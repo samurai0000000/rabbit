@@ -15,6 +15,8 @@
 #include "video.hxx"
 #include "wheels.hxx"
 
+#define WHEEL_DRIVE_LIMIT_MS  3000
+
 static int daemonize = 0;
 static Video *video = NULL;
 static Wheels *wheels = NULL;
@@ -41,8 +43,11 @@ static void cleanup(void)
 
 static void sig_handler(int signal)
 {
-    (void)(signal);
-    exit(EXIT_SUCCESS);
+    if (signal == SIGALRM) {
+        wheels->halt();
+    } else {
+        exit(EXIT_SUCCESS);
+    }
 }
 
 static void print_help(int argc, char **argv)
@@ -93,6 +98,7 @@ int main(int argc, char **argv)
 
     atexit(cleanup);
     signal(SIGTERM, sig_handler);
+    signal(SIGALRM, sig_handler);
 
     if (daemonize) {
         pid_t pid = fork();
@@ -142,8 +148,33 @@ int main(int argc, char **argv)
 
             if (FD_ISSET(STDIN_FILENO, &readfds)) {
                 int key = getchar();
-                if (key == 'q' || key == 'Q') {
+                switch (key) {
+                case 'q':
+                case 'Q':
                     exit(EXIT_SUCCESS);
+                    break;
+                case 'h':
+                case 'H':
+                    wheels->halt();
+                    break;
+                case 'f':
+                case 'F':
+                    wheels->fwd(WHEEL_DRIVE_LIMIT_MS);
+                    break;
+                case 'b':
+                case 'B':
+                    wheels->bwd(WHEEL_DRIVE_LIMIT_MS);
+                    break;
+                case 'r':
+                case 'R':
+                    wheels->ror(WHEEL_DRIVE_LIMIT_MS);
+                    break;
+                case 'l':
+                case 'L':
+                    wheels->rol(WHEEL_DRIVE_LIMIT_MS);
+                    break;
+                default:
+                    break;
                 }
             }
         }

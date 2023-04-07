@@ -32,6 +32,7 @@ public:
 
 private:
 
+    unsigned int now_diff_ts_ms(void) const;
     void change(unsigned int state);
 
     unsigned int _state;
