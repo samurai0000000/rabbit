@@ -7,6 +7,8 @@
 #ifndef WHEELS_HXX
 #define WHEELS_HXX
 
+#include <sys/time.h>
+
 class Wheels {
 
 public:
@@ -15,58 +17,31 @@ public:
     ~Wheels();
 
     void halt(void);
-    void fwd(unsigned int steps);
-    void bwd(unsigned int steps);
-    void ror(unsigned int degrees);
-    void rol(unsigned int degrees);
+    void fwd(unsigned int ms);
+    void bwd(unsigned int ms);
+    void ror(unsigned int ms);
+    void rol(unsigned int ms);
 
-    unsigned int fwd_steps(void) const;
-    unsigned int bwd_steps(void) const;
-    unsigned int ror_degrees(void) const;
-    unsigned int rol_degrees(void) const;
+    unsigned int state(void) const;
+    const char *stateStr(void) const;
+
+    unsigned int fwd_ms(void) const;
+    unsigned int bwd_ms(void) const;
+    unsigned int ror_ms(void) const;
+    unsigned int rol_ms(void) const;
 
 private:
 
-    unsigned int _fwd_steps;
-    unsigned int _bwd_steps;
-    unsigned int _ror_degrees;
-    unsigned int _rol_degrees;
+    void change(unsigned int state);
+
+    unsigned int _state;
+    struct timeval _ts;
+    unsigned int _fwd_ms;
+    unsigned int _bwd_ms;
+    unsigned int _ror_ms;
+    unsigned int _rol_ms;
 
 };
-
-inline Wheels::Wheels()
-    : _fwd_steps(0),
-      _bwd_steps(0),
-      _ror_degrees(0),
-      _rol_degrees(0)
-{
-
-}
-
-inline Wheels::~Wheels()
-{
-    halt();
-}
-
-inline unsigned int Wheels::fwd_steps(void) const
-{
-    return _fwd_steps;
-}
-
-inline unsigned int Wheels::bwd_steps(void) const
-{
-    return _bwd_steps;
-}
-
-inline unsigned int Wheels::ror_degrees(void) const
-{
-    return _ror_degrees;
-}
-
-inline unsigned int Wheels::rol_degrees(void) const
-{
-    return _rol_degrees;
-}
 
 #endif
 

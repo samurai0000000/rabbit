@@ -11,6 +11,7 @@
 #include <termios.h>
 #include <sys/select.h>
 #include <iostream>
+#include <pigpio.h>
 #include "video.hxx"
 #include "wheels.hxx"
 
@@ -34,6 +35,8 @@ static void cleanup(void)
         delete wheels;
         wheels = NULL;
     }
+
+    gpioTerminate();
 }
 
 static void sig_handler(int signal)
@@ -80,6 +83,12 @@ int main(int argc, char **argv)
             return -1;
             break;
         }
+    }
+
+
+    if (gpioInitialise() < 0) {
+        cerr << "gpioInitialise failed!" << endl;
+        return -1;
     }
 
     atexit(cleanup);
