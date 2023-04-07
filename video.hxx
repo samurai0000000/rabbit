@@ -8,11 +8,12 @@
 #define VIDEO_HXX
 
 #include <pthread.h>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/videoio.hpp>
+#include <opencv2/opencv.hpp>
+#include <nadjieb/mjpeg_streamer.hpp>
 
 using namespace std;
 using namespace cv;
+using namespace nadjieb;
 
 class Video {
 
@@ -26,6 +27,7 @@ private:
     static void *run(void *args);
 
     VideoCapture *_vc;
+    MJPEGStreamer _streamer;
     pthread_t _thread;
     int _running;
 

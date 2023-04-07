@@ -20,10 +20,14 @@ Video::Video()
 
     _running = 1;
     pthread_create(&_thread, NULL, Video::run, this);
+
+    _streamer.start(8000);
 }
 
 Video::~Video()
 {
+    _streamer.stop();
+
     _running = 0;
     pthread_join(_thread, NULL);
 
@@ -35,11 +39,25 @@ Video::~Video()
 void *Video::run(void *args)
 {
     Video *video = (Video *) args;
+    std::vector<int> params = { IMWRITE_JPEG_QUALITY, 90, };
 
     do {
         Mat frame;
 
         video->_vc->read(frame);
+
+        if (frame.empty()) {
+            cerr << "empty frame!" << endl;
+            continue;
+        }
+
+        if (video->_streamer.isRunning()) {
+            vector<uchar> buff_rgb;
+
+            imencode(".jpg", frame, buff_rgb, params);
+            video->_streamer.publish("/rgb", string(buff_rgb.begin(),
+                                                    buff_rgb.end()));
+        }
     } while (video->_running);
 
     return NULL;
