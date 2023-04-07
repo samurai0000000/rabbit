@@ -26,10 +26,10 @@ Video::Video()
 
 Video::~Video()
 {
-    _streamer.stop();
-
     _running = 0;
     pthread_join(_thread, NULL);
+
+    _streamer.stop();
 
     if (_vc) {
         delete _vc;
