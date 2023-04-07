@@ -6,17 +6,22 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <getopt.h>
+#include <signal.h>
 #include <termios.h>
 #include <sys/select.h>
 #include <iostream>
 #include "video.hxx"
 
+static int daemonize = 0;
 static Video *video = NULL;
 static struct termios t_old;
 
-void cleanup(void)
+static void cleanup(void)
 {
-    tcsetattr(fileno(stdin), TCSANOW, &t_old);
+    if (!daemonize) {
+        tcsetattr(fileno(stdin), TCSANOW, &t_old);
+    }
 
     if (video) {
         delete video;
@@ -24,42 +29,105 @@ void cleanup(void)
     }
 }
 
-int main(int argc, char **argv)
+static void sig_handler(int signal)
+{
+    (void)(signal);
+    exit(EXIT_SUCCESS);
+}
+
+static void print_help(int argc, char **argv)
 {
     (void)(argc);
-    (void)(argv);
+
+    printf("Usage: %s [OPTIONS]\n", argv[0]);
+    printf("  --help,-h      This message\n");
+    printf("  --daemon,-d    Run %s as daemon\n", argv[0]);
+}
+
+static const struct option long_options[] = {
+    { "help", no_argument, NULL, 'h', },
+    { "daemon", no_argument, NULL, 'd', },
+};
+
+int main(int argc, char **argv)
+{
     struct termios t_new;
 
-    tcgetattr(fileno(stdin), &t_old);
+    for (;;) {
+        int option_index = 0;
+        int c = getopt_long(argc, argv, "hd",
+                            long_options, &option_index);
+        if (c == -1) {
+            break;
+        }
+
+        switch (c) {
+        case 'h':
+            print_help(argc, argv);
+            return 0;
+        case 'd':
+            daemonize = 1;
+            break;
+        default:
+            print_help(argc, argv);
+            return -1;
+            break;
+        }
+    }
 
     atexit(cleanup);
+    signal(SIGTERM, sig_handler);
 
-    t_new = t_old;
-    t_new.c_lflag &= (tcflag_t) ~(ICANON | ECHO);
-    tcsetattr(fileno(stdin), TCSANOW, &t_new);
+    if (daemonize) {
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) {
+            /* Child */
+            close(fileno(stdin));
+            close(fileno(stdout));
+            close(fileno(stderr));
+        } else {
+            /* Parent */
+            exit(EXIT_SUCCESS);
+        }
+    } else {
+        signal(SIGINT, sig_handler);
+        tcgetattr(fileno(stdin), &t_old);
+        t_new = t_old;
+        t_new.c_lflag &= (tcflag_t) ~(ICANON | ECHO);
+        tcsetattr(fileno(stdin), TCSANOW, &t_new);
+    }
 
     video = new Video();
 
-    cout << "Press 'q' to quit ..." << endl;
+    if (daemonize) {
+        for (;;) {
+            sleep(60);
+        }
+    } else {
+        cout << "Press 'q' to quit ..." << endl;
 
-    for (;;) {
-        int nfds;
-        fd_set readfds;
-        struct timeval timeout = {
-            .tv_sec = 0,
-            .tv_usec = 200000,
-        };
+        for (;;) {
+            int nfds;
+            fd_set readfds;
+            struct timeval timeout = {
+                .tv_sec = 0,
+                .tv_usec = 200000,
+            };
 
-        FD_ZERO(&readfds);
-        FD_SET(STDIN_FILENO, &readfds);
-        nfds = STDIN_FILENO + 1;
+            FD_ZERO(&readfds);
+            FD_SET(STDIN_FILENO, &readfds);
+            nfds = STDIN_FILENO + 1;
 
-        select(nfds, &readfds, NULL, NULL, &timeout);
+            select(nfds, &readfds, NULL, NULL, &timeout);
 
-        if (FD_ISSET(STDIN_FILENO, &readfds)) {
-            int key = getchar();
-            if (key == 'q' || key == 'Q') {
-                exit(EXIT_SUCCESS);
+            if (FD_ISSET(STDIN_FILENO, &readfds)) {
+                int key = getchar();
+                if (key == 'q' || key == 'Q') {
+                    exit(EXIT_SUCCESS);
+                }
             }
         }
     }
