@@ -12,9 +12,11 @@
 #include <sys/select.h>
 #include <iostream>
 #include "video.hxx"
+#include "wheels.hxx"
 
 static int daemonize = 0;
 static Video *video = NULL;
+static Wheels *wheels = NULL;
 static struct termios t_old;
 
 static void cleanup(void)
@@ -26,6 +28,11 @@ static void cleanup(void)
     if (video) {
         delete video;
         video = NULL;
+    }
+
+    if (wheels) {
+        delete wheels;
+        wheels = NULL;
     }
 }
 
@@ -101,6 +108,7 @@ int main(int argc, char **argv)
     }
 
     video = new Video();
+    wheels = new Wheels();
 
     if (daemonize) {
         for (;;) {
