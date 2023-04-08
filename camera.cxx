@@ -5,7 +5,7 @@
  */
 
 #include <iostream>
-#include "camera.hxx"
+#include "rabbit.hxx"
 
 #define CAMERA_RES_WIDTH   640
 #define CAMERA_RES_HEIGHT  480
@@ -71,12 +71,22 @@ void *Camera::run(void *args)
             continue;
         }
 
+        putText(frame,
+                wheels->stateStr(),
+                Point(CAMERA_RES_WIDTH / 2,      // X-pos
+                      CAMERA_RES_HEIGHT - 50),   // Y-pos
+                FONT_HERSHEY_COMPLEX,            // Font
+                1,                               // Size
+                Scalar(255, 255, 255),           // Color
+                2                                // Weight
+            );
+
         if (camera->_streamer.isRunning()) {
             vector<uchar> buff_rgb;
 
             imencode(".jpg", frame, buff_rgb, params);
             camera->_streamer.publish("/rgb", string(buff_rgb.begin(),
-                                                    buff_rgb.end()));
+                                                     buff_rgb.end()));
         }
     } while (camera->_running);
 

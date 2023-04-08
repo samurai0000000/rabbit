@@ -5,8 +5,7 @@
  */
 
 #include <iostream>
-#include <pigpio.h>
-#include "wheels.hxx"
+#include "rabbit.hxx"
 
 /*
  * https://lastminuteengineers.com/l298n-dc-stepper-driver-arduino-tutorial/
@@ -232,12 +231,6 @@ void Wheels::change(unsigned int state)
     default:
         break;
     }
-
-#if 0
-    if (_state != 0) {
-        cout << stateStr() << " ran for " << ms << "ms" << endl;
-    }
-#endif
 
     _state = state;
     gettimeofday(&_ts, NULL);

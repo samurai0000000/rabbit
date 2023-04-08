@@ -11,16 +11,15 @@
 #include <termios.h>
 #include <sys/select.h>
 #include <iostream>
-#include <pigpio.h>
-#include "camera.hxx"
-#include "wheels.hxx"
+#include "rabbit.hxx"
 
 #define WHEEL_DRIVE_LIMIT_MS  3000
 
 static int daemonize = 0;
-static Camera *camera = NULL;
-static Wheels *wheels = NULL;
 static struct termios t_old;
+
+Camera *camera = NULL;
+Wheels *wheels = NULL;
 
 static void cleanup(void)
 {
