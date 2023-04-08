@@ -10,9 +10,15 @@
 #include <pigpio.h>
 #include "camera.hxx"
 #include "wheels.hxx"
+#include "power.hxx"
+#include "compass.hxx"
+#include "ambience.hxx"
 
 extern Camera *camera;
 extern Wheels *wheels;
+extern Power *power;
+extern Compass *compass;
+extern Ambience *ambience;
 
 #endif
 

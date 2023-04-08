@@ -20,6 +20,9 @@ static struct termios t_old;
 
 Camera *camera = NULL;
 Wheels *wheels = NULL;
+Power *power = NULL;
+Compass *compass = NULL;
+Ambience *ambience = NULL;
 
 static void cleanup(void)
 {
@@ -35,6 +38,19 @@ static void cleanup(void)
     if (wheels) {
         delete wheels;
         wheels = NULL;
+    }
+
+    if (power) {
+        delete power;
+        power = NULL;
+    }
+
+    if (compass) {
+        delete compass;
+    }
+
+    if (ambience) {
+        delete ambience;
     }
 
     gpioTerminate();
@@ -123,6 +139,9 @@ int main(int argc, char **argv)
 
     camera = new Camera();
     wheels = new Wheels();
+    power = new Power();
+    compass = new Compass();
+    ambience = new Ambience();
 
     if (daemonize) {
         for (;;) {
