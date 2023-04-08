@@ -12,13 +12,13 @@
 #include <sys/select.h>
 #include <iostream>
 #include <pigpio.h>
-#include "video.hxx"
+#include "camera.hxx"
 #include "wheels.hxx"
 
 #define WHEEL_DRIVE_LIMIT_MS  3000
 
 static int daemonize = 0;
-static Video *video = NULL;
+static Camera *camera = NULL;
 static Wheels *wheels = NULL;
 static struct termios t_old;
 
@@ -28,9 +28,9 @@ static void cleanup(void)
         tcsetattr(fileno(stdin), TCSANOW, &t_old);
     }
 
-    if (video) {
-        delete video;
-        video = NULL;
+    if (camera) {
+        delete camera;
+        camera = NULL;
     }
 
     if (wheels) {
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
         tcsetattr(fileno(stdin), TCSANOW, &t_new);
     }
 
-    video = new Video();
+    camera = new Camera();
     wheels = new Wheels();
 
     if (daemonize) {
@@ -152,6 +152,10 @@ int main(int argc, char **argv)
                 case 'q':
                 case 'Q':
                     exit(EXIT_SUCCESS);
+                    break;
+                case 'v':
+                case 'V':
+                    camera->enVision(!camera->isVisionEn());
                     break;
                 case 'h':
                 case 'H':

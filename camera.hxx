@@ -1,11 +1,11 @@
 /*
- * video.hxx
+ * camera.hxx
  *
  * Copyright (C) 2023, Charles Chiou
  */
 
-#ifndef VIDEO_HXX
-#define VIDEO_HXX
+#ifndef CAMERA_HXX
+#define CAMERA_HXX
 
 #include <pthread.h>
 #include <opencv2/opencv.hpp>
@@ -15,12 +15,15 @@ using namespace std;
 using namespace cv;
 using namespace nadjieb;
 
-class Video {
+class Camera {
 
 public:
 
-    Video();
-    ~Video();
+    Camera();
+    ~Camera();
+
+    void enVision(int enable);
+    int isVisionEn(void) const;
 
 private:
 
@@ -30,8 +33,19 @@ private:
     MJPEGStreamer _streamer;
     pthread_t _thread;
     int _running;
+    int _vision;
 
 };
+
+inline void Camera::enVision(int enable)
+{
+    _vision = enable ? 1 : 0;
+}
+
+inline int Camera::isVisionEn(void) const
+{
+    return _vision;
+}
 
 #endif
 
