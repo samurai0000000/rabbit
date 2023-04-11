@@ -8,12 +8,14 @@
 #define RABBIT_HXX
 
 #include <pigpio.h>
+#include "servos.hxx"
 #include "camera.hxx"
 #include "wheels.hxx"
 #include "power.hxx"
 #include "compass.hxx"
 #include "ambience.hxx"
 
+extern Servos *servos;
 extern Camera *camera;
 extern Wheels *wheels;
 extern Power *power;

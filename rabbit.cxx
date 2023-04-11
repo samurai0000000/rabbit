@@ -18,6 +18,7 @@
 static int daemonize = 0;
 static struct termios t_old;
 
+Servos *servos = NULL;
 Camera *camera = NULL;
 Wheels *wheels = NULL;
 Power *power = NULL;
@@ -51,6 +52,10 @@ static void cleanup(void)
 
     if (ambience) {
         delete ambience;
+    }
+
+    if (servos) {
+        delete servos;
     }
 
     gpioTerminate();
@@ -137,6 +142,7 @@ int main(int argc, char **argv)
         tcsetattr(fileno(stdin), TCSANOW, &t_new);
     }
 
+    servos = new Servos();
     camera = new Camera();
     wheels = new Wheels();
     power = new Power();
