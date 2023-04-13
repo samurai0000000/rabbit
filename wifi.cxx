@@ -23,7 +23,7 @@ int WIFI::stat(struct wifi_stat *wifi_stat)
     struct timeval ts, te, tdiff;
     bool reply = false;
     bool timeout = false;
-    char buf[0xffff];
+    char buf[2048];
 
     if (wifi_stat == NULL) {
         goto done;
