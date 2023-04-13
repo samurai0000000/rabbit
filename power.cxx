@@ -6,26 +6,27 @@
 
 #include "rabbit.hxx"
 
+#define VOLTAGE_ADC_CHAN 0
+#define CURRENT_ADC_CHAN 1
+
 Power::Power()
 {
-    // TODO
+
 }
 
 Power::~Power()
 {
-    // TODO
+
 }
 
 unsigned int Power::voltage(void) const
 {
-    // TODO
-    return 0;
+    return adc->val(VOLTAGE_ADC_CHAN);
 }
 
 unsigned int Power::current(void) const
 {
-    // TODO
-    return 0;
+    return adc->val(CURRENT_ADC_CHAN);
 }
 
 /*

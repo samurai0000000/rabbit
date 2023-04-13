@@ -9,18 +9,22 @@
 
 #include <pigpio.h>
 #include "servos.hxx"
+#include "adc.hxx"
 #include "camera.hxx"
 #include "wheels.hxx"
 #include "power.hxx"
 #include "compass.hxx"
 #include "ambience.hxx"
+#include "wifi.hxx"
 
 extern Servos *servos;
+extern ADC *adc;
 extern Camera *camera;
 extern Wheels *wheels;
 extern Power *power;
 extern Compass *compass;
 extern Ambience *ambience;
+extern WIFI *wifi;
 
 #endif
 

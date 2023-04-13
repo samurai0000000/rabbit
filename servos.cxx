@@ -4,20 +4,36 @@
  * Copyright (C) 2023, Charles Chiou
  */
 
+#include <pigpio.h>
 #include "rabbit.hxx"
 
+/*
+ * PCA9685
+ * https://www.mouser.com/datasheet/2/737/PCA9685-932827.pdf
+ * https://cdn-shop.adafruit.com/datasheets/PCA9685.pdf
+ */
+#define PWM_I2C_BUS    1
+#define PWM_I2C_ADDR   0x40
 #define PWM_CHANNELS   16
 #define PWM_RESOLUTION 4096
 
 Servos::Servos()
-    : _pos(NULL)
+    : _pos(NULL),
+      _handle(-1)
 {
     _pos = new unsigned int[PWM_CHANNELS];
+    _handle = i2cOpen(PWM_I2C_BUS, PWM_I2C_ADDR, 0);
+    if (_handle < 0) {
+        cerr << "Open PCA9685 failed" << endl;
+    }
 }
 
 Servos::~Servos()
 {
     delete [] _pos;
+    if (_handle >= 0) {
+        i2cClose(_handle);
+    }
 }
 
 unsigned int Servos::pos(unsigned int index) const

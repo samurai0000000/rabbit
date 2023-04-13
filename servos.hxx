@@ -22,6 +22,7 @@ public:
 private:
 
     unsigned int *_pos;
+    int _handle;
 
 };
 

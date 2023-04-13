@@ -19,6 +19,7 @@ static int daemonize = 0;
 static struct termios t_old;
 
 Servos *servos = NULL;
+ADC *adc = NULL;
 Camera *camera = NULL;
 Wheels *wheels = NULL;
 Power *power = NULL;
@@ -52,6 +53,10 @@ static void cleanup(void)
 
     if (ambience) {
         delete ambience;
+    }
+
+    if (adc) {
+        delete adc;
     }
 
     if (servos) {
@@ -143,6 +148,7 @@ int main(int argc, char **argv)
     }
 
     servos = new Servos();
+    adc = new ADC();
     camera = new Camera();
     wheels = new Wheels();
     power = new Power();

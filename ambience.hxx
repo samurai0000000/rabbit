@@ -14,9 +14,16 @@ public:
     Ambience();
     ~Ambience();
 
+    float cpuTemp(void) const;
+    float gpuTemp(void) const;
     unsigned int temp(void) const;
     unsigned int pressure(void) const;
     unsigned int humidity(void) const;
+
+private:
+
+    int _bme280;
+    int _sht3x;
 
 };
 
