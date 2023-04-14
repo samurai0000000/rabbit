@@ -14,8 +14,7 @@ public:
     Ambience();
     ~Ambience();
 
-    float cpuTemp(void) const;
-    float gpuTemp(void) const;
+    float socTemp(void) const;
     unsigned int temp(void) const;
     unsigned int pressure(void) const;
     unsigned int humidity(void) const;

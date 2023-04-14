@@ -25,6 +25,12 @@ public:
     void enVision(int enable);
     int isVisionEn(void) const;
 
+    void pan(int deg, bool relative = false);
+    void tilt(int deg, bool relative = false);
+
+    int panAt(void) const;
+    int tiltAt(void) const;
+
 private:
 
     static void *run(void *args);
@@ -34,6 +40,8 @@ private:
     pthread_t _thread;
     int _running;
     int _vision;
+    int _pan;
+    int _tilt;
 
 };
 
@@ -45,6 +53,16 @@ inline void Camera::enVision(int enable)
 inline int Camera::isVisionEn(void) const
 {
     return _vision;
+}
+
+inline int Camera::panAt(void) const
+{
+    return _pan;
+}
+
+inline int Camera::tiltAt(void) const
+{
+    return _tilt;
 }
 
 #endif

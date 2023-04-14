@@ -48,34 +48,7 @@ Ambience::~Ambience()
     }
 }
 
-float Ambience::cpuTemp(void) const
-{
-    float temp = 0.0;
-    FILE *fin;
-
-    fin = fopen("/sys/class/thermal/thermal_zone0/temp", "r");
-    if (fin) {
-        char buf[128];
-        size_t len;
-        unsigned long val;
-        char *endptr = NULL;
-
-        len = fread(buf, 1, sizeof(buf), fin);
-        if (len > 0) {
-            val = strtoul(buf, &endptr, 10);
-            if (errno == 0) {
-                temp = (float) val;
-                temp /= 1000;
-            }
-        }
-
-        fclose(fin);
-    }
-
-    return temp;
-}
-
-float Ambience::gpuTemp(void) const
+float Ambience::socTemp(void) const
 {
     float temp = 0.0;
     char cmd[128];
