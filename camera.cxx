@@ -60,7 +60,7 @@ void *Camera::run(void *args)
     Size textSize;
     String text;
     Point pos;
-    struct timeval ts, now, tdiff;
+    struct timeval ts, now, tdiff, tv;
     struct wifi_stat wifi_stat;
 
     /* Set up */
@@ -75,6 +75,7 @@ void *Camera::run(void *args)
     tdiff.tv_sec = 1;
     tdiff.tv_usec = 0;
     timersub(&now, &tdiff, &ts);
+    memcpy(&tv, &now, sizeof(struct timeval));
 
     do {
 
@@ -100,7 +101,12 @@ void *Camera::run(void *args)
             continue;
         }
 
+        /* Update frame rate */
         gettimeofday(&now, NULL);
+        timersub(&now, &tv, &tv);
+        camera->_fr = 1.0 / (tv.tv_sec + (tv.tv_usec * 0.000001));
+        memcpy(&tv, &now, sizeof(struct timeval));
+
         timersub(&now, &ts, &tdiff);
         if (tdiff.tv_sec > 0 || tdiff.tv_usec > 500000) {
             char buf[128];
@@ -132,6 +138,13 @@ void *Camera::run(void *args)
 
             text = String("Heading: ") + to_string(compass->azimuth()) +
                 String(" deg");
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            text = String("Frame Rate: ");
+            snprintf(buf, sizeof(buf) - 1, "%.2f", camera->frameRate());
+            text += buf;
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);

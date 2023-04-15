@@ -30,6 +30,7 @@ public:
 
     int panAt(void) const;
     int tiltAt(void) const;
+    float frameRate(void) const;
 
 private:
 
@@ -42,6 +43,7 @@ private:
     int _vision;
     int _pan;
     int _tilt;
+    float _fr;
 
 };
 
@@ -63,6 +65,11 @@ inline int Camera::panAt(void) const
 inline int Camera::tiltAt(void) const
 {
     return _tilt;
+}
+
+inline float Camera::frameRate(void) const
+{
+    return _fr;
 }
 
 #endif
