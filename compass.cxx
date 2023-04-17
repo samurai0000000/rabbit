@@ -6,6 +6,11 @@
 
 #include "rabbit.hxx"
 
+/*
+ * QMC5883L 3 axis magnetic sensor
+ * https://datasheet.lcsc.com/szlcsc/QST-QMC5883L-TR_C192585.pdf
+ */
+
 Compass::Compass()
 {
     // TODO
