@@ -21,7 +21,7 @@ public:
 
 private:
 
-    void *_bme280;
+    int _bme280;
     int _sht3x;
 
 };

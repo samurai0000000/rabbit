@@ -1,6 +1,3 @@
 [submodule "cpp-mjpeg-streamer"]
 	path = cpp-mjpeg-streamer
 	url = https://github.com/nadjieb/cpp-mjpeg-streamer.git
-[submodule "BME280_driver"]
-	path = BME280_driver
-	url = https://github.com/boschsensortec/BME280_driver.git
