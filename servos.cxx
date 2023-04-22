@@ -65,8 +65,6 @@ Servos::Servos()
     WRITE_I2C(PRE_SCALE_REG, v);
     WRITE_I2C(MODE1_REG, MODE1_RESTART | MODE1_ALLCALL);
 
-    cout << "Servo (PCA9685) initialized" << endl;
-
 done:
 
     if (ret != 0) {

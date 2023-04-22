@@ -38,7 +38,9 @@ private:
     float _humidity;
 
     pthread_t _thread;
-    int _running;
+    pthread_mutex_t _mutex;
+    pthread_cond_t _cond;
+    bool _running;
 };
 
 inline float Ambience::socTemp(void) const

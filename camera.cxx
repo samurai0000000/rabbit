@@ -5,6 +5,7 @@
  */
 
 #include <time.h>
+#include <sys/time.h>
 #include <iostream>
 #include "rabbit.hxx"
 
@@ -21,7 +22,7 @@
 
 Camera::Camera()
     : _vc(NULL),
-      _running(0),
+      _running(false),
       _vision(0),
       _fr(0.0),
       _sentry()
@@ -40,7 +41,9 @@ Camera::Camera()
     servos->setRange(TILT_SERVO, TILT_LO_PULSE, TILT_HI_PULSE);
     servos->center(TILT_SERVO);
 
-    _running = 1;
+    _running = true;
+    pthread_mutex_init(&_mutex, NULL);
+    pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Camera::thread_func, this);
 
     _streamer.start(8000);
@@ -48,8 +51,11 @@ Camera::Camera()
 
 Camera::~Camera()
 {
-    _running = 0;
+    _running = false;
+    pthread_cond_broadcast(&_cond);
     pthread_join(_thread, NULL);
+    pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
 
     _streamer.stop();
 
@@ -101,10 +107,16 @@ void Camera::run(void)
 
     do {
         if (!isVisionEn() && !_streamer.hasClient("/rgb")) {
+            struct timespec twait;
             if (_vc->isOpened()) {
                 _vc->release();
             }
-            usleep(50000);
+
+            pthread_mutex_lock(&_mutex);
+            clock_gettime(CLOCK_REALTIME, &twait);
+            twait.tv_sec += 1;
+            pthread_cond_timedwait(&_cond, &_mutex, &twait);
+            pthread_mutex_unlock(&_mutex);
             continue;
         } else {
             if (!_vc->isOpened()) {

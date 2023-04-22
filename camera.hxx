@@ -43,7 +43,9 @@ private:
     VideoCapture *_vc;
     MJPEGStreamer _streamer;
     pthread_t _thread;
-    int _running;
+    pthread_mutex_t _mutex;
+    pthread_cond_t _cond;
+    bool _running;
     bool _vision;
     float _fr;
     struct {

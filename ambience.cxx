@@ -5,12 +5,9 @@
  */
 
 #include <stdlib.h>
+#include <sys/time.h>
+#include <bsd/sys/time.h>
 #include <pigpio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <linux/i2c-dev.h>
-#include <sys/ioctl.h>
 #include "rabbit.hxx"
 
 /*
@@ -80,7 +77,8 @@ Ambience::Ambience()
       _settings(),
       _bme280_delay_us(0),
       _bme280(-1),
-      _sht3x(-1)
+      _sht3x(-1),
+      _running(false)
 {
     int8_t rslt = BME280_OK;
 
@@ -142,7 +140,9 @@ bme280_done:
 
 sht3x_done:
 
-    _running = 1;
+    _running = true;
+    pthread_mutex_init(&_mutex, NULL);
+    pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Ambience::thread_func, this);
 }
 
@@ -156,8 +156,11 @@ Ambience::~Ambience()
         i2cClose(_sht3x);
     }
 
-    _running = 0;
+    _running = false;
+    pthread_cond_broadcast(&_cond);
     pthread_join(_thread, NULL);
+    pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
 }
 
 void *Ambience::thread_func(void *args)
@@ -172,13 +175,19 @@ void *Ambience::thread_func(void *args)
 void Ambience::run(void)
 {
     int8_t rslt;
+    char cmd[128];
+    char result[128];
+    FILE *fin;
+    struct bme280_data data;
+    struct timespec ts, tbme, tloop;
+
+    tbme.tv_sec = 0;
+    tbme.tv_nsec = _bme280_delay_us * 1000;
+    tloop.tv_sec = 1;
+    tloop.tv_nsec = 0;
 
     while (_running) {
-        char cmd[128];
-        char result[128];
-        FILE *fin;
-        struct bme280_data data;
-
+        /* Run vcgencmd to measure the SoC temperature */
         snprintf(cmd, sizeof(cmd) - 1, "vcgencmd measure_temp");
         fin = popen(cmd, "r");
         if (fin != NULL) {
@@ -198,17 +207,24 @@ void Ambience::run(void)
             fin = NULL;
         }
 
-        /* Set the sensor to forced mode */
+        /* Set the BME sensor to forced mode */
         rslt = bme280_set_sensor_mode(BME280_POWERMODE_FORCED, &_dev);
         if (rslt != BME280_OK) {
             fprintf(stderr, "bme280_set_sensor_mode (%+d).", rslt);
             continue;
         }
 
-        /* Wait for the measurement to complete */
-        usleep(_bme280_delay_us);
+        /* Wait for BME measurement to complete */
+        pthread_mutex_lock(&_mutex);
+        clock_gettime(CLOCK_REALTIME, &ts);
+        timespecadd(&ts, &tbme, &ts);
+        pthread_cond_timedwait(&_cond, &_mutex, &ts);
+        pthread_mutex_unlock(&_mutex);
+        if (!_running) {
+            break;
+        }
 
-        /* Get sensor data */
+        /* Get BME sensor data */
         rslt = bme280_get_sensor_data(BME280_ALL, &data, &_dev);
         if (rslt != BME280_OK) {
             fprintf(stderr, "bme280_get_sensor_data (%+d).", rslt);
@@ -219,7 +235,11 @@ void Ambience::run(void)
         _pressure = data.pressure * 0.01;
         _humidity = data.humidity;
 
-        usleep(500000);
+        pthread_mutex_lock(&_mutex);
+        clock_gettime(CLOCK_REALTIME, &ts);
+        timespecadd(&ts, &tloop, &ts);
+        pthread_cond_timedwait(&_cond, &_mutex, &ts);
+        pthread_mutex_unlock(&_mutex);
     }
 }
 
