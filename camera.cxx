@@ -53,7 +53,6 @@ Camera::~Camera()
     }
 }
 
-
 void *Camera::thread_func(void *args)
 {
     Camera *camera = (Camera *) args;
@@ -178,20 +177,20 @@ void Camera::run(void)
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-            text = String("Temperature: ") + to_string(ambience->temp()) +
-                String("C");
+            snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->temp());
+            text = String("Temperature: ") + buf + String("C");
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-            text = String("Humidity: ") + to_string(ambience->humidity()) +
-                String("%");
+            snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->humidity());
+            text = String("Humidity: ") + buf + String("%");
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-            text = String("Barometric Pressure: ") +
-                to_string(ambience->pressure()) + String("kPa");
+            snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->pressure());
+            text = String("Barometric Pressure: ") + buf + String("hPa");
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);

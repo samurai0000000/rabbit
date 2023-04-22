@@ -27,6 +27,8 @@ int WIFI::stat(struct wifi_stat *wifi_stat)
 
     if (wifi_stat == NULL) {
         goto done;
+    } else {
+        memset(wifi_stat, 0x0, sizeof(*wifi_stat));
     }
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);

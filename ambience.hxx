@@ -7,6 +7,8 @@
 #ifndef AMBIENCE_HXX
 #define AMBIENCE_HXX
 
+#include <bme280.h>
+
 class Ambience {
 
 public:
@@ -15,16 +17,49 @@ public:
     ~Ambience();
 
     float socTemp(void) const;
-    unsigned int temp(void) const;
-    unsigned int pressure(void) const;
-    unsigned int humidity(void) const;
+    float temp(void) const;
+    float pressure(void) const;
+    float humidity(void) const;
 
 private:
 
+    static void *thread_func(void *args);
+    void run(void);
+
+    struct bme280_dev _dev;
+    struct bme280_settings _settings;
+    uint32_t _bme280_delay_us;
     int _bme280;
     int _sht3x;
 
+    float _socTemp;
+    float _temp;
+    float _pressure;
+    float _humidity;
+
+    pthread_t _thread;
+    int _running;
 };
+
+inline float Ambience::socTemp(void) const
+{
+    return _socTemp;
+}
+
+inline float Ambience::temp(void) const
+{
+    return _temp;
+}
+
+inline float Ambience::pressure(void) const
+{
+    return _pressure;
+}
+
+inline float Ambience::humidity(void) const
+{
+    return _humidity;
+}
 
 #endif
 
