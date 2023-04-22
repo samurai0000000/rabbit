@@ -36,7 +36,7 @@ Camera::Camera()
     servos->center(TILT_SERVO);
 
     _running = 1;
-    pthread_create(&_thread, NULL, Camera::run, this);
+    pthread_create(&_thread, NULL, Camera::thread_func, this);
 
     _streamer.start(8000);
 }
@@ -53,9 +53,18 @@ Camera::~Camera()
     }
 }
 
-void *Camera::run(void *args)
+
+void *Camera::thread_func(void *args)
 {
     Camera *camera = (Camera *) args;
+
+    camera->run();
+
+    return NULL;
+}
+
+void Camera::run(void)
+{
     std::vector<int> params = { IMWRITE_JPEG_QUALITY, 90, };
     Mat screen;
     Mat osd1;
@@ -72,7 +81,7 @@ void *Camera::run(void *args)
     struct wifi_stat wifi_stat;
 
     /* Set up */
-    camera->_vc->read(frame);
+    _vc->read(frame);
     osd1.create(Size(300, frame.rows), frame.type());
     screen.create(Size(frame.cols + osd1.cols,
                        frame.rows),
@@ -87,22 +96,22 @@ void *Camera::run(void *args)
 
     do {
 
-        if (!camera->isVisionEn() && !camera->_streamer.hasClient("/rgb")) {
-            if (camera->_vc->isOpened()) {
-                camera->_vc->release();
+        if (!isVisionEn() && !_streamer.hasClient("/rgb")) {
+            if (_vc->isOpened()) {
+                _vc->release();
             }
             usleep(50000);
             continue;
         } else {
-            if (!camera->_vc->isOpened()) {
-                camera->_vc->open(0, CAP_V4L);
-                camera->_vc->set(CAP_PROP_FRAME_WIDTH, CAMERA_RES_WIDTH);
-                camera->_vc->set(CAP_PROP_FRAME_HEIGHT, CAMERA_RES_HEIGHT);
+            if (!_vc->isOpened()) {
+                _vc->open(0, CAP_V4L);
+                _vc->set(CAP_PROP_FRAME_WIDTH, CAMERA_RES_WIDTH);
+                _vc->set(CAP_PROP_FRAME_HEIGHT, CAMERA_RES_HEIGHT);
             }
         }
 
         /* Read a frame from camera */
-        camera->_vc->read(frame);
+        _vc->read(frame);
 
         if (frame.empty()) {
             cerr << "empty frame!" << endl;
@@ -112,7 +121,7 @@ void *Camera::run(void *args)
         /* Update frame rate */
         gettimeofday(&now, NULL);
         timersub(&now, &tv, &tv);
-        camera->_fr = 1.0 / (tv.tv_sec + (tv.tv_usec * 0.000001));
+        _fr = 1.0 / (tv.tv_sec + (tv.tv_usec * 0.000001));
         memcpy(&tv, &now, sizeof(struct timeval));
 
         timersub(&now, &ts, &tdiff);
@@ -151,15 +160,15 @@ void *Camera::run(void *args)
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
             text = String("Frame Rate: ");
-            snprintf(buf, sizeof(buf) - 1, "%.2f", camera->frameRate());
+            snprintf(buf, sizeof(buf) - 1, "%.2f", frameRate());
             text += buf;
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
             text = String("");
-            text += "Pan: " + to_string(camera->panAt()) + " deg ";
-            text += "Tilt: " + to_string(camera->tiltAt()) + " deg";
+            text += "Pan: " + to_string(panAt()) + " deg ";
+            text += "Tilt: " + to_string(tiltAt()) + " deg";
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
@@ -219,34 +228,32 @@ void *Camera::run(void *args)
         frame.copyTo(screen(Rect(0, 0, frame.cols, frame.rows)));
         osd1.copyTo(screen(Rect(640, 0, osd1.cols, osd1.rows)));
 
-        if (camera->_streamer.isRunning()) {
+        if (_streamer.isRunning()) {
             vector<uchar> buff_rgb;
 
             imencode(".jpg", screen, buff_rgb, params);
-            camera->_streamer.publish("/rgb", string(buff_rgb.begin(),
+            _streamer.publish("/rgb", string(buff_rgb.begin(),
                                                      buff_rgb.end()));
         }
 
         /* Sentry */
-        if (camera->_sentry.enabled) {
+        if (_sentry.enabled) {
             unsigned int pulse;
 
             pulse = servos->pulse(PAN_SERVO);
             if (pulse >= servos->hiRange(PAN_SERVO)) {
-                camera->_sentry.dir = 0;
+                _sentry.dir = 0;
             } else if (pulse <= servos->loRange(PAN_SERVO)) {
-                camera->_sentry.dir = 1;
+                _sentry.dir = 1;
             }
 
-            if (camera->_sentry.dir) {
+            if (_sentry.dir) {
                 servos->setPulse(PAN_SERVO, pulse + 5);
             } else {
                 servos->setPulse(PAN_SERVO, pulse - 5);
             }
         }
-    } while (camera->_running);
-
-    return NULL;
+    } while (_running);
 }
 
 void Camera::pan(int deg, bool relative)

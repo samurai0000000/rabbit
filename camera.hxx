@@ -37,7 +37,8 @@ public:
 
 private:
 
-    static void *run(void *args);
+    static void *thread_func(void *args);
+    void run();
 
     VideoCapture *_vc;
     MJPEGStreamer _streamer;
