@@ -160,6 +160,8 @@ int main(int argc, char **argv)
             sleep(60);
         }
     } else {
+        unsigned int chan = 0;
+
         cout << "Press 'q' to quit ..." << endl;
 
         for (;;) {
@@ -167,7 +169,7 @@ int main(int argc, char **argv)
             fd_set readfds;
             struct timeval timeout = {
                 .tv_sec = 0,
-                .tv_usec = 200000,
+                .tv_usec = 5000,
             };
 
             FD_ZERO(&readfds);
@@ -206,6 +208,71 @@ int main(int argc, char **argv)
                 case 'l':
                 case 'L':
                     wheels->rol(WHEEL_DRIVE_LIMIT_MS);
+                    break;
+                case 's':
+                case 'S':
+                    camera->enSentry(!camera->isSentryEn());
+                    cout << "Sentry "
+                         << (camera->isSentryEn() ? "enabled" : "disabled")
+                         << endl;
+                    break;
+                case 'P':
+                case 'p':
+                    chan -= 1;
+                    if (chan >= SERVO_CHANNELS) {
+                        chan = SERVO_CHANNELS - 1;
+                    }
+                    cout << "Servo #" << to_string(chan) << " selected" << endl;
+                    break;
+                case 'N':
+                case 'n':
+                    chan += 1;
+                    if (chan >= SERVO_CHANNELS) {
+                        chan = 0;
+                    }
+                    cout << "Servo #" << to_string(chan) << " selected" << endl;
+                    break;
+                case '=':
+                    servos->center(chan);
+                    cout << "Servo #" << to_string(chan)
+                         << " centered to " << to_string(servos->pulse(chan))
+                         << endl;
+                    break;
+                case '^':
+                    servos->setPulse(chan, servos->loRange(chan));
+                    cout << "Servo #" << to_string(chan)
+                         << " set lo to " << to_string(servos->pulse(chan))
+                         << endl;
+                    break;
+                case '$':
+                    servos->setPulse(chan, servos->hiRange(chan));
+                    cout << "Servo #" << to_string(chan)
+                         << " set hi to " << to_string(servos->pulse(chan))
+                         << endl;
+                    break;
+                case '+':
+                    servos->setPulse(chan, servos->pulse(chan) + 1, true);
+                    cout << "Servo #" << to_string(chan)
+                         << " set to " << to_string(servos->pulse(chan))
+                         << endl;
+                    break;
+                case '-':
+                    servos->setPulse(chan, servos->pulse(chan) - 1, true);
+                    cout << "Servo #" << to_string(chan)
+                         << " set to " << to_string(servos->pulse(chan))
+                         << endl;
+                    break;
+                case '@':
+                    servos->setPulse(chan, servos->pulse(chan) + 10, true);
+                    cout << "Servo #" << to_string(chan)
+                         << " set to " << to_string(servos->pulse(chan))
+                         << endl;
+                    break;
+                case '!':
+                    servos->setPulse(chan, servos->pulse(chan) - 10, true);
+                    cout << "Servo #" << to_string(chan)
+                         << " set to " << to_string(servos->pulse(chan))
+                         << endl;
                     break;
                 default:
                     break;

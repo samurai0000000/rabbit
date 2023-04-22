@@ -22,3 +22,17 @@ build/rabbit: build/Makefile
 build/Makefile: CMakeLists.txt
 	@mkdir -p build
 	@cd build && cmake ..
+
+.PHONY: run install
+
+run: build/rabbit
+	@if [ `hostname` = "rabbit" ]; then \
+		sudo killall rabbit >/dev/null 2>&1; \
+		sudo ./build/rabbit; \
+	fi
+
+install: build/rabbit
+	@if [ `hostname` = "rabbit" ]; then \
+		sudo killall rabbit >/dev/null 2>&1; \
+		sudo install -m 755 $< /usr/local/bin; \
+	fi

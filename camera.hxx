@@ -22,8 +22,11 @@ public:
     Camera();
     ~Camera();
 
-    void enVision(int enable);
-    int isVisionEn(void) const;
+    void enVision(bool enable);
+    bool isVisionEn(void) const;
+
+    void enSentry(bool enable);
+    bool isSentryEn(void) const;
 
     void pan(int deg, bool relative = false);
     void tilt(int deg, bool relative = false);
@@ -40,21 +43,36 @@ private:
     MJPEGStreamer _streamer;
     pthread_t _thread;
     int _running;
-    int _vision;
+    bool _vision;
     int _pan;
     int _tilt;
     float _fr;
+    struct {
+        bool enabled;
+        int dir;
+    } _sentry;
 
 };
 
-inline void Camera::enVision(int enable)
+inline void Camera::enVision(bool enable)
 {
-    _vision = enable ? 1 : 0;
+    _vision = enable ? true : false;
 }
 
-inline int Camera::isVisionEn(void) const
+inline bool Camera::isVisionEn(void) const
 {
     return _vision;
+}
+
+inline void Camera::enSentry(bool enable)
+{
+    _sentry.enabled = enable ? true : false;
+    enVision(enable);
+}
+
+inline bool Camera::isSentryEn(void) const
+{
+    return _sentry.enabled;
 }
 
 inline int Camera::panAt(void) const

@@ -7,6 +7,8 @@
 #ifndef SERVOS_HXX
 #define SERVOS_HXX
 
+#define SERVO_CHANNELS 16
+
 class Servos {
 
 public:
@@ -14,17 +16,54 @@ public:
     Servos();
     ~Servos();
 
-    unsigned int pos(unsigned int index) const;
-    unsigned int posPct(unsigned int index) const;
-    void setPos(unsigned int index, unsigned int pos);
-    void setPosPct(unsigned int index, unsigned int pct);
+public:
+
+    void setRange(unsigned int chan, unsigned int lo, unsigned int hi);
+    unsigned int loRange(unsigned int chan);
+    unsigned int hiRange(unsigned int chan);
+    unsigned int pulse(unsigned int chan) const;
+    void setPulse(unsigned int chan, unsigned int pulse,
+                  bool ignoreRange = false);
+    void center(unsigned int chan);
 
 private:
 
-    unsigned int *_pos;
+    void setPwm(unsigned int chan, unsigned int on, unsigned int off);
+
     int _handle;
+    unsigned int _freq;
+    unsigned int _lo[SERVO_CHANNELS];
+    unsigned int _hi[SERVO_CHANNELS];
+    unsigned int _pulse[SERVO_CHANNELS];
 
 };
+
+inline unsigned int Servos::loRange(unsigned int chan)
+{
+    if (chan > SERVO_CHANNELS) {
+        return 0;
+    }
+
+    return _lo[chan];
+}
+
+inline unsigned int Servos::hiRange(unsigned int chan)
+{
+    if (chan > SERVO_CHANNELS) {
+        return 0;
+    }
+
+    return _hi[chan];
+}
+
+inline unsigned int Servos::pulse(unsigned int chan) const
+{
+    if (chan > SERVO_CHANNELS) {
+        return 0;
+    }
+
+    return _pulse[chan];
+}
 
 #endif
 

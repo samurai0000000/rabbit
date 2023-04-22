@@ -10,13 +10,16 @@
 
 #define CAMERA_RES_WIDTH   640
 #define CAMERA_RES_HEIGHT  480
+#define PAN_SERVO          2
+#define TILT_SERVO         3
 
 Camera::Camera()
     : _vc(NULL),
       _running(0),
       _vision(0),
       _pan(0),
-      _tilt(0)
+      _tilt(0),
+      _sentry()
 {
     try {
         _vc = new VideoCapture(0, CAP_V4L);
@@ -26,6 +29,11 @@ Camera::Camera()
         cerr << e.msg << endl;
         return;
     }
+
+    servos->setRange(PAN_SERVO, 640, 2180);
+    servos->center(PAN_SERVO);
+    servos->setRange(TILT_SERVO, 800, 1550);
+    servos->center(TILT_SERVO);
 
     _running = 1;
     pthread_create(&_thread, NULL, Camera::run, this);
@@ -83,7 +91,7 @@ void *Camera::run(void *args)
             if (camera->_vc->isOpened()) {
                 camera->_vc->release();
             }
-            usleep(1000000);
+            usleep(50000);
             continue;
         } else {
             if (!camera->_vc->isOpened()) {
@@ -217,6 +225,24 @@ void *Camera::run(void *args)
             imencode(".jpg", screen, buff_rgb, params);
             camera->_streamer.publish("/rgb", string(buff_rgb.begin(),
                                                      buff_rgb.end()));
+        }
+
+        /* Sentry */
+        if (camera->_sentry.enabled) {
+            unsigned int pulse;
+
+            pulse = servos->pulse(PAN_SERVO);
+            if (pulse >= servos->hiRange(PAN_SERVO)) {
+                camera->_sentry.dir = 0;
+            } else if (pulse <= servos->loRange(PAN_SERVO)) {
+                camera->_sentry.dir = 1;
+            }
+
+            if (camera->_sentry.dir) {
+                servos->setPulse(PAN_SERVO, pulse + 5);
+            } else {
+                servos->setPulse(PAN_SERVO, pulse - 5);
+            }
         }
     } while (camera->_running);
 
