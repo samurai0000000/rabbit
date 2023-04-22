@@ -30,9 +30,9 @@ public:
 
     void pan(int deg, bool relative = false);
     void tilt(int deg, bool relative = false);
-
     int panAt(void) const;
     int tiltAt(void) const;
+
     float frameRate(void) const;
 
 private:
@@ -45,8 +45,6 @@ private:
     pthread_t _thread;
     int _running;
     bool _vision;
-    int _pan;
-    int _tilt;
     float _fr;
     struct {
         bool enabled;
@@ -74,16 +72,6 @@ inline void Camera::enSentry(bool enable)
 inline bool Camera::isSentryEn(void) const
 {
     return _sentry.enabled;
-}
-
-inline int Camera::panAt(void) const
-{
-    return _pan;
-}
-
-inline int Camera::tiltAt(void) const
-{
-    return _tilt;
 }
 
 inline float Camera::frameRate(void) const

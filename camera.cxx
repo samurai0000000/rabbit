@@ -8,17 +8,22 @@
 #include <iostream>
 #include "rabbit.hxx"
 
-#define CAMERA_RES_WIDTH   640
-#define CAMERA_RES_HEIGHT  480
-#define PAN_SERVO          2
-#define TILT_SERVO         3
+#define CAMERA_RES_WIDTH    640
+#define CAMERA_RES_HEIGHT   480
+#define PAN_SERVO             2
+#define PAN_LO_PULSE        640
+#define PAN_HI_PULSE       2180
+#define PAN_ANGLE_MULT       14
+#define TILT_SERVO            3
+#define TILT_LO_PULSE       800
+#define TILT_HI_PULSE      1550
+#define TILT_ANGLE_MULT      14
 
 Camera::Camera()
     : _vc(NULL),
       _running(0),
       _vision(0),
-      _pan(0),
-      _tilt(0),
+      _fr(0.0),
       _sentry()
 {
     try {
@@ -30,9 +35,9 @@ Camera::Camera()
         return;
     }
 
-    servos->setRange(PAN_SERVO, 640, 2180);
+    servos->setRange(PAN_SERVO, PAN_LO_PULSE, PAN_HI_PULSE);
     servos->center(PAN_SERVO);
-    servos->setRange(TILT_SERVO, 800, 1550);
+    servos->setRange(TILT_SERVO, TILT_LO_PULSE, TILT_HI_PULSE);
     servos->center(TILT_SERVO);
 
     _running = 1;
@@ -78,6 +83,7 @@ void Camera::run(void)
     Point pos;
     struct timeval ts, now, tdiff, tv;
     struct wifi_stat wifi_stat;
+    unsigned int frame_count = 0;
 
     /* Set up */
     _vc->read(frame);
@@ -94,7 +100,6 @@ void Camera::run(void)
     memcpy(&tv, &now, sizeof(struct timeval));
 
     do {
-
         if (!isVisionEn() && !_streamer.hasClient("/rgb")) {
             if (_vc->isOpened()) {
                 _vc->release();
@@ -115,6 +120,8 @@ void Camera::run(void)
         if (frame.empty()) {
             cerr << "empty frame!" << endl;
             continue;
+        } else {
+            frame_count++;
         }
 
         /* Update frame rate */
@@ -247,9 +254,11 @@ void Camera::run(void)
             }
 
             if (_sentry.dir) {
-                servos->setPulse(PAN_SERVO, pulse + 5);
+                servos->setPulse(PAN_SERVO,
+                                 servos->pulse(PAN_SERVO) + PAN_ANGLE_MULT);
             } else {
-                servos->setPulse(PAN_SERVO, pulse - 5);
+                servos->setPulse(PAN_SERVO,
+                                 servos->pulse(PAN_SERVO) - PAN_ANGLE_MULT);
             }
         }
     } while (_running);
@@ -257,16 +266,62 @@ void Camera::run(void)
 
 void Camera::pan(int deg, bool relative)
 {
-    // TODO
-    (void)(deg);
-    (void)(relative);
+    unsigned int pulse;
+    unsigned int center;
+
+    if (relative) {
+        pulse = servos->pulse(PAN_SERVO);
+        pulse = (unsigned) ((int) pulse + (PAN_ANGLE_MULT * deg));
+        servos->setPulse(PAN_SERVO, pulse);
+    } else {
+        center =
+            ((servos->hiRange(PAN_SERVO) - servos->loRange(PAN_SERVO)) / 2) +
+            PAN_LO_PULSE;
+        pulse = (unsigned int) ((int) center + deg * PAN_ANGLE_MULT);
+        servos->setPulse(PAN_SERVO, pulse);
+    }
 }
 
 void Camera::tilt(int deg, bool relative)
 {
-    // TODO
-    (void)(deg);
-    (void)(relative);
+    unsigned int pulse;
+    unsigned int center;
+
+    if (relative) {
+        pulse = servos->pulse(TILT_SERVO);
+        pulse = (unsigned) ((int) pulse + (TILT_ANGLE_MULT * deg));
+        servos->setPulse(TILT_SERVO, pulse);
+    } else {
+        center =
+            ((servos->hiRange(TILT_SERVO) - servos->loRange(TILT_SERVO)) / 2) +
+            TILT_LO_PULSE;
+        pulse = (unsigned int) ((int) center + deg * TILT_ANGLE_MULT);
+        servos->setPulse(TILT_SERVO, pulse);
+    }
+}
+
+int Camera::panAt(void) const
+{
+    unsigned int pulse;
+    unsigned int center;
+
+    pulse = servos->pulse(PAN_SERVO);
+    center = ((servos->hiRange(PAN_SERVO) - servos->loRange(PAN_SERVO)) / 2) +
+        PAN_LO_PULSE;
+
+    return ((int) pulse - (int) center) / PAN_ANGLE_MULT;
+}
+
+int Camera::tiltAt(void) const
+{
+    unsigned int pulse;
+    unsigned int center;
+
+    pulse = servos->pulse(TILT_SERVO);
+    center = ((servos->hiRange(TILT_SERVO) - servos->loRange(TILT_SERVO)) / 2) +
+        TILT_LO_PULSE;
+
+    return ((int) pulse - (int) center) / TILT_ANGLE_MULT;
 }
 
 /*
