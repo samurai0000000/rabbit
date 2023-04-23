@@ -17,11 +17,14 @@
 #define PWM_I2C_BUS    1
 #define PWM_I2C_ADDR   0x40
 
-#define READ_I2C(r, v)                                              \
-    (v) = i2cReadByteData(_handle, (r));                            \
-    if ((v) < 0) {                                                  \
-        fprintf(stderr, "PCA9685 read reg 0x%.2x failed!\n", (r));  \
-        goto done;                                                  \
+#define READ_I2C(r, v) {                                                \
+        int x = i2cReadByteData(_handle, (r));                          \
+        if (x < 0) {                                                    \
+            fprintf(stderr, "PCA9685 read reg 0x%.2x failed!\n", (r));  \
+            goto done;                                                  \
+        } else {                                                        \
+            (v) = x;                                                    \
+        }                                                               \
     }
 
 #define WRITE_I2C(r, v)                                             \

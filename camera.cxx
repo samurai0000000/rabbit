@@ -171,8 +171,8 @@ void Camera::run(void)
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-            text = String("Heading: ") + to_string(compass->azimuth()) +
-                String(" deg");
+            snprintf(buf, sizeof(buf) - 1, "%.1f", compass->bearing());
+            text = String("Heading: ") + buf + String(" deg");
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);

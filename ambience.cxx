@@ -148,6 +148,12 @@ sht3x_done:
 
 Ambience::~Ambience()
 {
+    _running = false;
+    pthread_cond_broadcast(&_cond);
+    pthread_join(_thread, NULL);
+    pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
+
     if (_bme280) {
         i2cClose(_bme280);
     }
@@ -155,12 +161,6 @@ Ambience::~Ambience()
     if (_sht3x >= 0) {
         i2cClose(_sht3x);
     }
-
-    _running = false;
-    pthread_cond_broadcast(&_cond);
-    pthread_join(_thread, NULL);
-    pthread_mutex_destroy(&_mutex);
-    pthread_cond_destroy(&_cond);
 }
 
 void *Ambience::thread_func(void *args)
