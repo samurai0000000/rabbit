@@ -14,8 +14,8 @@ public:
     Power();
     ~Power();
 
-    unsigned int voltage(void) const;
-    unsigned int current(void) const;
+    float voltage(void) const;
+    float current(void) const;
 
 };
 

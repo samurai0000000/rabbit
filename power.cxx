@@ -6,7 +6,15 @@
 
 #include "rabbit.hxx"
 
+/*
+ * Voltage divider (by 5)
+ */
 #define VOLTAGE_ADC_CHAN 0
+
+/*
+ * ACS712
+ * https://www.sparkfun.com/datasheets/BreakoutBoards/0712.pdf
+ */
 #define CURRENT_ADC_CHAN 1
 
 Power::Power()
@@ -19,14 +27,24 @@ Power::~Power()
 
 }
 
-unsigned int Power::voltage(void) const
+float Power::voltage(void) const
 {
-    return adc->val(VOLTAGE_ADC_CHAN);
+    float v;
+
+    v = adc->v(VOLTAGE_ADC_CHAN);
+    v = v * 5.0;  /* Multiply by 5 to get the voltage */
+
+    return v;
 }
 
-unsigned int Power::current(void) const
+float Power::current(void) const
 {
-    return adc->val(CURRENT_ADC_CHAN);
+    float v;
+
+    v = adc->v(CURRENT_ADC_CHAN);
+    v = v * 5.0;  /* Multiply by 5 to get the amperage */
+
+    return v;
 }
 
 /*

@@ -49,18 +49,22 @@ static void cleanup(void)
 
     if (compass) {
         delete compass;
+        compass = NULL;
     }
 
     if (ambience) {
         delete ambience;
+        ambience = NULL;
     }
 
     if (adc) {
         delete adc;
+        adc = NULL;
     }
 
     if (servos) {
         delete servos;
+        servos = NULL;
     }
 
     gpioTerminate();

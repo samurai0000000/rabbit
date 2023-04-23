@@ -14,15 +14,16 @@ public:
     ADC();
     ~ADC();
 
-    unsigned int channels(void) const;
-    unsigned int min(void) const;
-    unsigned int max(void) const;
-
-    unsigned int val(unsigned int chan) const;
+    float v(unsigned int chan);
 
 private:
 
-    int *_devs;
+    int readReg(uint8_t reg, uint16_t *val) const;
+    int writeReg(uint8_t reg, uint16_t val) const;
+
+    int _handle;
+    uint16_t _config;
+    pthread_mutex_t _mutex;
 
 };
 

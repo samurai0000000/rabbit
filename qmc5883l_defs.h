@@ -1,11 +1,11 @@
 /*
- * qmc5883l_regs.h
+ * qmc5883l_defs.h
  *
  * Copyright (C) 2023, Charles Chiou
  */
 
-#ifndef QMC5883L_REGS_H
-#define QMC5883L_REGS_H
+#ifndef QMC5883L_DEFS_H
+#define QMC5883L_DEFS_H
 
 #define DATA_X_LSB_REG         0x00
 #define DATA_X_MSB_REG         0x01

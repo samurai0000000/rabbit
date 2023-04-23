@@ -23,12 +23,18 @@ build/Makefile: CMakeLists.txt
 	@mkdir -p build
 	@cd build && cmake ..
 
-.PHONY: run install
+.PHONY: run run-ns attach install
 
 run: build/rabbit
 	@if [ `hostname` = "rabbit" ]; then \
 		sudo killall rabbit >/dev/null 2>&1; \
 		sudo screen -R rabbit ./build/rabbit; \
+	fi
+
+run-ns: build/rabbit
+	@if [ `hostname` = "rabbit" ]; then \
+		sudo killall rabbit >/dev/null 2>&1; \
+		sudo ./build/rabbit; \
 	fi
 
 attach:

@@ -159,14 +159,14 @@ void Camera::run(void)
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-            text = String("Batt Voltage: ") + to_string(power->voltage()) +
-                String("V");
+            snprintf(buf, sizeof(buf) - 1, "%.2f", power->voltage());
+            text = String("Batt Voltage: ") + buf + String("V");
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-            text = String("Batt Current: ") + to_string(power->current()) +
-                String("A");
+            snprintf(buf, sizeof(buf) - 1, "%.2f", power->current());
+            text = String("Batt Current: ") + buf + String("A");
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
