@@ -28,7 +28,12 @@ build/Makefile: CMakeLists.txt
 run: build/rabbit
 	@if [ `hostname` = "rabbit" ]; then \
 		sudo killall rabbit >/dev/null 2>&1; \
-		sudo ./build/rabbit; \
+		sudo screen -R rabbit ./build/rabbit; \
+	fi
+
+attach:
+	@if [ `hostname` = "rabbit" ]; then \
+		sudo screen -x rabbit; \
 	fi
 
 install: build/rabbit
