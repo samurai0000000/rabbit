@@ -212,7 +212,7 @@ void Camera::run(void)
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-            snprintf(buf, sizeof(buf) - 1, "%u.%2u, %u.%.2u %u.%.2u",
+            snprintf(buf, sizeof(buf) - 1, "%u.%.2u, %u.%.2u %u.%.2u",
                      LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
                      LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
                      LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
