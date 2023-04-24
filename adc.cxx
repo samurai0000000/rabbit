@@ -33,7 +33,7 @@ ADC::ADC()
 
     _config =
         MUX_AIN0_GND |
-        PGA_FSR_6_144V |
+        PGA_FSR_4_096V |
         MODE_SING |
         DR_128_SPS |
         COMP_MODE_TRAD |
@@ -119,7 +119,7 @@ void ADC::run(void)
     struct timespec now, interval, next;
 
     interval.tv_sec = 0;
-    interval.tv_nsec = 250000000;
+    interval.tv_nsec = 500000000;
 
     while (_running) {
         clock_gettime(CLOCK_REALTIME, &now);
@@ -127,7 +127,11 @@ void ADC::run(void)
 
         convert(0);
         convert(1);
+        convert(2);
+        convert(3);
+        //printf("%.2f %.2f %.2f %.2f\n", _v[0], _v[1], _v[2], _v[3]);
 
+        pthread_mutex_lock(&_mutex);
         pthread_cond_timedwait(&_cond, &_mutex, &next);
         pthread_mutex_unlock(&_mutex);
     }
@@ -139,6 +143,7 @@ void ADC::convert(unsigned int chan)
     int ret;
     uint16_t config;
     int16_t conv;
+    struct timespec now, interval, next;
 
     if (_handle < 0) {
         return;
@@ -162,7 +167,23 @@ void ADC::convert(unsigned int chan)
     }
 
     /* Conversion delay */
-    usleep(80000);
+    interval.tv_sec = 0;
+    switch (config & DR_860_SPS) {
+    case DR_8_SPS:   interval.tv_nsec = 125000000; break;
+    case DR_16_SPS:  interval.tv_nsec =  62500000; break;
+    case DR_32_SPS:  interval.tv_nsec =  31250000; break;
+    case DR_64_SPS:  interval.tv_nsec =  15625000; break;
+    case DR_128_SPS: interval.tv_nsec =   7812500; break;
+    case DR_250_SPS: interval.tv_nsec =   4000000; break;
+    case DR_475_SPS: interval.tv_nsec =   2105263; break;
+    case DR_860_SPS: interval.tv_nsec =   1162791; break;
+    default:         interval.tv_nsec = 125000000; break;
+    }
+    pthread_mutex_lock(&_mutex);
+    clock_gettime(CLOCK_REALTIME, &now);
+    timespecadd(&now, &interval, &next);
+    pthread_cond_timedwait(&_cond, &_mutex, &next);
+    pthread_mutex_unlock(&_mutex);
 
     /* Read result */
     ret = readReg(CONVERSION_REG, (uint16_t *) &conv);
@@ -170,9 +191,17 @@ void ADC::convert(unsigned int chan)
         return;
     }
 
-
+    /* Apply Multiplier */
     v = (float) conv;
-    v = v * 6.144 / 32768.0;
+    switch (config & (7 << 9)) {
+    case PGA_FSR_6_144V:    v = v * 6.144 / 32768.0; break;
+    case PGA_FSR_4_096V:    v = v * 4.096 / 32768.0; break;
+    case PGA_FSR_2_048V:    v = v * 2.048 / 32768.0; break;
+    case PGA_FSR_1_024V:    v = v * 1.024 / 32768.0; break;
+    case PGA_FSR_0_512V:    v = v * 0.512 / 32768.0; break;
+    case PGA_FSR_0_256V:    v = v * 0.256 / 32768.0; break;
+    default:                v = -3.8; break;
+    }
     _v[chan] = v;
 }
 
