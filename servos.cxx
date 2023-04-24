@@ -17,35 +17,18 @@
 #define PWM_I2C_BUS    1
 #define PWM_I2C_ADDR   0x40
 
-#define READ_I2C(r, v) {                                                \
-        int x = i2cReadByteData(_handle, (r));                          \
-        if (x < 0) {                                                    \
-            fprintf(stderr, "PCA9685 read reg 0x%.2x failed!\n", (r));  \
-            goto done;                                                  \
-        } else {                                                        \
-            (v) = x;                                                    \
-        }                                                               \
-    }
-
-#define WRITE_I2C(r, v)                                             \
-    ret = i2cWriteByteData(_handle, (r), (uint8_t) (v));            \
-    if (ret != 0) {                                                 \
-        fprintf(stderr, "PCA9685 write reg 0x%.2x failed!\n", (r)); \
-        goto done;                                                  \
-    }
-
 Servos::Servos()
     : _handle(-1),
       _freq(50)
 {
-    int ret = 0;
     unsigned int i;
     uint8_t v;
     float prescale;
 
     _handle = i2cOpen(PWM_I2C_BUS, PWM_I2C_ADDR, 0x0);
     if (_handle < 0) {
-        goto done;
+        cerr << "Open PCA9685 failed" << endl;
+        return;
     }
 
     for (i = 0; i < SERVO_CHANNELS; i++) {
@@ -53,32 +36,20 @@ Servos::Servos()
         _hi[i] = 4800;
     }
 
-    WRITE_I2C(ALL_LED_ON_L_REG, 0x0);
-    WRITE_I2C(ALL_LED_ON_H_REG, 0x0);
-    WRITE_I2C(ALL_LED_OFF_L_REG, 0x0);
-    WRITE_I2C(ALL_LED_OFF_H_REG, 0x0);
-    WRITE_I2C(MODE2_REG, MODE2_OUTDRV);
-    WRITE_I2C(MODE1_REG, MODE1_SLEEP | MODE1_ALLCALL);
+    writeReg(ALL_LED_ON_L_REG, 0x0);
+    writeReg(ALL_LED_ON_H_REG, 0x0);
+    writeReg(ALL_LED_OFF_L_REG, 0x0);
+    writeReg(ALL_LED_OFF_H_REG, 0x0);
+    writeReg(MODE2_REG, MODE2_OUTDRV);
+    writeReg(MODE1_REG, MODE1_SLEEP | MODE1_ALLCALL);
 
     prescale = 25000000;
     prescale /= 4096.0;
     prescale /= (float) _freq;
     prescale -= 1.0;
     v = floor(prescale + 0.5);
-    WRITE_I2C(PRE_SCALE_REG, v);
-    WRITE_I2C(MODE1_REG, MODE1_RESTART | MODE1_ALLCALL);
-
-done:
-
-    if (ret != 0) {
-        cerr << "Open PCA9685 failed" << endl;
-        if (_handle != -1) {
-            i2cClose(_handle);
-            _handle = -1;
-        }
-    }
-
-    return;
+    writeReg(PRE_SCALE_REG, v);
+    writeReg(MODE1_REG, MODE1_RESTART | MODE1_ALLCALL);
 }
 
 Servos::~Servos()
@@ -86,21 +57,51 @@ Servos::~Servos()
     if (_handle >= 0) {
         i2cWriteByteData(_handle, MODE1_REG, MODE1_SLEEP | MODE1_ALLCALL);
         i2cClose(_handle);
+        _handle = -1;
     }
+}
+
+int Servos::readReg(uint8_t reg, uint8_t *val) const
+{
+    int ret = 0;
+
+    if (_handle < 0) {
+        return _handle;
+    }
+
+    ret = i2cReadByteData(_handle, reg);
+    if (ret < 0) {
+        fprintf(stderr, "%s: i2cReadByteData 0x%.2x failed!\n", __func__, reg);
+    } else {
+        *val = ret;
+        ret = 0;
+    }
+
+    return ret;
+}
+
+int Servos::writeReg(uint8_t reg, uint8_t val) const
+{
+    int ret = 0;
+
+    if (_handle < 0) {
+        return _handle;
+    }
+
+    ret = i2cWriteByteData(_handle, reg, val);
+    if (ret != 0) {
+        fprintf(stderr, "%s: i2cWriteByteData failed!\n", __func__);
+    }
+
+    return ret;
 }
 
 void Servos::setPwm(unsigned int chan, unsigned int on, unsigned int off)
 {
-    int ret;
-
-    WRITE_I2C(LED_ON_L_REG(chan), on & 0xff);
-    WRITE_I2C(LED_ON_H_REG(chan), on >> 8);
-    WRITE_I2C(LED_OFF_L_REG(chan), off & 0xff);
-    WRITE_I2C(LED_OFF_H_REG(chan), off >> 8);
-
-done:
-
-    return;
+    writeReg(LED_ON_L_REG(chan), on & 0xff);
+    writeReg(LED_ON_H_REG(chan), on >> 8);
+    writeReg(LED_OFF_L_REG(chan), off & 0xff);
+    writeReg(LED_OFF_H_REG(chan), off >> 8);
 }
 
 void Servos::setRange(unsigned int chan, unsigned int lo, unsigned int hi)

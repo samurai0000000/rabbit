@@ -28,6 +28,8 @@ public:
 
 private:
 
+    int readReg(uint8_t reg, uint8_t *val) const;
+    int writeReg(uint8_t reg, uint8_t val) const;
     void setPwm(unsigned int chan, unsigned int on, unsigned int off);
 
     int _handle;

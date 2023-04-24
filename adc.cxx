@@ -63,6 +63,7 @@ ADC::~ADC()
 
     if (_handle >= 0) {
         i2cClose(_handle);
+        _handle = -1;
     }
 }
 
