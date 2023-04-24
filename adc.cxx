@@ -4,6 +4,8 @@
  * Copyright (C) 2023, Charles Chiou
  */
 
+#include <sys/time.h>
+#include <bsd/sys/time.h>
 #include <pigpio.h>
 #include "rabbit.hxx"
 #include "ads1115_defs.h"
@@ -16,7 +18,10 @@
 #define ADC_I2C_ADDR   0x48
 
 ADC::ADC()
-    : _handle(-1)
+    : _handle(-1),
+      _config(0),
+      _running(false),
+      _v()
 {
     int ret;
 
@@ -30,7 +35,7 @@ ADC::ADC()
         MUX_AIN0_GND |
         PGA_FSR_6_144V |
         MODE_SING |
-        DR_8_SPS |
+        DR_128_SPS |
         COMP_MODE_TRAD |
         COMP_POL_LO |
         COMP_LAT_NO |
@@ -42,17 +47,23 @@ ADC::ADC()
 
 done:
 
+    _running = true;
     pthread_mutex_init(&_mutex, NULL);
+    pthread_cond_init(&_cond, NULL);
+    pthread_create(&_thread, NULL, ADC::thread_func, this);
 }
 
 ADC::~ADC()
 {
-    pthread_mutex_lock(&_mutex);
+    _running = false;
+    pthread_cond_broadcast(&_cond);
+    pthread_join(_thread, NULL);
+    pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
+
     if (_handle >= 0) {
         i2cClose(_handle);
     }
-    pthread_mutex_unlock(&_mutex);
-    pthread_mutex_destroy(&_mutex);
 }
 
 int ADC::readReg(uint8_t reg, uint16_t *val) const
@@ -93,79 +104,76 @@ int ADC::writeReg(uint8_t reg, uint16_t val) const
     return ret;
 }
 
-float ADC::v(unsigned int chan)
+void *ADC::thread_func(void *args)
+{
+    ADC *adc = (ADC *) args;
+
+    adc->run();
+
+    return NULL;
+}
+
+void ADC::run(void)
+{
+    struct timespec now, interval, next;
+
+    interval.tv_sec = 0;
+    interval.tv_nsec = 250000000;
+
+    while (_running) {
+        clock_gettime(CLOCK_REALTIME, &now);
+        timespecadd(&now, &interval, &next);
+
+        convert(0);
+        convert(1);
+
+        pthread_cond_timedwait(&_cond, &_mutex, &next);
+        pthread_mutex_unlock(&_mutex);
+    }
+}
+
+void ADC::convert(unsigned int chan)
 {
     float v = 0.0;
-    unsigned int retries;
-    static const unsigned int retry_limit = 10;
     int ret;
     uint16_t config;
-    uint16_t conv;
+    int16_t conv;
 
     if (_handle < 0) {
-        return 0.0;
+        return;
     }
 
-    pthread_mutex_lock(&_mutex);
-
-start:
-
-    config = _config & ~0x7000;  /* Clear MUX */
-    config |= OS;                /* Start a single conversion */
+    config = _config & ~0x7000;
+    config |= OS;
     switch (chan) {
     case 0: config |= MUX_AIN0_GND; break;
     case 1: config |= MUX_AIN1_GND; break;
     case 2: config |= MUX_AIN2_GND; break;
     case 3: config |= MUX_AIN3_GND; break;
     default:
-        goto done;
+        return;
     }
 
+    /* Setup CONFIG register to perform a single shot sampling */
     ret = writeReg(CONFIG_REG, config);
     if (ret != 0) {
-        goto done;
+        return;
     }
 
-    for (retries = 0; retries < retry_limit; retries++) {
-        ret = readReg(CONFIG_REG, &config);
-        if (ret != 0) {
-            goto done;
-        }
+    /* Conversion delay */
+    usleep(80000);
 
-        if ((config & OS) == 0x0) {
-            break;
-        }
-
-        usleep(1000);
-    }
-
-    if (retries >= retry_limit) {
-        /* Reset ADS1115 if retried too many times */
-        i2cClose(_handle);
-        _handle = i2cOpen(ADC_I2C_BUS, ADC_I2C_ADDR, 0x0);
-        if (_handle < 0) {
-            fprintf(stderr, "Reopen ADS1115 failed!\n");
-            goto done;
-        } else {
-            goto start;
-        }
-    }
-
-    ret = readReg(CONVERSION_REG, &conv);
+    /* Read result */
+    ret = readReg(CONVERSION_REG, (uint16_t *) &conv);
     if (ret != 0) {
-        goto done;
+        return;
     }
+
 
     v = (float) conv;
     v = v * 6.144 / 32768.0;
-
-done:
-
-    pthread_mutex_unlock(&_mutex);
-
-    return v;
+    _v[chan] = v;
 }
-
 
 /*
  * Local variables:

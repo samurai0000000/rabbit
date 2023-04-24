@@ -164,7 +164,7 @@ int main(int argc, char **argv)
             sleep(60);
         }
     } else {
-        unsigned int chan = 0;
+        unsigned int chan = 12;
 
         cout << "Press 'q' to quit ..." << endl;
 

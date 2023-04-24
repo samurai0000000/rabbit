@@ -12,11 +12,13 @@
 
 #define CAMERA_RES_WIDTH    640
 #define CAMERA_RES_HEIGHT   480
-#define PAN_SERVO             0
+
+#define PAN_SERVO            12
 #define PAN_LO_PULSE        640
 #define PAN_HI_PULSE       2180
 #define PAN_ANGLE_MULT       14
-#define TILT_SERVO            1
+
+#define TILT_SERVO           13
 #define TILT_LO_PULSE       800
 #define TILT_HI_PULSE      1550
 #define TILT_ANGLE_MULT      14

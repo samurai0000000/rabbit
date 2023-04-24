@@ -9,6 +9,7 @@
 
 /*
  * https://lastminuteengineers.com/l298n-dc-stepper-driver-arduino-tutorial/
+ * https://www.youtube.com/watch?v=_7COO5Xcff0
  */
 
 #define L298N_IN1 23
@@ -31,10 +32,10 @@ Wheels::Wheels()
     gpioSetMode(L298N_IN3, PI_OUTPUT);
     gpioSetMode(L298N_IN4, PI_OUTPUT);
 
-    gpioSetMode(L298N_IN1, 0);
-    gpioSetMode(L298N_IN2, 0);
-    gpioSetMode(L298N_IN3, 0);
-    gpioSetMode(L298N_IN4, 0);
+    gpioWrite(L298N_IN1, 0);
+    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 0);
 }
 
 Wheels::~Wheels()
@@ -60,10 +61,10 @@ void Wheels::halt(void)
 
     change(0);
 
-    gpioSetMode(L298N_IN1, 0);
-    gpioSetMode(L298N_IN2, 0);
-    gpioSetMode(L298N_IN3, 0);
-    gpioSetMode(L298N_IN4, 0);
+    gpioWrite(L298N_IN1, 0);
+    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 0);
 }
 
 static void my_setitimer(unsigned int ms)
@@ -82,10 +83,10 @@ void Wheels::fwd(unsigned int ms)
 {
     change(1);
 
-    gpioSetMode(L298N_IN1, 0);
-    gpioSetMode(L298N_IN2, 1);
-    gpioSetMode(L298N_IN3, 0);
-    gpioSetMode(L298N_IN4, 1);
+    gpioWrite(L298N_IN1, 0);
+    gpioWrite(L298N_IN2, 1);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 1);
 
     if (ms > 0) {
         my_setitimer(ms);
@@ -96,10 +97,10 @@ void Wheels::bwd(unsigned int ms)
 {
     change(2);
 
-    gpioSetMode(L298N_IN1, 1);
-    gpioSetMode(L298N_IN2, 0);
-    gpioSetMode(L298N_IN3, 1);
-    gpioSetMode(L298N_IN4, 0);
+    gpioWrite(L298N_IN1, 1);
+    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN3, 1);
+    gpioWrite(L298N_IN4, 0);
 
     if (ms > 0) {
         my_setitimer(ms);
@@ -110,10 +111,10 @@ void Wheels::ror(unsigned int ms)
 {
     change(3);
 
-    gpioSetMode(L298N_IN1, 0);
-    gpioSetMode(L298N_IN2, 1);
-    gpioSetMode(L298N_IN3, 1);
-    gpioSetMode(L298N_IN4, 0);
+    gpioWrite(L298N_IN1, 0);
+    gpioWrite(L298N_IN2, 1);
+    gpioWrite(L298N_IN3, 1);
+    gpioWrite(L298N_IN4, 0);
 
     if (ms > 0) {
         my_setitimer(ms);
@@ -124,10 +125,10 @@ void Wheels::rol(unsigned int ms)
 {
     change(4);
 
-    gpioSetMode(L298N_IN1, 1);
-    gpioSetMode(L298N_IN2, 0);
-    gpioSetMode(L298N_IN3, 0);
-    gpioSetMode(L298N_IN4, 1);
+    gpioWrite(L298N_IN1, 1);
+    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 1);
 
     if (ms > 0) {
         my_setitimer(ms);

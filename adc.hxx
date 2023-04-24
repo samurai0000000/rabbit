@@ -7,6 +7,8 @@
 #ifndef ADC_HXX
 #define ADC_HXX
 
+#define ADC_CHANNELS 4
+
 class ADC {
 
 public:
@@ -14,18 +16,35 @@ public:
     ADC();
     ~ADC();
 
-    float v(unsigned int chan);
+    float v(unsigned int chan) const;
 
 private:
 
     int readReg(uint8_t reg, uint16_t *val) const;
     int writeReg(uint8_t reg, uint16_t val) const;
 
+    static void *thread_func(void *args);
+    void run(void);
+    void convert(unsigned int chan);
+
     int _handle;
     uint16_t _config;
+    bool _running;
+    pthread_t _thread;
     pthread_mutex_t _mutex;
+    pthread_cond_t _cond;
+    float _v[ADC_CHANNELS];
 
 };
+
+inline float ADC::v(unsigned int chan) const
+{
+    if (chan >= ADC_CHANNELS) {
+        return 0.0;
+    }
+
+    return _v[chan];
+}
 
 #endif
 
