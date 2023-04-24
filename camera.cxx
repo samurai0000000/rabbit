@@ -6,6 +6,7 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <sys/sysinfo.h>
 #include <iostream>
 #include "rabbit.hxx"
 
@@ -19,6 +20,13 @@
 #define TILT_LO_PULSE       800
 #define TILT_HI_PULSE      1550
 #define TILT_ANGLE_MULT      14
+
+#ifndef FSHIFT
+# define FSHIFT 16         /* nr of bits of precision */
+#endif
+#define FIXED_1            (1 << FSHIFT)     /* 1.0 as fixed-point */
+#define LOAD_INT(x)        (unsigned int)((x) >> FSHIFT)
+#define LOAD_FRAC(x)       LOAD_INT(((x) & (FIXED_1 - 1)) * 100)
 
 Camera::Camera()
     : _vc(NULL),
@@ -87,7 +95,7 @@ void Camera::run(void)
     Size textSize;
     String text;
     Point pos;
-    struct timeval ts, now, tdiff, tv;
+    struct timeval since, ts, now, tdiff, tv;
     struct wifi_stat wifi_stat;
     unsigned int frame_count = 0;
 
@@ -100,6 +108,7 @@ void Camera::run(void)
     textSize = getTextSize("Xquick", fontFace, fontScale, thickness, &baseline);
     textSize.height += 3;
     gettimeofday(&now, NULL);
+    memcpy(&since, &now, sizeof(struct timeval));
     tdiff.tv_sec = 1;
     tdiff.tv_usec = 0;
     timersub(&now, &tdiff, &ts);
@@ -144,6 +153,8 @@ void Camera::run(void)
 
         timersub(&now, &ts, &tdiff);
         if (tdiff.tv_sec > 0 || tdiff.tv_usec > 500000) {
+            struct sysinfo info;
+            unsigned int updays, uphours, upminutes, upseconds;
             char buf[128];
             time_t tt;
             struct tm *tm;
@@ -151,10 +162,62 @@ void Camera::run(void)
             osd1.setTo(Scalar::all(0));
             pos = Point(0, 0);
 
+            text = String("Charlotte's Rabbit Robotic System");
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
             tt = time(NULL);
             tm = localtime(&tt);
             strftime(buf, sizeof(buf) - 1, "%Y-%m-%d %H:%M:%S %Z", tm);
             text = buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            sysinfo(&info);
+            updays = info.uptime / (60 * 60 * 24);
+            upminutes = info.uptime / 60;
+            uphours = (upminutes / 60) % 24;
+            upminutes %= 60;
+            upseconds = info.uptime % 60;
+            if (updays != 0) {
+                snprintf(buf, sizeof(buf) - 1, "%ud %.2u:%.2u:%.2u",
+                         updays, uphours, upminutes, upseconds);
+            } else {
+                snprintf(buf, sizeof(buf) - 1, "%.2u:%.2u:%.2u",
+                         uphours, upminutes, upseconds);
+            }
+
+            text = String("System Uptime: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            timersub(&now, &since, &tdiff);
+            updays = tdiff.tv_sec / (60 * 60 * 24);
+            upminutes = tdiff.tv_sec / 60;
+            uphours = (upminutes / 60) % 24;
+            upminutes %= 60;
+            upseconds = tdiff.tv_sec % 60;
+            if (updays != 0) {
+                snprintf(buf, sizeof(buf) - 1, "%ud %.2u:%.2u:%.2u",
+                         updays, uphours, upminutes, upseconds);
+            } else {
+                snprintf(buf, sizeof(buf) - 1, "%.2u:%.2u:%.2u",
+                         uphours, upminutes, upseconds);
+            }
+            text = String("Rabbit Uptime: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            snprintf(buf, sizeof(buf) - 1, "%u.%2u, %u.%.2u %u.%.2u",
+                     LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
+                     LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
+                     LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
+
+            text = String("Load averages: ") + buf;
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
