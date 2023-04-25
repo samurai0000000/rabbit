@@ -13,7 +13,7 @@
 #include <iostream>
 #include "rabbit.hxx"
 
-#define WHEEL_DRIVE_LIMIT_MS  3000
+#define WHEEL_DRIVE_LIMIT_MS  100
 
 static int daemonize = 0;
 static struct termios t_old;
@@ -165,10 +165,13 @@ int main(int argc, char **argv)
         }
     } else {
         unsigned int chan = 12;
-
-        cout << "Press 'q' to quit ..." << endl;
+        enum {
+            RABBIT_CONSOLE_MODE_WHEEL = 0,
+            RABBIT_CONSOLE_MODE_CAMERA = 1,
+        } mode = RABBIT_CONSOLE_MODE_WHEEL;
 
         for (;;) {
+            int ret;
             int nfds;
             fd_set readfds;
             struct timeval timeout = {
@@ -180,14 +183,35 @@ int main(int argc, char **argv)
             FD_SET(STDIN_FILENO, &readfds);
             nfds = STDIN_FILENO + 1;
 
-            select(nfds, &readfds, NULL, NULL, &timeout);
+            ret = select(nfds, &readfds, NULL, NULL, &timeout);
+            if (ret <= 0) {
+                continue;
+            }
 
             if (FD_ISSET(STDIN_FILENO, &readfds)) {
-                int key = getchar();
-                switch (key) {
+                int k1, k2, k3;
+                int nread;
+
+                nread = 0;
+                ret = ioctl(STDIN_FILENO, FIONREAD, &nread);
+                if (ret != 0) {
+                    perror("ioctl");
+                    continue;
+                }
+                nread--;
+
+                switch (k1 = getchar()) {
                 case 'q':
                 case 'Q':
                     exit(EXIT_SUCCESS);
+                    break;
+                case 'c':
+                case 'C':
+                    mode = RABBIT_CONSOLE_MODE_CAMERA;
+                    break;
+                case 'w':
+                case 'W':
+                    mode = RABBIT_CONSOLE_MODE_WHEEL;
                     break;
                 case 'v':
                 case 'V':
@@ -212,6 +236,10 @@ int main(int argc, char **argv)
                 case 'l':
                 case 'L':
                     wheels->rol(WHEEL_DRIVE_LIMIT_MS);
+                    break;
+                case ' ':
+                    camera->pan(0);
+                    camera->tilt(0);
                     break;
                 case 's':
                 case 'S':
@@ -277,6 +305,44 @@ int main(int argc, char **argv)
                     cout << "Servo #" << to_string(chan)
                          << " set to " << to_string(servos->pulse(chan))
                          << endl;
+                    break;
+                case 91:
+                    if (nread < 2) {
+                        continue;
+                    } else {
+                        k2 = getchar();
+                        k3 = getchar();
+                    }
+
+                    if (k2 == 65 && k3 == 27) {
+                        /* Up arrow */
+                        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+                            camera->tilt(-1, true);
+                        } else {
+                            wheels->fwd(WHEEL_DRIVE_LIMIT_MS);
+                        }
+                    } else if (k2 == 66 && k3 == 27) {
+                        /* Down arrow */
+                        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+                            camera->tilt(1, true);
+                        } else {
+                            wheels->bwd(WHEEL_DRIVE_LIMIT_MS);
+                        }
+                    } else if (k2 == 68 && k3 == 27) {
+                        /* Left arrow */
+                        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+                            camera->pan(1, true);
+                        } else {
+                            wheels->rol(WHEEL_DRIVE_LIMIT_MS);
+                        }
+                    } else if (k2 == 67 && k3 == 27) {
+                        /* Right arrow */
+                        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+                            camera->pan(-1, true);
+                        } else {
+                            wheels->ror(WHEEL_DRIVE_LIMIT_MS);
+                        }
+                    }
                     break;
                 default:
                     break;

@@ -10,7 +10,20 @@
 /*
  * https://lastminuteengineers.com/l298n-dc-stepper-driver-arduino-tutorial/
  * https://www.youtube.com/watch?v=_7COO5Xcff0
+ *
+ * rainbow wires       roomba wheel   pin
+ *           red                red     A
+ *        orange              black     B
+ *        yellow               gray   GND
+ *         green              white    5V
+ *          blue              green   SIG
+ *        purple              brown    DS
+ *          gray              brown    DS
  */
+
+
+#define LHS_SPEED_SERVO  14
+#define RHS_SPEED_SERVO  15
 
 #define L298N_IN1 23
 #define L298N_IN2 24
@@ -36,6 +49,9 @@ Wheels::Wheels()
     gpioWrite(L298N_IN2, 0);
     gpioWrite(L298N_IN3, 0);
     gpioWrite(L298N_IN4, 0);
+
+    servos->setPulse(LHS_SPEED_SERVO, 0);
+    servos->setPulse(RHS_SPEED_SERVO, 0);
 }
 
 Wheels::~Wheels()
@@ -61,6 +77,9 @@ void Wheels::halt(void)
 
     change(0);
 
+    servos->setPulse(LHS_SPEED_SERVO, 0);
+    servos->setPulse(RHS_SPEED_SERVO, 0);
+
     gpioWrite(L298N_IN1, 0);
     gpioWrite(L298N_IN2, 0);
     gpioWrite(L298N_IN3, 0);
@@ -72,7 +91,7 @@ static void my_setitimer(unsigned int ms)
     struct itimerval tv;
 
     tv.it_value.tv_sec = ms / 1000;
-    tv.it_value.tv_usec = (ms - (ms / 1000)) / 1000;
+    tv.it_value.tv_usec = (ms - (ms / 1000)) * 1000;
     tv.it_interval.tv_sec = 0;
     tv.it_interval.tv_usec = 0;
 
@@ -83,19 +102,8 @@ void Wheels::fwd(unsigned int ms)
 {
     change(1);
 
-    gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 1);
-    gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 1);
-
-    if (ms > 0) {
-        my_setitimer(ms);
-    }
-}
-
-void Wheels::bwd(unsigned int ms)
-{
-    change(2);
+    servos->setPulse(LHS_SPEED_SERVO, 15000);
+    servos->setPulse(RHS_SPEED_SERVO, 4000);
 
     gpioWrite(L298N_IN1, 1);
     gpioWrite(L298N_IN2, 0);
@@ -107,9 +115,29 @@ void Wheels::bwd(unsigned int ms)
     }
 }
 
+void Wheels::bwd(unsigned int ms)
+{
+    change(2);
+
+    servos->setPulse(LHS_SPEED_SERVO, 6000);
+    servos->setPulse(RHS_SPEED_SERVO, 6000);
+
+    gpioWrite(L298N_IN1, 0);
+    gpioWrite(L298N_IN2, 1);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 1);
+
+    if (ms > 0) {
+        my_setitimer(ms);
+    }
+}
+
 void Wheels::ror(unsigned int ms)
 {
     change(3);
+
+    servos->setPulse(LHS_SPEED_SERVO, 5000);
+    servos->setPulse(RHS_SPEED_SERVO, 5000);
 
     gpioWrite(L298N_IN1, 0);
     gpioWrite(L298N_IN2, 1);
@@ -124,6 +152,9 @@ void Wheels::ror(unsigned int ms)
 void Wheels::rol(unsigned int ms)
 {
     change(4);
+
+    servos->setPulse(LHS_SPEED_SERVO, 4200);
+    servos->setPulse(RHS_SPEED_SERVO, 5000);
 
     gpioWrite(L298N_IN1, 1);
     gpioWrite(L298N_IN2, 0);
@@ -235,7 +266,6 @@ void Wheels::change(unsigned int state)
 
     _state = state;
     gettimeofday(&_ts, NULL);
-    cout << stateStr() << endl;
 }
 
 /*
