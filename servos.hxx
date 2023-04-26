@@ -24,6 +24,7 @@ public:
     unsigned int pulse(unsigned int chan) const;
     void setPulse(unsigned int chan, unsigned int pulse,
                   bool ignoreRange = false);
+    void setPct(unsigned int chan, unsigned int pct);
     void center(unsigned int chan);
 
 private:

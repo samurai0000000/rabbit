@@ -32,14 +32,10 @@ Servos::Servos()
     }
 
     for (i = 0; i < SERVO_CHANNELS; i++) {
-        _lo[i] = 0;
-        _hi[i] = 4800;
+        _lo[i] = 450;
+        _hi[i] = 2500;
     }
 
-    writeReg(ALL_LED_ON_L_REG, 0x0);
-    writeReg(ALL_LED_ON_H_REG, 0x0);
-    writeReg(ALL_LED_OFF_L_REG, 0x0);
-    writeReg(ALL_LED_OFF_H_REG, 0x0);
     writeReg(MODE2_REG, MODE2_OUTDRV);
     writeReg(MODE1_REG, MODE1_SLEEP | MODE1_ALLCALL);
 
@@ -98,6 +94,9 @@ int Servos::writeReg(uint8_t reg, uint8_t val) const
 
 void Servos::setPwm(unsigned int chan, unsigned int on, unsigned int off)
 {
+    if (_handle < 0) {
+        return;
+    }
     writeReg(LED_ON_L_REG(chan), on & 0xff);
     writeReg(LED_ON_H_REG(chan), on >> 8);
     writeReg(LED_OFF_L_REG(chan), off & 0xff);
@@ -118,6 +117,8 @@ void Servos::setRange(unsigned int chan, unsigned int lo, unsigned int hi)
 
 void Servos::setPulse(unsigned int chan, unsigned int pulse, bool ignoreRange)
 {
+    unsigned int on, off;
+
     if (chan > SERVO_CHANNELS) {
         return;
     }
@@ -132,8 +133,24 @@ void Servos::setPulse(unsigned int chan, unsigned int pulse, bool ignoreRange)
         }
     }
 
-    setPwm(chan, 0, pulse * 4096 / (1000000 / _freq));
-    _pulse[chan] = pulse;
+    on = 0;
+    off = pulse * 4096 / (1000000 / _freq);
+    if (off <= 4096) {
+        setPwm(chan, on, off);
+        _pulse[chan] = pulse;
+    }
+}
+
+void Servos::setPct(unsigned int chan, unsigned int pct)
+{
+    unsigned int pulse;
+
+    if (pct > 100) {
+        pct = 100;
+    }
+
+    pulse = ((_hi[chan] - _lo[chan]) * pct / 100) + _lo[chan];
+    setPulse(chan, pulse, false);
 }
 
 void Servos::center(unsigned int chan)

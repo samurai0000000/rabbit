@@ -100,7 +100,8 @@ void Compass::run(void)
 {
     int ret;
     uint8_t status;
-    int16_t x, y, z, bearing;
+    int16_t x, y, z;
+    float bearing;
     struct timespec ts, tloop;
 
     tloop.tv_sec = 0;

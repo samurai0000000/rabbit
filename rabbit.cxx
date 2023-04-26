@@ -306,7 +306,7 @@ int main(int argc, char **argv)
                          << " set to " << to_string(servos->pulse(chan))
                          << endl;
                     break;
-                case 91:
+                case 0x1b:
                     if (nread < 2) {
                         continue;
                     } else {
@@ -314,28 +314,28 @@ int main(int argc, char **argv)
                         k3 = getchar();
                     }
 
-                    if (k2 == 65 && k3 == 27) {
+                    if (k2 == 0x5b && k3 == 0x41) {
                         /* Up arrow */
                         if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
                             camera->tilt(-1, true);
                         } else {
                             wheels->fwd(WHEEL_DRIVE_LIMIT_MS);
                         }
-                    } else if (k2 == 66 && k3 == 27) {
+                    } else if (k2 == 0x5b && k3 == 0x42) {
                         /* Down arrow */
                         if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
                             camera->tilt(1, true);
                         } else {
                             wheels->bwd(WHEEL_DRIVE_LIMIT_MS);
                         }
-                    } else if (k2 == 68 && k3 == 27) {
+                    } else if (k2 == 0x5b && k3 == 0x44) {
                         /* Left arrow */
                         if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
                             camera->pan(1, true);
                         } else {
                             wheels->rol(WHEEL_DRIVE_LIMIT_MS);
                         }
-                    } else if (k2 == 67 && k3 == 27) {
+                    } else if (k2 == 0x5b && k3 == 0x43) {
                         /* Right arrow */
                         if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
                             camera->pan(-1, true);

@@ -22,8 +22,12 @@
  */
 
 
-#define LHS_SPEED_SERVO  14
-#define RHS_SPEED_SERVO  15
+#define RHS_SPEED_SERVO        14
+#define RHS_SPEED_LO_PULSE      0
+#define RHS_SPEED_HI_PULSE  19995
+#define LHS_SPEED_SERVO        15
+#define LHS_SPEED_LO_PULSE      0
+#define LHS_SPEED_HI_PULSE  19995
 
 #define L298N_IN1 23
 #define L298N_IN2 24
@@ -50,8 +54,10 @@ Wheels::Wheels()
     gpioWrite(L298N_IN3, 0);
     gpioWrite(L298N_IN4, 0);
 
-    servos->setPulse(LHS_SPEED_SERVO, 0);
-    servos->setPulse(RHS_SPEED_SERVO, 0);
+    servos->setRange(RHS_SPEED_SERVO, RHS_SPEED_LO_PULSE, RHS_SPEED_HI_PULSE);
+    servos->setPct(RHS_SPEED_SERVO, 0);
+    servos->setRange(LHS_SPEED_SERVO, LHS_SPEED_LO_PULSE, LHS_SPEED_HI_PULSE);
+    servos->setPct(LHS_SPEED_SERVO, 0);
 }
 
 Wheels::~Wheels()
@@ -77,8 +83,8 @@ void Wheels::halt(void)
 
     change(0);
 
-    servos->setPulse(LHS_SPEED_SERVO, 0);
-    servos->setPulse(RHS_SPEED_SERVO, 0);
+    servos->setPct(RHS_SPEED_SERVO, 0);
+    servos->setPct(LHS_SPEED_SERVO, 0);
 
     gpioWrite(L298N_IN1, 0);
     gpioWrite(L298N_IN2, 0);
@@ -102,8 +108,8 @@ void Wheels::fwd(unsigned int ms)
 {
     change(1);
 
-    servos->setPulse(LHS_SPEED_SERVO, 15000);
-    servos->setPulse(RHS_SPEED_SERVO, 4000);
+    servos->setPct(RHS_SPEED_SERVO, 50);
+    servos->setPct(LHS_SPEED_SERVO, 50);
 
     gpioWrite(L298N_IN1, 1);
     gpioWrite(L298N_IN2, 0);
@@ -119,8 +125,8 @@ void Wheels::bwd(unsigned int ms)
 {
     change(2);
 
-    servos->setPulse(LHS_SPEED_SERVO, 6000);
-    servos->setPulse(RHS_SPEED_SERVO, 6000);
+    servos->setPct(RHS_SPEED_SERVO, 50);
+    servos->setPct(LHS_SPEED_SERVO, 50);
 
     gpioWrite(L298N_IN1, 0);
     gpioWrite(L298N_IN2, 1);
@@ -136,8 +142,8 @@ void Wheels::ror(unsigned int ms)
 {
     change(3);
 
-    servos->setPulse(LHS_SPEED_SERVO, 5000);
-    servos->setPulse(RHS_SPEED_SERVO, 5000);
+    servos->setPct(RHS_SPEED_SERVO, 30);
+    servos->setPct(LHS_SPEED_SERVO, 30);
 
     gpioWrite(L298N_IN1, 0);
     gpioWrite(L298N_IN2, 1);
@@ -153,8 +159,8 @@ void Wheels::rol(unsigned int ms)
 {
     change(4);
 
-    servos->setPulse(LHS_SPEED_SERVO, 4200);
-    servos->setPulse(RHS_SPEED_SERVO, 5000);
+    servos->setPct(RHS_SPEED_SERVO, 30);
+    servos->setPct(LHS_SPEED_SERVO, 30);
 
     gpioWrite(L298N_IN1, 1);
     gpioWrite(L298N_IN2, 0);
