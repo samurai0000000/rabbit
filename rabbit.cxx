@@ -22,6 +22,8 @@ Servos *servos = NULL;
 ADC *adc = NULL;
 Camera *camera = NULL;
 Wheels *wheels = NULL;
+Arm *rightArm = NULL;
+Arm *leftArm = NULL;
 Power *power = NULL;
 Compass *compass = NULL;
 Ambience *ambience = NULL;
@@ -40,6 +42,16 @@ static void cleanup(void)
     if (wheels) {
         delete wheels;
         wheels = NULL;
+    }
+
+    if (rightArm) {
+        delete rightArm;
+        rightArm = NULL;
+    }
+
+    if (leftArm) {
+        delete leftArm;
+        leftArm = NULL;
     }
 
     if (power) {
@@ -155,6 +167,8 @@ int main(int argc, char **argv)
     adc = new ADC();
     camera = new Camera();
     wheels = new Wheels();
+    rightArm = new Arm(RIGHT_ARM);
+    leftArm = new Arm(LEFT_ARM);
     power = new Power();
     compass = new Compass();
     ambience = new Ambience();
@@ -247,6 +261,21 @@ int main(int argc, char **argv)
                     cout << "Sentry "
                          << (camera->isSentryEn() ? "enabled" : "disabled")
                          << endl;
+                    break;
+                case 'x':
+                case 'X':
+                    leftArm->rest();
+                    rightArm->rest();
+                    break;
+                case 'y':
+                case 'Y':
+                    leftArm->hug();
+                    rightArm->hug();
+                    break;
+                case 'z':
+                case 'Z':
+                    leftArm->surrender();
+                    rightArm->surrender();
                     break;
                 case 'P':
                 case 'p':

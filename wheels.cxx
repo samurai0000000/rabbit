@@ -108,8 +108,8 @@ void Wheels::fwd(unsigned int ms)
 {
     change(1);
 
-    servos->setPct(RHS_SPEED_SERVO, 50);
-    servos->setPct(LHS_SPEED_SERVO, 50);
+    servos->setPct(RHS_SPEED_SERVO, 75);
+    servos->setPct(LHS_SPEED_SERVO, 75);
 
     gpioWrite(L298N_IN1, 1);
     gpioWrite(L298N_IN2, 0);
@@ -142,8 +142,8 @@ void Wheels::ror(unsigned int ms)
 {
     change(3);
 
-    servos->setPct(RHS_SPEED_SERVO, 30);
-    servos->setPct(LHS_SPEED_SERVO, 30);
+    servos->setPct(RHS_SPEED_SERVO, 40);
+    servos->setPct(LHS_SPEED_SERVO, 40);
 
     gpioWrite(L298N_IN1, 0);
     gpioWrite(L298N_IN2, 1);
@@ -159,8 +159,8 @@ void Wheels::rol(unsigned int ms)
 {
     change(4);
 
-    servos->setPct(RHS_SPEED_SERVO, 30);
-    servos->setPct(LHS_SPEED_SERVO, 30);
+    servos->setPct(RHS_SPEED_SERVO, 40);
+    servos->setPct(LHS_SPEED_SERVO, 40);
 
     gpioWrite(L298N_IN1, 1);
     gpioWrite(L298N_IN2, 0);

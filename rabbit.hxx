@@ -12,6 +12,7 @@
 #include "adc.hxx"
 #include "camera.hxx"
 #include "wheels.hxx"
+#include "arms.hxx"
 #include "power.hxx"
 #include "compass.hxx"
 #include "ambience.hxx"
@@ -25,6 +26,8 @@ extern Power *power;
 extern Compass *compass;
 extern Ambience *ambience;
 extern WIFI *wifi;
+extern Arm *rightArm;
+extern Arm *leftArm;
 
 #endif
 
