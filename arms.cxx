@@ -8,11 +8,29 @@
 
 Arm::Arm(unsigned int side)
 {
-    if (side == RIGHT_ARM || side == LEFT_ARM) {
-        _side = side;
-        updateTrims();
-        rest();
+    if (side != RIGHT_ARM && side != LEFT_ARM) {
+        assert(0);
     }
+
+    _side = side;
+    if (side == RIGHT_ARM) {
+        servos->setRange( 0, 530, 2580);
+        servos->setRange( 1, 450, 2500);
+        servos->setRange( 2, 450, 2500);
+        servos->setRange( 3, 510, 2560);
+        servos->setRange( 4, 530, 2580);
+        servos->setRange( 5, 450, 2500);
+    } else {
+        servos->setRange( 6, 430, 2490);
+        servos->setRange( 7, 450, 2500);
+        servos->setRange( 8, 450, 2500);
+        servos->setRange( 9, 450, 2500);
+        servos->setRange(10, 430, 2480);
+        servos->setRange(11, 450, 2500);
+    }
+
+    updateTrims();
+    rest();
 }
 
 Arm::~Arm()
@@ -290,7 +308,7 @@ void Arm::rest(void)
     extendElbow(-90.0);
     extendWrist(-40.0);
     rotateWrist(-90.0);
-    setGripperPosition(0.0);
+    setGripperPosition(20.0);
 }
 
 void Arm::surrender(void)
@@ -304,17 +322,17 @@ void Arm::surrender(void)
     extendElbow(36.0);
     extendWrist(0.0);
     rotateWrist(0.0);
-    setGripperPosition(0.0);
+    setGripperPosition(20.0);
 }
 
 void Arm::hug(void)
 {
-    rotateShoulder(0.0);
+    rotateShoulder(10.0);
     extendShoulder(85.0);
     extendElbow(45.0);
     extendWrist(0.0);
     rotateWrist(0.0);
-    setGripperPosition(0.0);
+    setGripperPosition(20.0);
 }
 
 /*
