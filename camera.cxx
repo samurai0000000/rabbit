@@ -261,6 +261,66 @@ void Camera::run(void)
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
+            snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
+                     rightArm->shoulderRotation(),
+                     rightArm->shoulderExtension());
+            text = String("Right Shoulder: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            snprintf(buf, sizeof(buf) - 1, "%.1f",
+                     rightArm->elbowExtension());
+            text = String("Right Elbow: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
+                     rightArm->wristExtension(),
+                     rightArm->wristRotation());
+            text = String("Right Wrist: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            snprintf(buf, sizeof(buf) - 1, "%.1f",
+                     rightArm->gripperPosition());
+            text = String("Right Gripper: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
+                     leftArm->shoulderRotation(),
+                     leftArm->shoulderExtension());
+            text = String("Left Shoulder: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            snprintf(buf, sizeof(buf) - 1, "%.1f",
+                     leftArm->elbowExtension());
+            text = String("Left Elbow: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
+                     leftArm->wristExtension(),
+                     leftArm->wristRotation());
+            text = String("Left Wrist: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+            snprintf(buf, sizeof(buf) - 1, "%.1f",
+                     leftArm->gripperPosition());
+            text = String("Left Gripper: ") + buf;
+            pos.y += textSize.height;
+            putText(osd1, text, pos,
+                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
             snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->temp());
             text = String("Temperature: ") + buf + String("C");
             pos.y += textSize.height;

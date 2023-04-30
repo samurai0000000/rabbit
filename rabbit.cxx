@@ -179,10 +179,22 @@ int main(int argc, char **argv)
         }
     } else {
         unsigned int chan = 12;
-        enum {
-            RABBIT_CONSOLE_MODE_WHEEL = 0,
-            RABBIT_CONSOLE_MODE_CAMERA = 1,
-        } mode = RABBIT_CONSOLE_MODE_WHEEL;
+        enum rabbit_console_mode {
+            RABBIT_CONSOLE_MODE_CAMERA = 0,
+            RABBIT_CONSOLE_MODE_WHEEL = 1,
+            RABBIT_CONSOLE_MODE_R_SHOULDER = 2,
+            RABBIT_CONSOLE_MODE_R_ELBOW = 3,
+            RABBIT_CONSOLE_MODE_R_WRIST = 4,
+            RABBIT_CONSOLE_MODE_R_GRIPPER = 5,
+            RABBIT_CONSOLE_MODE_L_SHOULDER = 6,
+            RABBIT_CONSOLE_MODE_L_ELBOW = 7,
+            RABBIT_CONSOLE_MODE_L_WRIST = 8,
+            RABBIT_CONSOLE_MODE_L_GRIPPER = 9,
+        } mode;;
+
+
+        mode = RABBIT_CONSOLE_MODE_CAMERA;
+        cout << "Camera control active" << endl;
 
         for (;;) {
             int ret;
@@ -221,11 +233,17 @@ int main(int argc, char **argv)
                     break;
                 case 'c':
                 case 'C':
-                    mode = RABBIT_CONSOLE_MODE_CAMERA;
+                    if (mode != RABBIT_CONSOLE_MODE_CAMERA) {
+                        mode = RABBIT_CONSOLE_MODE_CAMERA;
+                        cout << "Camera control active" << endl;
+                    }
                     break;
                 case 'w':
                 case 'W':
-                    mode = RABBIT_CONSOLE_MODE_WHEEL;
+                    if (mode != RABBIT_CONSOLE_MODE_WHEEL) {
+                        mode = RABBIT_CONSOLE_MODE_WHEEL;
+                        cout << "Wheel control active" << endl;
+                    }
                     break;
                 case 'v':
                 case 'V':
@@ -261,6 +279,64 @@ int main(int argc, char **argv)
                     cout << "Sentry "
                          << (camera->isSentryEn() ? "enabled" : "disabled")
                          << endl;
+                    break;
+                case 'k':
+                case 'K':
+                    if (mode >= RABBIT_CONSOLE_MODE_R_SHOULDER &&
+                        mode <= RABBIT_CONSOLE_MODE_R_GRIPPER) {
+                        mode = (enum rabbit_console_mode)
+                            (((unsigned int) mode) + 1);
+                        if (mode > RABBIT_CONSOLE_MODE_R_GRIPPER) {
+                            mode = RABBIT_CONSOLE_MODE_R_SHOULDER;
+                        }
+                    } else {
+                        mode = RABBIT_CONSOLE_MODE_R_SHOULDER;
+                    }
+                    switch (mode) {
+                    case RABBIT_CONSOLE_MODE_R_SHOULDER:
+                        cout << "Right shoulder control active" << endl;
+                        break;
+                    case RABBIT_CONSOLE_MODE_R_ELBOW:
+                        cout << "Right elbow control active" << endl;
+                        break;
+                    case RABBIT_CONSOLE_MODE_R_WRIST:
+                        cout << "Right wrist control active" << endl;
+                        break;
+                    case RABBIT_CONSOLE_MODE_R_GRIPPER:
+                        cout << "Right gripper control active" << endl;
+                        break;
+                    default:
+                        break;
+                    }
+                    break;
+                case 'j':
+                case 'J':
+                    if (mode >= RABBIT_CONSOLE_MODE_L_SHOULDER &&
+                        mode <= RABBIT_CONSOLE_MODE_L_GRIPPER) {
+                        mode = (enum rabbit_console_mode)
+                            (((unsigned int) mode) + 1);
+                        if (mode > RABBIT_CONSOLE_MODE_L_GRIPPER) {
+                            mode = RABBIT_CONSOLE_MODE_L_SHOULDER;
+                        }
+                    } else {
+                        mode = RABBIT_CONSOLE_MODE_L_SHOULDER;
+                    }
+                    switch (mode) {
+                    case RABBIT_CONSOLE_MODE_L_SHOULDER:
+                        cout << "Left shoulder control active" << endl;
+                        break;
+                    case RABBIT_CONSOLE_MODE_L_ELBOW:
+                        cout << "Left elbow control active" << endl;
+                        break;
+                    case RABBIT_CONSOLE_MODE_L_WRIST:
+                        cout << "Left wrist control active" << endl;
+                        break;
+                    case RABBIT_CONSOLE_MODE_L_GRIPPER:
+                        cout << "Left gripper control active" << endl;
+                        break;
+                    default:
+                        break;
+                    }
                     break;
                 case 'x':
                 case 'X':
@@ -345,31 +421,147 @@ int main(int argc, char **argv)
 
                     if (k2 == 0x5b && k3 == 0x41) {
                         /* Up arrow */
-                        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+                        switch (mode) {
+                        case RABBIT_CONSOLE_MODE_CAMERA:
                             camera->tilt(-1, true);
-                        } else {
+                            break;
+                        case RABBIT_CONSOLE_MODE_WHEEL:
                             wheels->fwd(WHEEL_DRIVE_LIMIT_MS);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_SHOULDER:
+                            rightArm->rotateShoulder(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_ELBOW:
+                            rightArm->extendElbow(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_WRIST:
+                            rightArm->extendWrist(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_GRIPPER:
+                            rightArm->setGripperPosition(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_SHOULDER:
+                            leftArm->rotateShoulder(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_ELBOW:
+                            leftArm->extendElbow(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_WRIST:
+                            leftArm->extendWrist(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_GRIPPER:
+                            leftArm->setGripperPosition(1.0, true);
+                            break;
+                        default:
+                            break;
                         }
                     } else if (k2 == 0x5b && k3 == 0x42) {
                         /* Down arrow */
-                        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+                        switch (mode) {
+                        case RABBIT_CONSOLE_MODE_CAMERA:
                             camera->tilt(1, true);
-                        } else {
+                            break;
+                        case RABBIT_CONSOLE_MODE_WHEEL:
                             wheels->bwd(WHEEL_DRIVE_LIMIT_MS);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_SHOULDER:
+                            rightArm->rotateShoulder(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_ELBOW:
+                            rightArm->extendElbow(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_WRIST:
+                            rightArm->extendWrist(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_GRIPPER:
+                            rightArm->setGripperPosition(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_SHOULDER:
+                            leftArm->rotateShoulder(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_ELBOW:
+                            leftArm->extendElbow(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_WRIST:
+                            leftArm->extendWrist(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_GRIPPER:
+                            leftArm->setGripperPosition(-1.0, true);
+                            break;
+                        default:
+                            break;
                         }
                     } else if (k2 == 0x5b && k3 == 0x44) {
                         /* Left arrow */
-                        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+                        switch (mode) {
+                        case RABBIT_CONSOLE_MODE_CAMERA:
                             camera->pan(1, true);
-                        } else {
+                            break;
+                        case RABBIT_CONSOLE_MODE_WHEEL:
                             wheels->rol(WHEEL_DRIVE_LIMIT_MS);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_SHOULDER:
+                            rightArm->extendShoulder(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_ELBOW:
+                            rightArm->extendElbow(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_WRIST:
+                            rightArm->rotateWrist(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_GRIPPER:
+                            rightArm->setGripperPosition(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_SHOULDER:
+                            leftArm->extendShoulder(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_ELBOW:
+                            leftArm->extendElbow(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_WRIST:
+                            leftArm->rotateWrist(1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_GRIPPER:
+                            leftArm->setGripperPosition(1.0, true);
+                            break;
+                        default:
+                            break;
                         }
                     } else if (k2 == 0x5b && k3 == 0x43) {
                         /* Right arrow */
-                        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+                        switch (mode) {
+                        case RABBIT_CONSOLE_MODE_CAMERA:
                             camera->pan(-1, true);
-                        } else {
+                            break;
+                        case RABBIT_CONSOLE_MODE_WHEEL:
                             wheels->ror(WHEEL_DRIVE_LIMIT_MS);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_SHOULDER:
+                            rightArm->extendShoulder(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_ELBOW:
+                            rightArm->extendElbow(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_WRIST:
+                            rightArm->rotateWrist(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_R_GRIPPER:
+                            rightArm->setGripperPosition(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_SHOULDER:
+                            leftArm->extendShoulder(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_ELBOW:
+                            leftArm->extendElbow(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_WRIST:
+                            leftArm->rotateWrist(-1.0, true);
+                            break;
+                        case RABBIT_CONSOLE_MODE_L_GRIPPER:
+                            leftArm->setGripperPosition(-1.0, true);
+                            break;
+                        default:
+                            break;
                         }
                     }
                     break;
