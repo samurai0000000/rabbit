@@ -35,19 +35,9 @@ private:
     pthread_t _thread;
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;
-    float _v[ADC_CHANNELS];
     MedianFilter<float> *_hist[ADC_CHANNELS];
 
 };
-
-inline float ADC::v(unsigned int chan) const
-{
-    if (chan >= ADC_CHANNELS) {
-        return 0.0;
-    }
-
-    return _v[chan];
-}
 
 #endif
 

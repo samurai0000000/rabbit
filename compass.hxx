@@ -16,10 +16,10 @@ public:
     Compass();
     ~Compass();
 
-    float x(void) const;
-    float y(void) const;
-    float z(void) const;
-    float bearing(void) const;
+    float x(void);
+    float y(void);
+    float z(void);
+    float bearing(void);
 
 private:
 
@@ -28,40 +28,15 @@ private:
 
     int _handle;
 
-    float _x;
-    float _y;
-    float _z;
-    float _bearing;
-
-    MedianFilter<float> _histX;
-    MedianFilter<float> _histY;
-    MedianFilter<float> _histZ;
+    MedianFilter<int16_t> _histX;
+    MedianFilter<int16_t> _histY;
+    MedianFilter<int16_t> _histZ;
 
     pthread_t _thread;
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;
     bool _running;
 };
-
-inline float Compass::x(void) const
-{
-    return _x;
-}
-
-inline float Compass::y(void) const
-{
-    return _y;
-}
-
-inline float Compass::z(void) const
-{
-    return _z;
-}
-
-inline float Compass::bearing(void) const
-{
-    return _bearing;
-}
 
 #endif
 

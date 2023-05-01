@@ -20,8 +20,7 @@
 ADC::ADC()
     : _handle(-1),
       _config(0),
-      _running(false),
-      _v()
+      _running(false)
 {
     int ret;
     unsigned int i;
@@ -141,7 +140,6 @@ void ADC::run(void)
         convert(1);
         convert(2);
         convert(3);
-        //printf("%.2f %.2f %.2f %.2f\n", _v[0], _v[1], _v[2], _v[3]);
 
         pthread_mutex_lock(&_mutex);
         pthread_cond_timedwait(&_cond, &_mutex, &next);
@@ -217,7 +215,15 @@ void ADC::convert(unsigned int chan)
     }
 
     _hist[chan]->addSample(v);
-    _v[chan] = _hist[chan]->average() * 5.13 / 3.3;
+}
+
+float ADC::v(unsigned int chan) const
+{
+    if (chan >= ADC_CHANNELS) {
+        return 0.0;
+    }
+
+    return _hist[chan]->average() * 5.13 / 3.3;
 }
 
 /*

@@ -17,8 +17,8 @@ public:
     ~MedianFilter();
 
     void addSample(T s);
-    T median(void) const;
-    T average(void) const;
+    T median(void);
+    T average(void);
 
 private:
 
@@ -28,21 +28,11 @@ private:
     unsigned int _index;
     unsigned int _sampleCount;
     T _median;
+    bool _medianUp2date;
     T _average;
+    bool _averageUp2date;
 
 };
-
-template <typename T>
-inline T MedianFilter<T>::median(void) const
-{
-    return _median;
-}
-
-template <typename T>
-inline T MedianFilter<T>::average(void) const
-{
-    return _average;
-}
 
 #endif
 

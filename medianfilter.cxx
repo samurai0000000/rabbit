@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "medianfilter.hxx"
 
 template <typename T>
@@ -17,6 +18,9 @@ MedianFilter<T>::MedianFilter(unsigned int windowSize)
     _sorted = new T[windowSize];
     _index = 0;
     _median = (T) 0;
+    _medianUp2date = false;
+    _average = (T) 0;
+    _averageUp2date = false;
 }
 
 template <typename T>
@@ -50,13 +54,23 @@ static int compar(T x, T y)
 template <typename T>
 void MedianFilter<T>::addSample(T s)
 {
-    unsigned int i;
-    unsigned int len;
-
     _samples[_index] = s;
     _sampleCount++;
     _index++;
     _index %= _windowSize;
+
+    _medianUp2date = false;
+    _averageUp2date = false;
+}
+
+template <typename T>
+T MedianFilter<T>::median(void)
+{
+    unsigned int len;
+
+    if (_medianUp2date) {
+        return _median;
+    }
 
     if (_sampleCount < _windowSize) {
         len = _sampleCount;
@@ -67,10 +81,39 @@ void MedianFilter<T>::addSample(T s)
     memcpy(_sorted, _samples, sizeof(T) * len);
     qsort(_sorted, len, sizeof(T), compar);
     _median = _sorted[len / 2];
-    for (i = 0, _average = (T) 0; i < len; i++) {
-        _average += _sorted[i];
+
+    _medianUp2date = true;
+
+    return _median;
+}
+
+template <typename T>
+T MedianFilter<T>::average(void)
+{
+    unsigned int i;
+    unsigned int len;
+
+    if (_averageUp2date) {
+        return _average;
     }
-    _average /= (T) len;
+
+    if (_sampleCount < _windowSize) {
+        len = _sampleCount;
+    } else {
+        len = _windowSize;
+    }
+
+    for (i = 0; i < len; i++) {
+        if (i == 0) {
+            _average = _samples[i];
+        } else {
+            _average = _average * (i - 1) / i + (_samples[i] / i);
+        }
+    }
+
+    _averageUp2date = true;
+
+    return _average;
 }
 
 /*
@@ -78,6 +121,8 @@ void MedianFilter<T>::addSample(T s)
  */
 
 template class MedianFilter<unsigned int>;
+template class MedianFilter<uint16_t>;
+template class MedianFilter<int16_t>;
 template class MedianFilter<float>;
 
 /*

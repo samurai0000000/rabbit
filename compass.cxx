@@ -19,11 +19,7 @@
 #define COMPASS_I2C_ADDR   0x0d
 
 Compass::Compass()
-    : _handle(-1),
-      _x(0),
-      _y(0),
-      _z(0),
-      _bearing(0)
+    : _handle(-1)
 {
     int ret;
     uint8_t chipid;
@@ -101,7 +97,6 @@ void Compass::run(void)
     int ret;
     uint8_t status;
     int16_t x, y, z;
-    float bearing;
     struct timespec ts, tloop;
 
     tloop.tv_sec = 0;
@@ -178,18 +173,9 @@ void Compass::run(void)
          * Normalize and calculate the bearing
          */
 
-        _histX.addSample((float) x);
-        _x = _histX.median();
-        _x = _x * 360.0 / 32768.0 ;
-        _histY.addSample((float) y);
-        _y = _histY.median();
-        _y = _y * 360.0 / 32768.0 ;
-        _histZ.addSample((float) z);
-        _z = _histZ.median();
-        _z = _z * 360.0 / 32768.0 ;
-
-        bearing = atan2f(_y, _x) * 180.0 / M_PI;
-        _bearing = bearing >= 0 ? bearing : bearing + 360.0;
+        _histX.addSample(x);
+        _histY.addSample(y);
+        _histZ.addSample(z);
 
     done:
 
@@ -199,6 +185,36 @@ void Compass::run(void)
         pthread_cond_timedwait(&_cond, &_mutex, &ts);
         pthread_mutex_unlock(&_mutex);
     }
+}
+
+float Compass::x(void)
+{
+    return (float) _histX.median() * 360.0 / 32768.0;
+}
+
+float Compass::y(void)
+{
+    return (float) _histY.median() * 360.0 / 32768.0;
+}
+
+float Compass::z(void)
+{
+    return (float) _histZ.median() * 360.0 / 32768.0;
+}
+
+float Compass::bearing(void)
+{
+    float x, y, bearing;
+
+    x = this->x();
+    y = this->y();
+
+    bearing = atan2f(y, x) * 180.0 / M_PI;
+    if (bearing < 0) {
+        bearing += 360.0;
+    }
+
+    return bearing;
 }
 
 /*
