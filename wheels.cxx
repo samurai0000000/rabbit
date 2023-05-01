@@ -176,23 +176,6 @@ void Wheels::fwr(unsigned int ms)
 {
     change(5);
 
-    servos->setPct(RHS_SPEED_SERVO, 75);
-    servos->setPct(LHS_SPEED_SERVO, 0);
-
-    gpioWrite(L298N_IN1, 1);
-    gpioWrite(L298N_IN2, 0);
-    gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 0);
-
-    if (ms > 0) {
-        my_setitimer(ms);
-    }
-}
-
-void Wheels::fwl(unsigned int ms)
-{
-    change(6);
-
     servos->setPct(RHS_SPEED_SERVO, 0);
     servos->setPct(LHS_SPEED_SERVO, 75);
 
@@ -206,17 +189,34 @@ void Wheels::fwl(unsigned int ms)
     }
 }
 
+void Wheels::fwl(unsigned int ms)
+{
+    change(6);
+
+    servos->setPct(RHS_SPEED_SERVO, 75);
+    servos->setPct(LHS_SPEED_SERVO, 0);
+
+    gpioWrite(L298N_IN1, 1);
+    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 0);
+
+    if (ms > 0) {
+        my_setitimer(ms);
+    }
+}
+
 void Wheels::bwr(unsigned int ms)
 {
     change(6);
 
-    servos->setPct(RHS_SPEED_SERVO, 50);
-    servos->setPct(LHS_SPEED_SERVO, 0);
+    servos->setPct(RHS_SPEED_SERVO, 0);
+    servos->setPct(LHS_SPEED_SERVO, 50);
 
     gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 1);
+    gpioWrite(L298N_IN2, 0);
     gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 0);
+    gpioWrite(L298N_IN4, 1);
 
     if (ms > 0) {
         my_setitimer(ms);
@@ -227,13 +227,13 @@ void Wheels::bwl(unsigned int ms)
 {
     change(7);
 
-    servos->setPct(RHS_SPEED_SERVO, 0);
-    servos->setPct(LHS_SPEED_SERVO, 50);
+    servos->setPct(RHS_SPEED_SERVO, 50);
+    servos->setPct(LHS_SPEED_SERVO, 0);
 
     gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN2, 1);
     gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 1);
+    gpioWrite(L298N_IN4, 0);
 
     if (ms > 0) {
         my_setitimer(ms);
