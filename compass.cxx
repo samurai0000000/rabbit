@@ -178,11 +178,14 @@ void Compass::run(void)
          * Normalize and calculate the bearing
          */
 
-        _x = (float) x;
+        _histX.addSample((float) x);
+        _x = _histX.median();
         _x = _x * 360.0 / 32768.0 ;
-        _y = (float) y;
+        _histY.addSample((float) y);
+        _y = _histY.median();
         _y = _y * 360.0 / 32768.0 ;
-        _z = (float) z;
+        _histZ.addSample((float) z);
+        _z = _histZ.median();
         _z = _z * 360.0 / 32768.0 ;
 
         bearing = atan2f(_y, _x) * 180.0 / M_PI;

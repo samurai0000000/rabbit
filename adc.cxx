@@ -24,6 +24,7 @@ ADC::ADC()
       _v()
 {
     int ret;
+    unsigned int i;
 
     _handle = i2cOpen(ADC_I2C_BUS, ADC_I2C_ADDR, 0x0);
     if (_handle < 0) {
@@ -33,9 +34,9 @@ ADC::ADC()
 
     _config =
         MUX_AIN0_GND |
-        PGA_FSR_4_096V |
+        PGA_FSR_6_144V |
         MODE_SING |
-        DR_128_SPS |
+        DR_64_SPS |
         COMP_MODE_TRAD |
         COMP_POL_LO |
         COMP_LAT_NO |
@@ -47,6 +48,10 @@ ADC::ADC()
 
 done:
 
+    for (i = 0; i < ADC_CHANNELS; i++) {
+        _hist[i] = new MedianFilter<float>(20);
+    }
+
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
@@ -55,6 +60,8 @@ done:
 
 ADC::~ADC()
 {
+    unsigned int i;
+
     _running = false;
     pthread_cond_broadcast(&_cond);
     pthread_join(_thread, NULL);
@@ -64,6 +71,11 @@ ADC::~ADC()
     if (_handle >= 0) {
         i2cClose(_handle);
         _handle = -1;
+    }
+
+    for (i = 0; i < ADC_CHANNELS; i++) {
+        delete _hist[i];
+        _hist[i] = NULL;
     }
 }
 
@@ -99,7 +111,7 @@ int ADC::writeReg(uint8_t reg, uint16_t val) const
     val = (val >> 8) | (val << 8);
     ret = i2cWriteWordData(_handle, reg, val);
     if (ret != 0) {
-        fprintf(stderr, "%s: i2cWriteWordData failed!\n", __func__);
+        fprintf(stderr, "%s: i2cWriteWordData 0x%.2xfailed!\n", __func__, reg);
     }
 
     return ret;
@@ -119,7 +131,7 @@ void ADC::run(void)
     struct timespec now, interval, next;
 
     interval.tv_sec = 0;
-    interval.tv_nsec = 500000000;
+    interval.tv_nsec = 200000000;
 
     while (_running) {
         clock_gettime(CLOCK_REALTIME, &now);
@@ -181,7 +193,7 @@ void ADC::convert(unsigned int chan)
     }
     pthread_mutex_lock(&_mutex);
     clock_gettime(CLOCK_REALTIME, &now);
-    timespecadd(&now, &interval, &next);
+    timespecadd(&next, &interval, &next);
     pthread_cond_timedwait(&_cond, &_mutex, &next);
     pthread_mutex_unlock(&_mutex);
 
@@ -200,9 +212,12 @@ void ADC::convert(unsigned int chan)
     case PGA_FSR_1_024V:    v = v * 1.024 / 32768.0; break;
     case PGA_FSR_0_512V:    v = v * 0.512 / 32768.0; break;
     case PGA_FSR_0_256V:    v = v * 0.256 / 32768.0; break;
-    default:                v = -3.8; break;
+    default:
+        return;
     }
-    _v[chan] = v;
+
+    _hist[chan]->addSample(v);
+    _v[chan] = _hist[chan]->average() * 5.13 / 3.3;
 }
 
 /*

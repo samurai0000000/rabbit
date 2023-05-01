@@ -231,9 +231,12 @@ void Ambience::run(void)
             continue;
         }
 
-        _temp = data.temperature;
-        _pressure = data.pressure * 0.01;
-        _humidity = data.humidity;
+        _histTemp.addSample(data.temperature);
+        _temp = _histTemp.median();
+        _histPressure.addSample(data.pressure * 0.01);
+        _pressure = _histPressure.median();
+        _histHumidity.addSample(data.humidity);
+        _humidity = _histHumidity.median();
 
         pthread_mutex_lock(&_mutex);
         clock_gettime(CLOCK_REALTIME, &ts);

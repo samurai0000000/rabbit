@@ -7,7 +7,8 @@
 #ifndef AMBIENCE_HXX
 #define AMBIENCE_HXX
 
-#include <bme280.h>
+#include "bme280.h"
+#include "medianfilter.hxx"
 
 class Ambience {
 
@@ -36,6 +37,10 @@ private:
     float _temp;
     float _pressure;
     float _humidity;
+
+    MedianFilter<float> _histTemp;
+    MedianFilter<float> _histPressure;
+    MedianFilter<float> _histHumidity;
 
     pthread_t _thread;
     pthread_mutex_t _mutex;

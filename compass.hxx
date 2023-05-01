@@ -7,6 +7,8 @@
 #ifndef COMPASS_HXX
 #define COMPASS_HXX
 
+#include "medianfilter.hxx"
+
 class Compass {
 
 public:
@@ -30,6 +32,10 @@ private:
     float _y;
     float _z;
     float _bearing;
+
+    MedianFilter<float> _histX;
+    MedianFilter<float> _histY;
+    MedianFilter<float> _histZ;
 
     pthread_t _thread;
     pthread_mutex_t _mutex;

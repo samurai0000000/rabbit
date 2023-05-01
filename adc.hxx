@@ -7,6 +7,8 @@
 #ifndef ADC_HXX
 #define ADC_HXX
 
+#include "medianfilter.hxx"
+
 #define ADC_CHANNELS 4
 
 class ADC {
@@ -34,6 +36,7 @@ private:
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;
     float _v[ADC_CHANNELS];
+    MedianFilter<float> *_hist[ADC_CHANNELS];
 
 };
 

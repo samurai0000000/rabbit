@@ -86,7 +86,7 @@ int Servos::writeReg(uint8_t reg, uint8_t val) const
 
     ret = i2cWriteByteData(_handle, reg, val);
     if (ret != 0) {
-        fprintf(stderr, "%s: i2cWriteByteData failed!\n", __func__);
+        fprintf(stderr, "%s: i2cWriteByteData 0x%.2x failed!\n", __func__, reg);
     }
 
     return ret;

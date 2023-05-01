@@ -32,8 +32,7 @@ float Power::voltage(void) const
     float v;
 
     v = adc->v(VOLTAGE_ADC_CHAN);
-    v = v * 5.0;    /* Multiply by 5 to get the voltage */
-    v = v * 1.426;  /* 3.3v problem? */
+    v = v * 5.0;
 
     return v;
 }
@@ -43,8 +42,7 @@ float Power::current(void) const
     float v;
 
     v = adc->v(CURRENT_ADC_CHAN);
-    v = v * 5.0;    /* Multiply by 5 to get the amperage */
-    v = v * 1.426;  /* 3.3v problem? */
+    v = (v - 2.5) * 5.0;
 
     return v;
 }
