@@ -17,13 +17,6 @@
 #define BME280_I2C_BUS  1
 #define BME280_I2C_ADDR 0x76
 
-/*
- * GY-SHT30-D
- * https://www.mouser.com/datasheet/2/682/Sensirion_Humidity_Sensors_SHT3x_Datasheet_digital-971521.pdf
- */
-#define SHT3X_I2C_BUS   1
-#define SHT3X_I2C_ADDR  0x44
-
 static int8_t user_i2c_read(uint8_t reg_addr, uint8_t *data,
                             uint32_t len, void *intf_ptr)
 {
@@ -77,7 +70,6 @@ Ambience::Ambience()
       _settings(),
       _bme280_delay_us(0),
       _bme280(-1),
-      _sht3x(-1),
       _running(false)
 {
     int8_t rslt = BME280_OK;
@@ -132,14 +124,6 @@ Ambience::Ambience()
 
 bme280_done:
 
-    _sht3x = i2cOpen(SHT3X_I2C_BUS, SHT3X_I2C_ADDR, 0);
-    if (_sht3x < 0) {
-        cerr << "Open SHT3X failed" << endl;
-        goto sht3x_done;
-    }
-
-sht3x_done:
-
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
@@ -156,10 +140,6 @@ Ambience::~Ambience()
 
     if (_bme280) {
         i2cClose(_bme280);
-    }
-
-    if (_sht3x >= 0) {
-        i2cClose(_sht3x);
     }
 }
 

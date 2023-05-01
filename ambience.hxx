@@ -31,7 +31,6 @@ private:
     struct bme280_settings _settings;
     uint32_t _bme280_delay_us;
     int _bme280;
-    int _sht3x;
 
     float _socTemp;
     float _temp;
