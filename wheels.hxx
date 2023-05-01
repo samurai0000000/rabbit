@@ -17,10 +17,15 @@ public:
     ~Wheels();
 
     void halt(void);
+
     void fwd(unsigned int ms);
     void bwd(unsigned int ms);
     void ror(unsigned int ms);
     void rol(unsigned int ms);
+    void fwr(unsigned int ms);
+    void fwl(unsigned int ms);
+    void bwr(unsigned int ms);
+    void bwl(unsigned int ms);
 
     unsigned int state(void) const;
     const char *stateStr(void) const;
@@ -29,6 +34,10 @@ public:
     unsigned int bwd_ms(void) const;
     unsigned int ror_ms(void) const;
     unsigned int rol_ms(void) const;
+    unsigned int fwr_ms(void) const;
+    unsigned int fwl_ms(void) const;
+    unsigned int bwr_ms(void) const;
+    unsigned int bwl_ms(void) const;
 
 private:
 
@@ -41,6 +50,10 @@ private:
     unsigned int _bwd_ms;
     unsigned int _ror_ms;
     unsigned int _rol_ms;
+    unsigned int _fwr_ms;
+    unsigned int _fwl_ms;
+    unsigned int _bwr_ms;
+    unsigned int _bwl_ms;
 
 };
 

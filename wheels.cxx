@@ -172,9 +172,99 @@ void Wheels::rol(unsigned int ms)
     }
 }
 
+void Wheels::fwr(unsigned int ms)
+{
+    change(5);
+
+    servos->setPct(RHS_SPEED_SERVO, 75);
+    servos->setPct(LHS_SPEED_SERVO, 0);
+
+    gpioWrite(L298N_IN1, 1);
+    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 0);
+
+    if (ms > 0) {
+        my_setitimer(ms);
+    }
+}
+
+void Wheels::fwl(unsigned int ms)
+{
+    change(6);
+
+    servos->setPct(RHS_SPEED_SERVO, 0);
+    servos->setPct(LHS_SPEED_SERVO, 75);
+
+    gpioWrite(L298N_IN1, 0);
+    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN3, 1);
+    gpioWrite(L298N_IN4, 0);
+
+    if (ms > 0) {
+        my_setitimer(ms);
+    }
+}
+
+void Wheels::bwr(unsigned int ms)
+{
+    change(6);
+
+    servos->setPct(RHS_SPEED_SERVO, 50);
+    servos->setPct(LHS_SPEED_SERVO, 0);
+
+    gpioWrite(L298N_IN1, 0);
+    gpioWrite(L298N_IN2, 1);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 0);
+
+    if (ms > 0) {
+        my_setitimer(ms);
+    }
+}
+
+void Wheels::bwl(unsigned int ms)
+{
+    change(7);
+
+    servos->setPct(RHS_SPEED_SERVO, 0);
+    servos->setPct(LHS_SPEED_SERVO, 50);
+
+    gpioWrite(L298N_IN1, 0);
+    gpioWrite(L298N_IN2, 0);
+    gpioWrite(L298N_IN3, 0);
+    gpioWrite(L298N_IN4, 1);
+
+    if (ms > 0) {
+        my_setitimer(ms);
+    }
+}
+
 unsigned int Wheels::state(void) const
 {
     return _state;
+}
+
+const char *Wheels::stateStr(void) const
+{
+    const char *s[10] = {
+        "halt",
+        "fwd",
+        "bwd",
+        "ror",
+        "rol",
+        "fwr",
+        "fwl",
+        "bwr",
+        "bwl",
+        "unknown",
+    };
+
+    if (_state <= 8) {
+        return s[_state];
+    }
+
+    return s[9];
 }
 
 unsigned int Wheels::fwd_ms(void) const
@@ -213,22 +303,40 @@ unsigned int Wheels::rol_ms(void) const
     return _rol_ms;
 }
 
-const char *Wheels::stateStr(void) const
+unsigned int Wheels::fwr_ms(void) const
 {
-    const char *s[6] = {
-        "halt",
-        "fwd",
-        "bwd",
-        "ror",
-        "rol",
-        "unknown",
-    };
-
-    if (_state <= 4) {
-        return s[_state];
+    if (_state == 5) {
+        return _fwr_ms + now_diff_ts_ms();
     }
 
-    return s[5];
+    return _fwr_ms;
+}
+
+unsigned int Wheels::fwl_ms(void) const
+{
+    if (_state == 6) {
+        return _fwl_ms + now_diff_ts_ms();
+    }
+
+    return _fwl_ms;
+}
+
+unsigned int Wheels::bwr_ms(void) const
+{
+    if (_state == 7) {
+        return _bwr_ms + now_diff_ts_ms();
+    }
+
+    return _bwr_ms;
+}
+
+unsigned int Wheels::bwl_ms(void) const
+{
+    if (_state == 8) {
+        return _bwl_ms + now_diff_ts_ms();
+    }
+
+    return _bwl_ms;
 }
 
 unsigned int Wheels::now_diff_ts_ms(void) const
@@ -247,27 +355,19 @@ void Wheels::change(unsigned int state)
 {
     unsigned int ms;
 
+    ms = now_diff_ts_ms();
+
     switch (_state) {
-    case 0:
-        break;
-    case 1:
-        ms = now_diff_ts_ms();
-        _fwd_ms += ms;
-        break;
-    case 2:
-        ms = now_diff_ts_ms();
-        _bwd_ms += ms;
-        break;
-    case 3:
-        ms = now_diff_ts_ms();
-        _ror_ms += ms;
-        break;
-    case 4:
-        ms = now_diff_ts_ms();
-        _rol_ms += ms;
-        break;
-    default:
-        break;
+    case 0:                break;
+    case 1: _fwd_ms += ms; break;
+    case 2: _bwd_ms += ms; break;
+    case 3: _ror_ms += ms; break;
+    case 4: _rol_ms += ms; break;
+    case 5: _fwr_ms += ms; break;
+    case 6: _fwl_ms += ms; break;
+    case 7: _bwr_ms += ms; break;
+    case 8: _bwl_ms += ms; break;
+    default:               break;
     }
 
     _state = state;
