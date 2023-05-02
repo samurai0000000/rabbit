@@ -69,6 +69,9 @@ Camera::~Camera()
 
     _streamer.stop();
 
+    servos->clearSchedule(PAN_SERVO);
+    servos->clearSchedule(TILT_SERVO);
+
     if (_vc) {
         delete _vc;
     }
@@ -265,9 +268,10 @@ void Camera::run(void)
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-            text = String("");
-            text += "Pan: " + to_string(panAt()) + " deg ";
-            text += "Tilt: " + to_string(tiltAt()) + " deg";
+            snprintf(buf, sizeof(buf) - 1, "%.1f", panAt());
+            text = String("Pan: ") + buf + String(" deg ");
+            snprintf(buf, sizeof(buf) - 1, "%.1f", tiltAt());
+            text += String("Tilt: ") + buf + String(" deg");
             pos.y += textSize.height;
             putText(osd1, text, pos,
                     fontFace, fontScale, fontColor, thickness, LINE_8, false);
@@ -408,43 +412,43 @@ void Camera::run(void)
     } while (_running);
 }
 
-void Camera::pan(int deg, bool relative)
+void Camera::pan(float deg, bool relative)
 {
     unsigned int pulse;
     unsigned int center;
 
     if (relative) {
         pulse = servos->pulse(PAN_SERVO);
-        pulse = (unsigned) ((int) pulse + (PAN_ANGLE_MULT * deg));
+        pulse = (unsigned int) ((float) pulse + (PAN_ANGLE_MULT * deg));
         servos->setPulse(PAN_SERVO, pulse);
     } else {
         center =
             ((servos->hiRange(PAN_SERVO) - servos->loRange(PAN_SERVO)) / 2) +
             PAN_LO_PULSE;
-        pulse = (unsigned int) ((int) center + deg * PAN_ANGLE_MULT);
+        pulse = (unsigned int) ((float) center - deg * PAN_ANGLE_MULT);
         servos->setPulse(PAN_SERVO, pulse);
     }
 }
 
-void Camera::tilt(int deg, bool relative)
+void Camera::tilt(float deg, bool relative)
 {
     unsigned int pulse;
     unsigned int center;
 
     if (relative) {
         pulse = servos->pulse(TILT_SERVO);
-        pulse = (unsigned) ((int) pulse + (TILT_ANGLE_MULT * deg));
+        pulse = (unsigned int) ((float) pulse + (TILT_ANGLE_MULT * deg));
         servos->setPulse(TILT_SERVO, pulse);
     } else {
         center =
             ((servos->hiRange(TILT_SERVO) - servos->loRange(TILT_SERVO)) / 2) +
             TILT_LO_PULSE;
-        pulse = (unsigned int) ((int) center + deg * TILT_ANGLE_MULT);
+        pulse = (unsigned int) ((float) center - deg * TILT_ANGLE_MULT);
         servos->setPulse(TILT_SERVO, pulse);
     }
 }
 
-int Camera::panAt(void) const
+float Camera::panAt(void) const
 {
     unsigned int pulse;
     unsigned int center;
@@ -453,10 +457,10 @@ int Camera::panAt(void) const
     center = ((servos->hiRange(PAN_SERVO) - servos->loRange(PAN_SERVO)) / 2) +
         PAN_LO_PULSE;
 
-    return ((int) pulse - (int) center) / PAN_ANGLE_MULT;
+    return ((float) pulse - (float) center) / PAN_ANGLE_MULT * -1.0;
 }
 
-int Camera::tiltAt(void) const
+float Camera::tiltAt(void) const
 {
     unsigned int pulse;
     unsigned int center;
@@ -465,7 +469,7 @@ int Camera::tiltAt(void) const
     center = ((servos->hiRange(TILT_SERVO) - servos->loRange(TILT_SERVO)) / 2) +
         TILT_LO_PULSE;
 
-    return ((int) pulse - (int) center) / TILT_ANGLE_MULT;
+    return ((float) pulse - (float) center) / TILT_ANGLE_MULT * -1.0;
 }
 
 /*

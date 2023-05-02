@@ -28,10 +28,10 @@ public:
     void enSentry(bool enable);
     bool isSentryEn(void) const;
 
-    void pan(int deg, bool relative = false);
-    void tilt(int deg, bool relative = false);
-    int panAt(void) const;
-    int tiltAt(void) const;
+    void pan(float deg, bool relative = false);
+    void tilt(float deg, bool relative = false);
+    float panAt(void) const;
+    float tiltAt(void) const;
 
     float frameRate(void) const;
 
