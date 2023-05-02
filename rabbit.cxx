@@ -118,28 +118,28 @@ static void action_up(void)
         wheels->fwd(WHEEL_DRIVE_LIMIT_MS);
         break;
     case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->rotateShoulder(1.0, true);
+        rightArm->rotateShoulder(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_ELBOW:
-        rightArm->extendElbow(1.0, true);
+        rightArm->extendElbow(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_WRIST:
-        rightArm->extendWrist(1.0, true);
+        rightArm->rotateWrist(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_GRIPPER:
-        rightArm->setGripperPosition(1.0, true);
+        rightArm->setGripperPosition(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->rotateShoulder(1.0, true);
+        leftArm->rotateShoulder(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_ELBOW:
-        leftArm->extendElbow(1.0, true);
+        leftArm->extendElbow(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_WRIST:
-        leftArm->extendWrist(1.0, true);
+        leftArm->rotateWrist(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_GRIPPER:
-        leftArm->setGripperPosition(1.0, true);
+        leftArm->setGripperPosition(1.0, 5, true);
         break;
     default:
         break;
@@ -156,66 +156,28 @@ static void action_down(void)
         wheels->bwd(WHEEL_DRIVE_LIMIT_MS);
         break;
     case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->rotateShoulder(-1.0, true);
+        rightArm->rotateShoulder(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_ELBOW:
-        rightArm->extendElbow(-1.0, true);
+        rightArm->extendElbow(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_WRIST:
-        rightArm->extendWrist(-1.0, true);
+        rightArm->rotateWrist(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_GRIPPER:
-        rightArm->setGripperPosition(-1.0, true);
+        rightArm->setGripperPosition(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->rotateShoulder(-1.0, true);
+        leftArm->rotateShoulder(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_ELBOW:
-        leftArm->extendElbow(-1.0, true);
+        leftArm->extendElbow(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_WRIST:
-        leftArm->extendWrist(-1.0, true);
+        leftArm->rotateWrist(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_GRIPPER:
-        leftArm->setGripperPosition(-1.0, true);
-        break;
-    default:
-        break;
-    }
-}
-
-static void action_left(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->pan(1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->rol(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->extendShoulder(1.0, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_ELBOW:
-        rightArm->extendElbow(1.0, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_WRIST:
-        rightArm->rotateWrist(1.0, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_GRIPPER:
-        rightArm->setGripperPosition(1.0, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->extendShoulder(1.0, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_ELBOW:
-        leftArm->extendElbow(1.0, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_WRIST:
-        leftArm->rotateWrist(1.0, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_GRIPPER:
-        leftArm->setGripperPosition(1.0, true);
+        leftArm->setGripperPosition(-1.0, 5, true);
         break;
     default:
         break;
@@ -232,28 +194,66 @@ static void action_right(void)
         wheels->ror(WHEEL_DRIVE_LIMIT_MS);
         break;
     case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->extendShoulder(-1.0, true);
+        rightArm->extendShoulder(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_ELBOW:
-        rightArm->extendElbow(-1.0, true);
+        rightArm->extendElbow(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_WRIST:
-        rightArm->rotateWrist(-1.0, true);
+        rightArm->extendWrist(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_R_GRIPPER:
-        rightArm->setGripperPosition(-1.0, true);
+        rightArm->setGripperPosition(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->extendShoulder(-1.0, true);
+        leftArm->extendShoulder(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_ELBOW:
-        leftArm->extendElbow(-1.0, true);
+        leftArm->extendElbow(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_WRIST:
-        leftArm->rotateWrist(-1.0, true);
+        leftArm->extendWrist(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_L_GRIPPER:
-        leftArm->setGripperPosition(-1.0, true);
+        leftArm->setGripperPosition(-1.0, 5, true);
+        break;
+    default:
+        break;
+    }
+}
+
+static void action_left(void)
+{
+    switch (mode) {
+    case RABBIT_CONSOLE_MODE_CAMERA:
+        camera->pan(1, true);
+        break;
+    case RABBIT_CONSOLE_MODE_WHEEL:
+        wheels->rol(WHEEL_DRIVE_LIMIT_MS);
+        break;
+    case RABBIT_CONSOLE_MODE_R_SHOULDER:
+        rightArm->extendShoulder(1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_R_ELBOW:
+        rightArm->extendElbow(-1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_R_WRIST:
+        rightArm->extendWrist(-1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_R_GRIPPER:
+        rightArm->setGripperPosition(1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_L_SHOULDER:
+        leftArm->extendShoulder(1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_L_ELBOW:
+        leftArm->extendElbow(1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_L_WRIST:
+        leftArm->extendWrist(1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_L_GRIPPER:
+        leftArm->setGripperPosition(1.0, 5, true);
         break;
     default:
         break;
@@ -270,6 +270,12 @@ static void action_upright(void)
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->fwr(WHEEL_DRIVE_LIMIT_MS);
         break;
+    case RABBIT_CONSOLE_MODE_R_SHOULDER:
+        rightArm->extendWrist(-1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_L_SHOULDER:
+        leftArm->extendWrist(-1.0, 5, true);
+        break;
     default:
         break;
     }
@@ -285,6 +291,12 @@ static void action_upleft(void)
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->fwl(WHEEL_DRIVE_LIMIT_MS);
         break;
+    case RABBIT_CONSOLE_MODE_R_SHOULDER:
+        rightArm->extendElbow(-1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_L_SHOULDER:
+        leftArm->extendElbow(-1.0, 5, true);
+        break;
     default:
         break;
     }
@@ -299,8 +311,14 @@ static void action_downright(void)
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->bwr(WHEEL_DRIVE_LIMIT_MS);
-    default:
         break;
+    case RABBIT_CONSOLE_MODE_R_SHOULDER:
+        rightArm->extendWrist(1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_L_SHOULDER:
+        leftArm->extendWrist(1.0, 5, true);
+        break;
+    default:
         break;
     }
 }
@@ -314,6 +332,12 @@ static void action_downleft(void)
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->bwl(WHEEL_DRIVE_LIMIT_MS);
+        break;
+    case RABBIT_CONSOLE_MODE_R_SHOULDER:
+        rightArm->extendElbow(1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_L_SHOULDER:
+        leftArm->extendElbow(1.0, 5, true);
         break;
     default:
         break;
@@ -466,6 +490,9 @@ int main(int argc, char **argv)
                 case ' ':
                     camera->pan(0);
                     camera->tilt(0);
+                    wheels->halt();
+                    rightArm->rest();
+                    leftArm->rest();
                     break;
                 case 's':
                 case 'S':
@@ -536,18 +563,24 @@ int main(int argc, char **argv)
                     break;
                 case 'x':
                 case 'X':
-                    leftArm->rest();
                     rightArm->rest();
+                    leftArm->rest();
                     break;
                 case 'y':
                 case 'Y':
-                    leftArm->hug();
                     rightArm->hug();
+                    leftArm->hug();
                     break;
                 case 'z':
                 case 'Z':
-                    leftArm->surrender();
                     rightArm->surrender();
+                    leftArm->surrender();
+                    break;
+                case 'a':
+                    rightArm->pickup();
+                    break;
+                case'A':
+                    leftArm->pickup();
                     break;
                 case 'P':
                 case 'p':
@@ -613,11 +646,11 @@ int main(int argc, char **argv)
                 case '2':
                     action_down();
                     break;
-                case '4':
-                    action_left();
-                    break;
                 case '6':
                     action_right();
+                    break;
+                case '4':
+                    action_left();
                     break;
                 case '9':
                     action_upright();
@@ -643,10 +676,10 @@ int main(int argc, char **argv)
                         action_up();
                     } else if (k2 == 0x5b && k3 == 0x42) {
                         action_down();
-                    } else if (k2 == 0x5b && k3 == 0x44) {
-                        action_left();
                     } else if (k2 == 0x5b && k3 == 0x43) {
                         action_right();
+                    } else if (k2 == 0x5b && k3 == 0x44) {
+                        action_left();
                     }
                     break;
                 default:

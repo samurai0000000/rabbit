@@ -100,6 +100,8 @@ void Camera::run(void)
     struct timeval since, ts, now, tdiff, tv;
     struct wifi_stat wifi_stat;
     unsigned int frame_count = 0;
+    vector<struct servo_motion> sentry_motions;
+    struct servo_motion motion;
 
     /* Set up */
     _vc->read(frame);
@@ -115,6 +117,20 @@ void Camera::run(void)
     tdiff.tv_usec = 0;
     timersub(&now, &tdiff, &ts);
     memcpy(&tv, &now, sizeof(struct timeval));
+
+    /* Set up sentry motion vector */
+    motion.pulse = (PAN_HI_PULSE - PAN_LO_PULSE) / 2 + PAN_LO_PULSE;
+    motion.ms = 50;
+    sentry_motions.push_back(motion);
+    motion.pulse = PAN_HI_PULSE;
+    motion.ms = 2000;
+    sentry_motions.push_back(motion);
+    motion.pulse = PAN_LO_PULSE;
+    motion.ms = 4000;
+    sentry_motions.push_back(motion);
+    motion.pulse = (PAN_HI_PULSE - PAN_LO_PULSE) / 2 + PAN_LO_PULSE;
+    motion.ms = 2000;
+    sentry_motions.push_back(motion);
 
     do {
         if (!isVisionEn() && !_streamer.hasClient("/rgb")) {
@@ -381,21 +397,12 @@ void Camera::run(void)
 
         /* Sentry */
         if (_sentry.enabled) {
-            unsigned int pulse;
-
-            pulse = servos->pulse(PAN_SERVO);
-            if (pulse >= servos->hiRange(PAN_SERVO)) {
-                _sentry.dir = 0;
-            } else if (pulse <= servos->loRange(PAN_SERVO)) {
-                _sentry.dir = 1;
+            if (servos->hasMotionSchedule(PAN_SERVO) == false) {
+                servos->schedule(PAN_SERVO, sentry_motions);
             }
-
-            if (_sentry.dir) {
-                servos->setPulse(PAN_SERVO,
-                                 servos->pulse(PAN_SERVO) + PAN_ANGLE_MULT);
-            } else {
-                servos->setPulse(PAN_SERVO,
-                                 servos->pulse(PAN_SERVO) - PAN_ANGLE_MULT);
+        } else {
+            if (servos->hasMotionSchedule(PAN_SERVO) == true) {
+                servos->center(PAN_SERVO);
             }
         }
     } while (_running);

@@ -5,6 +5,8 @@
  */
 
 #include <math.h>
+#include <sys/time.h>
+#include <bsd/sys/time.h>
 #include <pigpio.h>
 #include "rabbit.hxx"
 #include "pca9685_regs.h"
@@ -16,10 +18,11 @@
  */
 #define PWM_I2C_BUS    1
 #define PWM_I2C_ADDR   0x40
+#define PWM_FREQ_KHZ   50
 
 Servos::Servos()
     : _handle(-1),
-      _freq(50)
+      _freq(PWM_FREQ_KHZ)
 {
     unsigned int i;
     uint8_t v;
@@ -46,10 +49,21 @@ Servos::Servos()
     v = floor(prescale + 0.5);
     writeReg(PRE_SCALE_REG, v);
     writeReg(MODE1_REG, MODE1_RESTART | MODE1_ALLCALL);
+
+    _running = true;
+    pthread_mutex_init(&_mutex, NULL);
+    pthread_cond_init(&_cond, NULL);
+    pthread_create(&_thread, NULL, Servos::thread_func, this);
 }
 
 Servos::~Servos()
 {
+    _running = false;
+    pthread_cond_broadcast(&_cond);
+    pthread_join(_thread, NULL);
+    pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
+
     if (_handle >= 0) {
         i2cWriteByteData(_handle, MODE1_REG, MODE1_SLEEP | MODE1_ALLCALL);
         i2cClose(_handle);
@@ -97,6 +111,7 @@ void Servos::setPwm(unsigned int chan, unsigned int on, unsigned int off)
     if (_handle < 0) {
         return;
     }
+
     writeReg(LED_ON_L_REG(chan), on & 0xff);
     writeReg(LED_ON_H_REG(chan), on >> 8);
     writeReg(LED_OFF_L_REG(chan), off & 0xff);
@@ -105,7 +120,7 @@ void Servos::setPwm(unsigned int chan, unsigned int on, unsigned int off)
 
 void Servos::setRange(unsigned int chan, unsigned int lo, unsigned int hi)
 {
-    if (chan > SERVO_CHANNELS) {
+    if (chan >= SERVO_CHANNELS) {
         return;
     } else if (_lo >= _hi) {
         return;
@@ -115,11 +130,12 @@ void Servos::setRange(unsigned int chan, unsigned int lo, unsigned int hi)
     _hi[chan] = hi;
 }
 
-void Servos::setPulse(unsigned int chan, unsigned int pulse, bool ignoreRange)
+void Servos::setPulse(unsigned int chan, unsigned int pulse,
+                      bool ignoreRange, bool clearMotions)
 {
     unsigned int on, off;
 
-    if (chan > SERVO_CHANNELS) {
+    if (chan >= SERVO_CHANNELS) {
         return;
     }
 
@@ -135,10 +151,19 @@ void Servos::setPulse(unsigned int chan, unsigned int pulse, bool ignoreRange)
 
     on = 0;
     off = pulse * 4096 / (1000000 / _freq);
-    if (off <= 4096) {
-        setPwm(chan, on, off);
-        _pulse[chan] = pulse;
+    if (off >= 4096) {
+        return;
     }
+
+    pthread_mutex_lock(&_mutex);
+
+    setPwm(chan, on, off);
+    _pulse[chan] = pulse;
+    if (clearMotions) {
+        _motions[chan].clear();
+    }
+
+    pthread_mutex_unlock(&_mutex);
 }
 
 void Servos::setPct(unsigned int chan, unsigned int pct)
@@ -157,12 +182,158 @@ void Servos::center(unsigned int chan)
 {
     unsigned int pulse;
 
-    if (chan > SERVO_CHANNELS) {
+    if (chan >= SERVO_CHANNELS) {
         return;
     }
 
     pulse = (_lo[chan] + _hi[chan]) / 2;
     setPulse(chan, pulse);
+}
+
+void *Servos::thread_func(void *args)
+{
+    Servos *servos = (Servos *) args;
+
+    servos->run();
+
+    return NULL;
+}
+
+void Servos::run(void)
+{
+    struct timespec ts, tn;
+    unsigned int chan;
+    unsigned int pulse;
+    unsigned int on, off;
+    bool unfinished = false;
+
+    clock_gettime(CLOCK_REALTIME, &ts);
+    tn.tv_sec = 0;
+    tn.tv_nsec = 1000000 * SERVO_SCHEDULE_INTERVAL_MS;
+
+    do {
+        if (0) {
+            struct timespec now, prev;
+
+            clock_gettime(CLOCK_REALTIME, &now);
+            timespecsub(&now, &prev, &prev);
+            printf("time diff=%ld.%.09ld\n", prev.tv_sec, prev.tv_nsec);
+            prev.tv_sec = now.tv_sec;
+            prev.tv_nsec = now.tv_nsec;
+        }
+
+        timespecadd(&ts, &tn, &ts);
+
+        for (chan = 0; chan < SERVO_CHANNELS; chan++) {
+            if (_motions[chan].empty()) {
+                continue;
+            }
+
+            struct servo_motion_exec &e = _motions[chan].at(0);
+            e.elapsed_intervals++;
+            e.f_current_pulse += e.f_steps_per_interval;
+            pulse = (unsigned int) ceil(e.f_current_pulse);
+
+            if (pulse < _lo[chan]) {
+                pulse = _lo[chan];
+            }
+
+            if (pulse > _hi[chan]) {
+                pulse = _hi[chan];
+            }
+
+            if ((e.elapsed_intervals >= e.intervals)) {
+                pulse = e.motion.pulse;
+                _motions[chan].erase(_motions[chan].begin());
+            }
+
+            //printf("interval %u target=%u current=%u\n",
+            //       e.elapsed_intervals, e.motion.pulse, pulse);
+
+            on = 0;
+            off = pulse * 4096 / (1000000 / _freq);
+
+            if (_pulse[chan] != pulse) {
+                setPwm(chan, on, off);
+                _pulse[chan] = pulse;
+            }
+        }
+
+        pthread_mutex_lock(&_mutex);
+        pthread_cond_timedwait(&_cond, &_mutex, &ts);
+        pthread_mutex_unlock(&_mutex);
+
+        unfinished = false;
+        for (chan = 0; chan < SERVO_CHANNELS; chan++) {
+            if (!_motions[chan].empty()) {
+                unfinished = true;
+                break;
+            }
+        }
+    } while (_running || unfinished);
+}
+
+void Servos::schedule(unsigned int chan,
+                      const vector<struct servo_motion> &motions,
+                      bool append)
+{
+    unsigned int i;
+    unsigned int cur_pulse;
+
+    if (chan >= SERVO_CHANNELS) {
+        return;
+    }
+
+    if (motions.size() == 0) {
+        return;
+    }
+
+    pthread_mutex_lock(&_mutex);
+
+    if (append != true) {
+        _motions[chan].clear();
+    }
+
+    if (_motions[chan].empty()) {
+        cur_pulse = _pulse[chan];
+    } else {
+        cur_pulse = _motions[chan].back().motion.pulse;
+    }
+
+    for (i = 0; i < motions.size(); i++) {
+        const struct servo_motion &m = motions.at(i);
+        struct servo_motion_exec e;
+
+        e.motion.ms = m.ms;
+        e.motion.pulse = m.pulse;
+        if (e.motion.pulse < _lo[chan]) {
+            e.motion.pulse = _lo[chan];
+        }
+
+        if (e.motion.pulse > _hi[chan]) {
+            e.motion.pulse = _hi[chan];
+        }
+
+        gettimeofday(&e.t_start, NULL);
+        e.intervals = (e.motion.ms / SERVO_SCHEDULE_INTERVAL_MS) + 1;
+        e.elapsed_intervals = 0;
+        e.f_steps_per_interval =
+            (float) ((int) e.motion.pulse - (int) cur_pulse) /
+            (float) e.intervals;
+        e.f_current_pulse = (float) cur_pulse;
+        cur_pulse = e.motion.pulse;
+        //printf("scheduled chan %u: intervals=%u spi=%.2f\n",
+        //       chan, e.intervals, e.f_steps_per_interval);
+        _motions[chan].push_back(e);
+    }
+
+
+    pthread_mutex_unlock(&_mutex);
+}
+
+void Servos::clearSchedule(unsigned int chan)
+{
+    _motions[chan].clear();
 }
 
 /*

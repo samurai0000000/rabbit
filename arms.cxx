@@ -30,13 +30,18 @@ Arm::Arm(unsigned int side)
     }
 
     updateTrims();
-    rest();
+
+    rotateShoulder(0.0);
+    extendShoulder(-85.0);
+    extendElbow(-90.0);
+    extendWrist(-40.0);
+    rotateWrist(-90.0);
+    setGripperPosition(20.0);
 }
 
 Arm::~Arm()
 {
     rest();
-    usleep(1000000);
 }
 
 void Arm::updateTrims(void)
@@ -76,9 +81,27 @@ unsigned int Arm::pulse(unsigned int index) const
     return servos->pulse(servoId);
 }
 
-void Arm::setPulse(unsigned int index, unsigned int pulse)
+void Arm::clearSchedules(void)
+{
+    unsigned int i;
+    unsigned int servoId;
+
+    for (i = 0; i < 6; i++) {
+        if (_side == RIGHT_ARM) {
+            servoId = i;
+        } else {
+            servoId = i + 6;
+        }
+
+        servos->clearSchedule(servoId);
+    }
+}
+
+void Arm::setPulse(unsigned int index, unsigned int pulse, unsigned int ms)
 {
     unsigned int servoId;
+    vector<struct servo_motion> motions;
+    struct servo_motion motion;
 
     if (_side == RIGHT_ARM) {
         servoId = index;
@@ -86,7 +109,15 @@ void Arm::setPulse(unsigned int index, unsigned int pulse)
         servoId = index + 6;
     }
 
-    return servos->setPulse(servoId, pulse);
+    if (ms <= SERVO_SCHEDULE_INTERVAL_MS) {
+        servos->setPulse(servoId, pulse);
+    } else {
+        motion.pulse = pulse;
+        motion.ms = ms;
+
+        motions.push_back(motion);
+        servos->schedule(servoId, motions, true);
+    }
 }
 
 float Arm::shoulderRotation(void) const
@@ -184,7 +215,7 @@ float Arm::gripperPosition(void) const
     return pos;
 }
 
-void Arm::rotateShoulder(float deg, bool relative)
+void Arm::rotateShoulder(float deg, unsigned int ms, bool relative)
 {
     unsigned int newPulse;
     int offset;
@@ -201,10 +232,10 @@ void Arm::rotateShoulder(float deg, bool relative)
         newPulse = (unsigned int) (((int) _center[index]) - offset);
     }
 
-    setPulse(index, newPulse);
+    setPulse(index, newPulse, ms);
 }
 
-void Arm::extendShoulder(float deg, bool relative)
+void Arm::extendShoulder(float deg, unsigned int ms, bool relative)
 {
     unsigned int newPulse;
     int offset;
@@ -221,10 +252,10 @@ void Arm::extendShoulder(float deg, bool relative)
         newPulse = (unsigned int) (((int) _center[index]) - offset);
     }
 
-    setPulse(index, newPulse);
+    setPulse(index, newPulse, ms);
 }
 
-void Arm::extendElbow(float deg, bool relative)
+void Arm::extendElbow(float deg, unsigned int ms, bool relative)
 {
     unsigned int newPulse;
     int offset;
@@ -241,10 +272,10 @@ void Arm::extendElbow(float deg, bool relative)
         newPulse = (unsigned int) (((int) _center[index]) - offset);
     }
 
-    setPulse(index, newPulse);
+    setPulse(index, newPulse, ms);
 }
 
-void Arm::extendWrist(float deg, bool relative)
+void Arm::extendWrist(float deg, unsigned int ms, bool relative)
 {
     unsigned int newPulse;
     int offset;
@@ -261,10 +292,10 @@ void Arm::extendWrist(float deg, bool relative)
         newPulse = (unsigned int) (((int) _center[index]) - offset);
     }
 
-    setPulse(index, newPulse);
+    setPulse(index, newPulse, ms);
 }
 
-void Arm::rotateWrist(float deg, bool relative)
+void Arm::rotateWrist(float deg, unsigned int ms, bool relative)
 {
     unsigned int newPulse;
     int offset;
@@ -281,10 +312,10 @@ void Arm::rotateWrist(float deg, bool relative)
         newPulse = (unsigned int) (((int) _center[index]) - offset);
     }
 
-    setPulse(index, newPulse);
+    setPulse(index, newPulse, ms);
 }
 
-void Arm::setGripperPosition(float pos, bool relative)
+void Arm::setGripperPosition(float pos, unsigned int ms, bool relative)
 {
     unsigned int newPulse;
     unsigned index = 5;
@@ -298,41 +329,111 @@ void Arm::setGripperPosition(float pos, bool relative)
 
     newPulse = (((unsigned int) pos) * _ppd[index]) + _loRange[index] ;
 
-    setPulse(index, newPulse);
+    setPulse(index, newPulse, ms);
 }
 
 void Arm::rest(void)
 {
-    rotateShoulder(0.0);
-    extendShoulder(-85.0);
-    extendElbow(-90.0);
-    extendWrist(-40.0);
-    rotateWrist(-90.0);
-    setGripperPosition(20.0);
+    clearSchedules();
+
+    rotateShoulder(0.0, 1500);
+    extendShoulder(-85.0, 1500);
+    extendElbow(-90.0, 1500);
+    extendWrist(-40.0, 1500);
+    rotateWrist(-90.0, 1500);
+    setGripperPosition(20.0, 1500);
 }
 
 void Arm::surrender(void)
 {
-    hug();
+    clearSchedules();
 
-    usleep(500000);
+    rotateShoulder(10.0, 1500);
+    extendShoulder(85.0, 1500);
+    extendElbow(45.0, 1500);
+    extendWrist(0.0, 1500);
+    rotateWrist(0.0, 1500);
+    setGripperPosition(20.0, 1500);
 
-    rotateShoulder(90.0);
-    extendShoulder(85.0);
-    extendElbow(36.0);
-    extendWrist(0.0);
-    rotateWrist(0.0);
-    setGripperPosition(20.0);
+    rotateShoulder(90.0, 1500);
+    extendShoulder(85.0, 1500);
+    extendElbow(36.0, 1500);
+    extendWrist(0.0, 1500);
+    rotateWrist(0.0, 1500);
+    setGripperPosition(20.0, 1500);
 }
 
 void Arm::hug(void)
 {
-    rotateShoulder(10.0);
-    extendShoulder(85.0);
-    extendElbow(45.0);
-    extendWrist(0.0);
-    rotateWrist(0.0);
-    setGripperPosition(20.0);
+    clearSchedules();
+
+    rotateShoulder(10.0, 1500);
+    extendShoulder(85.0, 1500);
+    extendElbow(45.0, 1500);
+    extendWrist(0.0, 1500);
+    rotateWrist(0.0, 1500);
+    setGripperPosition(20.0, 1500);
+}
+
+void Arm::pickup(void)
+{
+    clearSchedules();
+
+    rotateShoulder(-32.5, 1500);
+    extendShoulder(40.0, 1500);
+    extendElbow(-25.0, 1500);
+    extendWrist(-5.0, 1500);
+    rotateWrist(-90.0, 1500);
+    setGripperPosition(0.0, 1500);
+
+    rotateShoulder(-32.5, 1500);
+    extendShoulder(40.0, 1500);
+    extendElbow(-25.0, 1500);
+    extendWrist(-5.0, 1500);
+    rotateWrist(-90.0, 1500);
+    setGripperPosition(28.0, 1500);
+
+    rotateShoulder(90, 1500);
+    extendShoulder(-70.0, 1500);
+    extendElbow(-80.0, 1500);
+    extendWrist(-40.0, 1500);
+    rotateWrist(-90.0, 1500);
+    setGripperPosition(28.0, 1500);
+
+    rotateShoulder(90, 1500);
+    extendShoulder(51.0, 1500);
+    extendElbow(-23.0, 1500);
+    extendWrist(-40.0, 1500);
+    rotateWrist(0.0, 1500);
+    setGripperPosition(28.0, 1500);
+
+    rotateShoulder(90, 1000);
+    extendShoulder(51.0, 1000);
+    extendElbow(-23.0, 1000);
+    extendWrist(40.0, 1000);
+    rotateWrist(0.0, 1000);
+    setGripperPosition(28.0, 1000);
+
+    rotateShoulder(90, 1000);
+    extendShoulder(51.0, 1000);
+    extendElbow(-23.0, 1000);
+    extendWrist(-40.0, 1000);
+    rotateWrist(0.0, 1000);
+    setGripperPosition(28.0, 1000);
+
+    rotateShoulder(90, 1500);
+    extendShoulder(51.0, 1500);
+    extendElbow(-23.0, 1500);
+    extendWrist(-40.0, 1500);
+    rotateWrist(0.0, 1500);
+    setGripperPosition(0.0, 1500);
+
+    rotateShoulder(0.0, 1500);
+    extendShoulder(-85.0, 1500);
+    extendElbow(-90.0, 1500);
+    extendWrist(-40.0, 1500);
+    rotateWrist(-90.0, 1500);
+    setGripperPosition(20.0, 1500);
 }
 
 /*

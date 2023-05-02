@@ -24,22 +24,36 @@ public:
     float wristRotation(void) const;
     float gripperPosition(void) const;
 
-    void rotateShoulder(float deg, bool relative = false);
-    void extendShoulder(float deg, bool relative = false);
-    void extendElbow(float deg, bool relative = false);
-    void extendWrist(float deg, bool relative = false);
-    void rotateWrist(float deg, bool relative = false);
-    void setGripperPosition(float pos, bool relative = false);
+    void rotateShoulder(float deg,
+                        unsigned int ms = SERVO_SCHEDULE_INTERVAL_MS,
+                        bool relative = false);
+    void extendShoulder(float deg,
+                        unsigned int ms = SERVO_SCHEDULE_INTERVAL_MS,
+                        bool relative = false);
+    void extendElbow(float deg,
+                     unsigned int ms = SERVO_SCHEDULE_INTERVAL_MS,
+                     bool relative = false);
+    void extendWrist(float deg,
+                     unsigned int ms = SERVO_SCHEDULE_INTERVAL_MS,
+                     bool relative = false);
+    void rotateWrist(float deg,
+                     unsigned int ms = SERVO_SCHEDULE_INTERVAL_MS,
+                     bool relative = false);
+    void setGripperPosition(float pos,
+                            unsigned int ms = SERVO_SCHEDULE_INTERVAL_MS,
+                            bool relative = false);
 
     void rest(void);
     void surrender(void);
     void hug(void);
+    void pickup(void);
 
 private:
 
     void updateTrims(void);
     unsigned int pulse(unsigned int index) const;
-    void setPulse(unsigned int index, unsigned int pulse);
+    void setPulse(unsigned int index, unsigned int pulse, unsigned int ms);
+    void clearSchedules(void);
 
     unsigned int _side;
     unsigned int _loRange[6];
