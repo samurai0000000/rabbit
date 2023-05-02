@@ -403,28 +403,14 @@ void Arm::pickup(void)
     rotateShoulder(90, 1500);
     extendShoulder(51.0, 1500);
     extendElbow(-23.0, 1500);
-    extendWrist(-40.0, 1500);
+    extendWrist(-50.0, 1500);
     rotateWrist(0.0, 1500);
     setGripperPosition(28.0, 1500);
-
-    rotateShoulder(90, 1000);
-    extendShoulder(51.0, 1000);
-    extendElbow(-23.0, 1000);
-    extendWrist(40.0, 1000);
-    rotateWrist(0.0, 1000);
-    setGripperPosition(28.0, 1000);
-
-    rotateShoulder(90, 1000);
-    extendShoulder(51.0, 1000);
-    extendElbow(-23.0, 1000);
-    extendWrist(-40.0, 1000);
-    rotateWrist(0.0, 1000);
-    setGripperPosition(28.0, 1000);
 
     rotateShoulder(90, 1500);
     extendShoulder(51.0, 1500);
     extendElbow(-23.0, 1500);
-    extendWrist(-40.0, 1500);
+    extendWrist(-50.0, 1500);
     rotateWrist(0.0, 1500);
     setGripperPosition(0.0, 1500);
 
