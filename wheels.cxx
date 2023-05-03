@@ -39,12 +39,6 @@
 using namespace std;
 
 Wheels::Wheels()
-    : _state(0),
-      _ts(),
-      _fwd_ms(0),
-      _bwd_ms(0),
-      _ror_ms(0),
-      _rol_ms(0)
 {
     gpioSetMode(L298N_IN1, PI_OUTPUT);
     gpioSetMode(L298N_IN2, PI_OUTPUT);
@@ -60,6 +54,21 @@ Wheels::Wheels()
     servos->setPct(RHS_SPEED_SERVO, 0);
     servos->setRange(LHS_SPEED_SERVO, LHS_SPEED_LO_PULSE, LHS_SPEED_HI_PULSE);
     servos->setPct(LHS_SPEED_SERVO, 0);
+
+    _state = 0;
+    _rpwr = 0;
+    _rpwrTarget = 0;
+    _lpwr = 0;
+    _lpwrTarget = 0;
+
+    _fwd_ms = 0;
+    _bwd_ms = 0;
+    _ror_ms = 0;
+    _rol_ms = 0;
+    _fwr_ms = 0;
+    _fwl_ms = 0;
+    _bwr_ms = 0;
+    _bwl_ms = 0;
 
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -104,6 +113,55 @@ void Wheels::run(void)
             halt();
         }
 
+        if (_rpwr != _rpwrTarget) {
+            if (_rpwrTarget < _rpwr) {
+                _rpwr -= 5;
+                if (_rpwr > 100) {
+                    _rpwr = 0;
+                }
+            } else {
+                if (_rpwr < 20) {
+                    _rpwr = 20;
+                } else {
+                    _rpwr += 1;
+                }
+                if (_rpwr > _rpwrTarget) {
+                    _rpwr = _rpwrTarget;
+                }
+            }
+
+            servos->setPct(RHS_SPEED_SERVO, _rpwr);
+        }
+
+        if (_lpwr != _lpwrTarget) {
+            if (_lpwrTarget < _lpwr) {
+                _lpwr -= 5;
+                if (_lpwr > 100) {
+                    _lpwr = 0;
+                }
+            } else {
+                if (_lpwr < 20) {
+                    _lpwr = 20;
+                } else {
+                    _lpwr += 1;
+                }
+                if (_lpwr > _lpwrTarget) {
+                    _lpwr = _lpwrTarget;
+                }
+            }
+            servos->setPct(LHS_SPEED_SERVO, _lpwr);
+        }
+
+        if (_rpwr == 0) {
+            gpioWrite(L298N_IN1, 0);
+            gpioWrite(L298N_IN2, 0);
+        }
+
+        if (_lpwr == 0) {
+            gpioWrite(L298N_IN3, 0);
+            gpioWrite(L298N_IN4, 0);
+        }
+
         pthread_mutex_lock(&_mutex);
         pthread_cond_timedwait(&_cond, &_mutex, &ts);
         pthread_mutex_unlock(&_mutex);
@@ -120,19 +178,14 @@ void Wheels::halt(void)
 
     tv.it_value.tv_sec = 0;
     tv.it_value.tv_usec = 0;
-    tv.it_interval.tv_sec = 0;
+    tv.it_interval.tv_sec = 70;
     tv.it_interval.tv_usec = 0;
     setitimer(ITIMER_REAL, &tv, NULL);
 
     change(0);
 
-    servos->setPct(RHS_SPEED_SERVO, 0);
-    servos->setPct(LHS_SPEED_SERVO, 0);
-
-    gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 0);
-    gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 0);
+    _rpwrTarget = 0;
+    _lpwrTarget = 0;
 }
 
 void Wheels::fwd(unsigned int ms)
@@ -140,8 +193,8 @@ void Wheels::fwd(unsigned int ms)
     if (_state != 1) {
         change(1);
 
-        servos->setPct(RHS_SPEED_SERVO, 75);
-        servos->setPct(LHS_SPEED_SERVO, 75);
+        _rpwrTarget = 75;
+        _lpwrTarget = 75;
 
         gpioWrite(L298N_IN1, 1);
         gpioWrite(L298N_IN2, 0);
@@ -159,8 +212,8 @@ void Wheels::bwd(unsigned int ms)
     if (_state != 2) {
         change(2);
 
-        servos->setPct(RHS_SPEED_SERVO, 50);
-        servos->setPct(LHS_SPEED_SERVO, 50);
+        _rpwrTarget = 75;
+        _lpwrTarget = 75;
 
         gpioWrite(L298N_IN1, 0);
         gpioWrite(L298N_IN2, 1);
@@ -178,8 +231,8 @@ void Wheels::ror(unsigned int ms)
     if (_state != 3) {
         change(3);
 
-        servos->setPct(RHS_SPEED_SERVO, 40);
-        servos->setPct(LHS_SPEED_SERVO, 40);
+        _rpwrTarget = 50;
+        _lpwrTarget = 50;
 
         gpioWrite(L298N_IN1, 0);
         gpioWrite(L298N_IN2, 1);
@@ -197,8 +250,8 @@ void Wheels::rol(unsigned int ms)
     if (_state != 4) {
         change(4);
 
-        servos->setPct(RHS_SPEED_SERVO, 40);
-        servos->setPct(LHS_SPEED_SERVO, 40);
+        _rpwrTarget = 50;
+        _lpwrTarget = 50;
 
         gpioWrite(L298N_IN1, 1);
         gpioWrite(L298N_IN2, 0);
@@ -216,10 +269,10 @@ void Wheels::fwr(unsigned int ms)
     if (_state != 5) {
         change(5);
 
-        servos->setPct(RHS_SPEED_SERVO, 0);
-        servos->setPct(LHS_SPEED_SERVO, 75);
+        _rpwrTarget = 8;
+        _lpwrTarget = 75;
 
-        gpioWrite(L298N_IN1, 0);
+        gpioWrite(L298N_IN1, 1);
         gpioWrite(L298N_IN2, 0);
         gpioWrite(L298N_IN3, 1);
         gpioWrite(L298N_IN4, 0);
@@ -235,12 +288,12 @@ void Wheels::fwl(unsigned int ms)
     if (_state != 6) {
         change(6);
 
-        servos->setPct(RHS_SPEED_SERVO, 75);
-        servos->setPct(LHS_SPEED_SERVO, 0);
+        _rpwrTarget = 75;
+        _lpwrTarget = 8;
 
         gpioWrite(L298N_IN1, 1);
         gpioWrite(L298N_IN2, 0);
-        gpioWrite(L298N_IN3, 0);
+        gpioWrite(L298N_IN3, 1);
         gpioWrite(L298N_IN4, 0);
     }
 
@@ -254,11 +307,11 @@ void Wheels::bwr(unsigned int ms)
     if (_state != 7) {
         change(7);
 
-        servos->setPct(RHS_SPEED_SERVO, 0);
-        servos->setPct(LHS_SPEED_SERVO, 50);
+        _rpwrTarget = 8;
+        _lpwrTarget = 75;
 
         gpioWrite(L298N_IN1, 0);
-        gpioWrite(L298N_IN2, 0);
+        gpioWrite(L298N_IN2, 1);
         gpioWrite(L298N_IN3, 0);
         gpioWrite(L298N_IN4, 1);
     }
@@ -273,13 +326,13 @@ void Wheels::bwl(unsigned int ms)
     if (_state != 8) {
         change(8);
 
-        servos->setPct(RHS_SPEED_SERVO, 50);
-        servos->setPct(LHS_SPEED_SERVO, 0);
+        _rpwrTarget = 75;
+        _lpwrTarget = 8;
 
         gpioWrite(L298N_IN1, 0);
         gpioWrite(L298N_IN2, 1);
         gpioWrite(L298N_IN3, 0);
-        gpioWrite(L298N_IN4, 0);
+        gpioWrite(L298N_IN4, 1);
     }
 
     if (ms > 0) {

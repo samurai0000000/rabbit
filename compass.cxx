@@ -101,7 +101,7 @@ void Compass::run(void)
 
     clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
-    tloop.tv_nsec = 100000000;
+    tloop.tv_nsec = 150000000;
 
     while (_running) {
         timespecadd(&ts, &tloop, &ts);
@@ -109,7 +109,7 @@ void Compass::run(void)
         /* Check status register for data ready */
         ret = i2cReadByteData(_handle, STATUS_REG);
         if (ret < 0) {
-            fprintf(stderr, "QMC5883L read CHIPID_REG failed!\n");
+            fprintf(stderr, "QMC5883L read STATUS_REG failed!\n");
             goto done;
         } else {
             status = (uint8_t) ret;

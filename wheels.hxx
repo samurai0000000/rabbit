@@ -50,7 +50,9 @@ private:
 
     unsigned int _state;
     unsigned int _rpwr;
+    unsigned int _rpwrTarget;
     unsigned int _lpwr;
+    unsigned int _lpwrTarget;
 
     bool _running;
     pthread_t _thread;
