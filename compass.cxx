@@ -99,10 +99,13 @@ void Compass::run(void)
     int16_t x, y, z;
     struct timespec ts, tloop;
 
+    clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
-    tloop.tv_nsec = 1000000;
+    tloop.tv_nsec = 100000000;
 
     while (_running) {
+        timespecadd(&ts, &tloop, &ts);
+
         /* Check status register for data ready */
         ret = i2cReadByteData(_handle, STATUS_REG);
         if (ret < 0) {
@@ -180,8 +183,6 @@ void Compass::run(void)
     done:
 
         pthread_mutex_lock(&_mutex);
-        clock_gettime(CLOCK_REALTIME, &ts);
-        timespecadd(&ts, &tloop, &ts);
         pthread_cond_timedwait(&_cond, &_mutex, &ts);
         pthread_mutex_unlock(&_mutex);
     }

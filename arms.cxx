@@ -348,7 +348,7 @@ void Arm::surrender(void)
 {
     clearSchedules();
 
-    rotateShoulder(10.0, 1500);
+    rotateShoulder(50.0, 1500);
     extendShoulder(85.0, 1500);
     extendElbow(45.0, 1500);
     extendWrist(0.0, 1500);

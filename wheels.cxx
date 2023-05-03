@@ -4,6 +4,8 @@
  * Copyright (C) 2023, Charles Chiou
  */
 
+#include <sys/time.h>
+#include <bsd/sys/time.h>
 #include <iostream>
 #include "rabbit.hxx"
 
@@ -58,12 +60,53 @@ Wheels::Wheels()
     servos->setPct(RHS_SPEED_SERVO, 0);
     servos->setRange(LHS_SPEED_SERVO, LHS_SPEED_LO_PULSE, LHS_SPEED_HI_PULSE);
     servos->setPct(LHS_SPEED_SERVO, 0);
+
+    _running = true;
+    pthread_mutex_init(&_mutex, NULL);
+    pthread_cond_init(&_cond, NULL);
+    pthread_create(&_thread, NULL, Wheels::thread_func, this);
 }
 
 Wheels::~Wheels()
 {
     if (_state != 0) {
         halt();
+    }
+
+    _running = false;
+    pthread_cond_broadcast(&_cond);
+    pthread_join(_thread, NULL);
+    pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
+}
+
+void *Wheels::thread_func(void *args)
+{
+    Wheels *wheels = (Wheels *) args;
+
+    wheels->run();
+
+    return NULL;
+}
+
+void Wheels::run(void)
+{
+    struct timespec ts, tloop;
+
+    clock_gettime(CLOCK_REALTIME, &ts);
+    tloop.tv_sec = 0;
+    tloop.tv_nsec = 50000000;
+
+    while (_running) {
+        timespecadd(&ts, &tloop, &ts);
+
+        if (hasExpired()) {
+            halt();
+        }
+
+        pthread_mutex_lock(&_mutex);
+        pthread_cond_timedwait(&_cond, &_mutex, &ts);
+        pthread_mutex_unlock(&_mutex);
     }
 }
 
@@ -92,151 +135,155 @@ void Wheels::halt(void)
     gpioWrite(L298N_IN4, 0);
 }
 
-static void my_setitimer(unsigned int ms)
-{
-    struct itimerval tv;
-
-    tv.it_value.tv_sec = ms / 1000;
-    tv.it_value.tv_usec = (ms - (ms / 1000)) * 1000;
-    tv.it_interval.tv_sec = 0;
-    tv.it_interval.tv_usec = 0;
-
-    setitimer(ITIMER_REAL, &tv, NULL);
-}
-
 void Wheels::fwd(unsigned int ms)
 {
-    change(1);
+    if (_state != 1) {
+        change(1);
 
-    servos->setPct(RHS_SPEED_SERVO, 75);
-    servos->setPct(LHS_SPEED_SERVO, 75);
+        servos->setPct(RHS_SPEED_SERVO, 75);
+        servos->setPct(LHS_SPEED_SERVO, 75);
 
-    gpioWrite(L298N_IN1, 1);
-    gpioWrite(L298N_IN2, 0);
-    gpioWrite(L298N_IN3, 1);
-    gpioWrite(L298N_IN4, 0);
+        gpioWrite(L298N_IN1, 1);
+        gpioWrite(L298N_IN2, 0);
+        gpioWrite(L298N_IN3, 1);
+        gpioWrite(L298N_IN4, 0);
+    }
 
     if (ms > 0) {
-        my_setitimer(ms);
+        setExpiration(ms);
     }
 }
 
 void Wheels::bwd(unsigned int ms)
 {
-    change(2);
+    if (_state != 2) {
+        change(2);
 
-    servos->setPct(RHS_SPEED_SERVO, 50);
-    servos->setPct(LHS_SPEED_SERVO, 50);
+        servos->setPct(RHS_SPEED_SERVO, 50);
+        servos->setPct(LHS_SPEED_SERVO, 50);
 
-    gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 1);
-    gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 1);
+        gpioWrite(L298N_IN1, 0);
+        gpioWrite(L298N_IN2, 1);
+        gpioWrite(L298N_IN3, 0);
+        gpioWrite(L298N_IN4, 1);
+    }
 
     if (ms > 0) {
-        my_setitimer(ms);
+        setExpiration(ms);
     }
 }
 
 void Wheels::ror(unsigned int ms)
 {
-    change(3);
+    if (_state != 3) {
+        change(3);
 
-    servos->setPct(RHS_SPEED_SERVO, 40);
-    servos->setPct(LHS_SPEED_SERVO, 40);
+        servos->setPct(RHS_SPEED_SERVO, 40);
+        servos->setPct(LHS_SPEED_SERVO, 40);
 
-    gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 1);
-    gpioWrite(L298N_IN3, 1);
-    gpioWrite(L298N_IN4, 0);
+        gpioWrite(L298N_IN1, 0);
+        gpioWrite(L298N_IN2, 1);
+        gpioWrite(L298N_IN3, 1);
+        gpioWrite(L298N_IN4, 0);
+    }
 
     if (ms > 0) {
-        my_setitimer(ms);
+        setExpiration(ms);
     }
 }
 
 void Wheels::rol(unsigned int ms)
 {
-    change(4);
+    if (_state != 4) {
+        change(4);
 
-    servos->setPct(RHS_SPEED_SERVO, 40);
-    servos->setPct(LHS_SPEED_SERVO, 40);
+        servos->setPct(RHS_SPEED_SERVO, 40);
+        servos->setPct(LHS_SPEED_SERVO, 40);
 
-    gpioWrite(L298N_IN1, 1);
-    gpioWrite(L298N_IN2, 0);
-    gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 1);
+        gpioWrite(L298N_IN1, 1);
+        gpioWrite(L298N_IN2, 0);
+        gpioWrite(L298N_IN3, 0);
+        gpioWrite(L298N_IN4, 1);
+    }
 
     if (ms > 0) {
-        my_setitimer(ms);
+        setExpiration(ms);
     }
 }
 
 void Wheels::fwr(unsigned int ms)
 {
-    change(5);
+    if (_state != 5) {
+        change(5);
 
-    servos->setPct(RHS_SPEED_SERVO, 0);
-    servos->setPct(LHS_SPEED_SERVO, 75);
+        servos->setPct(RHS_SPEED_SERVO, 0);
+        servos->setPct(LHS_SPEED_SERVO, 75);
 
-    gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 0);
-    gpioWrite(L298N_IN3, 1);
-    gpioWrite(L298N_IN4, 0);
+        gpioWrite(L298N_IN1, 0);
+        gpioWrite(L298N_IN2, 0);
+        gpioWrite(L298N_IN3, 1);
+        gpioWrite(L298N_IN4, 0);
+    }
 
     if (ms > 0) {
-        my_setitimer(ms);
+        setExpiration(ms);
     }
 }
 
 void Wheels::fwl(unsigned int ms)
 {
-    change(6);
+    if (_state != 6) {
+        change(6);
 
-    servos->setPct(RHS_SPEED_SERVO, 75);
-    servos->setPct(LHS_SPEED_SERVO, 0);
+        servos->setPct(RHS_SPEED_SERVO, 75);
+        servos->setPct(LHS_SPEED_SERVO, 0);
 
-    gpioWrite(L298N_IN1, 1);
-    gpioWrite(L298N_IN2, 0);
-    gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 0);
+        gpioWrite(L298N_IN1, 1);
+        gpioWrite(L298N_IN2, 0);
+        gpioWrite(L298N_IN3, 0);
+        gpioWrite(L298N_IN4, 0);
+    }
 
     if (ms > 0) {
-        my_setitimer(ms);
+        setExpiration(ms);
     }
 }
 
 void Wheels::bwr(unsigned int ms)
 {
-    change(6);
+    if (_state != 7) {
+        change(7);
 
-    servos->setPct(RHS_SPEED_SERVO, 0);
-    servos->setPct(LHS_SPEED_SERVO, 50);
+        servos->setPct(RHS_SPEED_SERVO, 0);
+        servos->setPct(LHS_SPEED_SERVO, 50);
 
-    gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 0);
-    gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 1);
+        gpioWrite(L298N_IN1, 0);
+        gpioWrite(L298N_IN2, 0);
+        gpioWrite(L298N_IN3, 0);
+        gpioWrite(L298N_IN4, 1);
+    }
 
     if (ms > 0) {
-        my_setitimer(ms);
+        setExpiration(ms);
     }
 }
 
 void Wheels::bwl(unsigned int ms)
 {
-    change(7);
+    if (_state != 8) {
+        change(8);
 
-    servos->setPct(RHS_SPEED_SERVO, 50);
-    servos->setPct(LHS_SPEED_SERVO, 0);
+        servos->setPct(RHS_SPEED_SERVO, 50);
+        servos->setPct(LHS_SPEED_SERVO, 0);
 
-    gpioWrite(L298N_IN1, 0);
-    gpioWrite(L298N_IN2, 1);
-    gpioWrite(L298N_IN3, 0);
-    gpioWrite(L298N_IN4, 0);
+        gpioWrite(L298N_IN1, 0);
+        gpioWrite(L298N_IN2, 1);
+        gpioWrite(L298N_IN3, 0);
+        gpioWrite(L298N_IN4, 0);
+    }
 
     if (ms > 0) {
-        my_setitimer(ms);
+        setExpiration(ms);
     }
 }
 
@@ -372,6 +419,32 @@ void Wheels::change(unsigned int state)
 
     _state = state;
     gettimeofday(&_ts, NULL);
+}
+
+void Wheels::setExpiration(unsigned int ms)
+{
+    struct timeval now;
+    struct timeval expiry;
+
+    gettimeofday(&now, NULL);
+
+    expiry.tv_sec = ms / 1000;
+    expiry.tv_usec = (ms - (ms / 1000)) * 1000;
+
+    timeradd(&now, &expiry, &_expire);
+}
+
+bool Wheels::hasExpired(void) const
+{
+    struct timeval now;
+
+    gettimeofday(&now, NULL);
+
+    if (timercmp(&now, &_expire, >=)) {
+        return true;
+    }
+
+    return false;
 }
 
 /*

@@ -84,11 +84,8 @@ static void cleanup(void)
 
 static void sig_handler(int signal)
 {
-    if (signal == SIGALRM) {
-        wheels->halt();
-    } else {
-        exit(EXIT_SUCCESS);
-    }
+    (void)(signal);
+    exit(EXIT_SUCCESS);
 }
 
 static unsigned int chan = 12;
@@ -392,7 +389,6 @@ int main(int argc, char **argv)
 
     atexit(cleanup);
     signal(SIGTERM, sig_handler);
-    signal(SIGALRM, sig_handler);
 
     if (daemonize) {
         pid_t pid = fork();

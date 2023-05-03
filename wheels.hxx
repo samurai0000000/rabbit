@@ -41,11 +41,24 @@ public:
 
 private:
 
+    static void *thread_func(void *);
+    void run(void);
     unsigned int now_diff_ts_ms(void) const;
     void change(unsigned int state);
+    void setExpiration(unsigned int ms);
+    bool hasExpired(void) const;
 
     unsigned int _state;
+    unsigned int _rpwr;
+    unsigned int _lpwr;
+
+    bool _running;
+    pthread_t _thread;
+    pthread_mutex_t _mutex;
+    pthread_cond_t _cond;
+
     struct timeval _ts;
+    struct timeval _expire;
     unsigned int _fwd_ms;
     unsigned int _bwd_ms;
     unsigned int _ror_ms;
