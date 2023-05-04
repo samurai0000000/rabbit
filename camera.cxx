@@ -51,6 +51,8 @@ Camera::Camera()
     servos->setRange(TILT_SERVO, TILT_LO_PULSE, TILT_HI_PULSE);
     servos->center(TILT_SERVO);
 
+    _cascade.load("/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml");
+
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
@@ -98,11 +100,9 @@ void Camera::run(void)
     int baseline = 0;
     Scalar fontColor(255, 255, 255);
     Size textSize;
-    String text;
-    Point pos;
     struct timeval since, ts, now, tdiff, tv;
-    struct wifi_stat wifi_stat;
     unsigned int frame_count = 0;
+    vector<Point> ptFaces;
     vector<struct servo_motion> sentry_motions;
     struct servo_motion motion;
 
@@ -166,6 +166,9 @@ void Camera::run(void)
             frame_count++;
         }
 
+        /* Perform face detection */
+        detectFaces(frame, ptFaces);
+
         /* Update frame rate */
         gettimeofday(&now, NULL);
         timersub(&now, &tv, &tv);
@@ -174,216 +177,9 @@ void Camera::run(void)
 
         timersub(&now, &ts, &tdiff);
         if (tdiff.tv_sec > 0 || tdiff.tv_usec > 500000) {
-            struct sysinfo info;
-            unsigned int updays, uphours, upminutes, upseconds;
-            char buf[128];
-            time_t tt;
-            struct tm *tm;
-
-            osd1.setTo(Scalar::all(0));
-            pos = Point(0, 0);
-
-            text = String("Charlotte's Rabbit Robotic System");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            tt = time(NULL);
-            tm = localtime(&tt);
-            strftime(buf, sizeof(buf) - 1, "%Y-%m-%d %H:%M:%S %Z", tm);
-            text = buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            sysinfo(&info);
-            updays = info.uptime / (60 * 60 * 24);
-            upminutes = info.uptime / 60;
-            uphours = (upminutes / 60) % 24;
-            upminutes %= 60;
-            upseconds = info.uptime % 60;
-            if (updays != 0) {
-                snprintf(buf, sizeof(buf) - 1, "%ud %.2u:%.2u:%.2u",
-                         updays, uphours, upminutes, upseconds);
-            } else {
-                snprintf(buf, sizeof(buf) - 1, "%.2u:%.2u:%.2u",
-                         uphours, upminutes, upseconds);
-            }
-
-            text = String("System Uptime: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            timersub(&now, &since, &tdiff);
-            updays = tdiff.tv_sec / (60 * 60 * 24);
-            upminutes = tdiff.tv_sec / 60;
-            uphours = (upminutes / 60) % 24;
-            upminutes %= 60;
-            upseconds = tdiff.tv_sec % 60;
-            if (updays != 0) {
-                snprintf(buf, sizeof(buf) - 1, "%ud %.2u:%.2u:%.2u",
-                         updays, uphours, upminutes, upseconds);
-            } else {
-                snprintf(buf, sizeof(buf) - 1, "%.2u:%.2u:%.2u",
-                         uphours, upminutes, upseconds);
-            }
-            text = String("Rabbit Uptime: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%u.%.2u, %u.%.2u %u.%.2u",
-                     LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
-                     LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
-                     LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
-
-            text = String("Load averages: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.2f", power->voltage());
-            text = String("Batt Voltage: ") + buf + String("V");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.2f", power->current());
-            text = String("Batt Current: ") + buf + String("A");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f", compass->bearing());
-            text = String("Heading: ") + buf + String(" deg");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            text = String("Frame Rate: ");
-            snprintf(buf, sizeof(buf) - 1, "%.2f", frameRate());
-            text += buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f", panAt());
-            text = String("Pan: ") + buf + String(" deg ");
-            snprintf(buf, sizeof(buf) - 1, "%.1f", tiltAt());
-            text += String("Tilt: ") + buf + String(" deg");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            text = String("Wheels: ") + wheels->stateStr();
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
-                     rightArm->shoulderRotation(),
-                     rightArm->shoulderExtension());
-            text = String("Right Shoulder: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f",
-                     rightArm->elbowExtension());
-            text = String("Right Elbow: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
-                     rightArm->wristExtension(),
-                     rightArm->wristRotation());
-            text = String("Right Wrist: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f",
-                     rightArm->gripperPosition());
-            text = String("Right Gripper: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
-                     leftArm->shoulderRotation(),
-                     leftArm->shoulderExtension());
-            text = String("Left Shoulder: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f",
-                     leftArm->elbowExtension());
-            text = String("Left Elbow: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
-                     leftArm->wristExtension(),
-                     leftArm->wristRotation());
-            text = String("Left Wrist: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.1f",
-                     leftArm->gripperPosition());
-            text = String("Left Gripper: ") + buf;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->temp());
-            text = String("Temperature: ") + buf + String("C");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->humidity());
-            text = String("Humidity: ") + buf + String("%");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->pressure());
-            text = String("Barometric Pressure: ") + buf + String("hPa");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            WIFI::stat(&wifi_stat);
-
-            text = String("AP: ") + wifi_stat.ap;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            text = String("ESSID: ") + wifi_stat.essid;
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
-            text = String();
-            text += "Chan: " + to_string(wifi_stat.chan) + " ";
-            text += "Link: " + to_string(wifi_stat.link_quality) + "% ";
-            text += "Signal: " + to_string(wifi_stat.signal_level) + "dBm";
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-            snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->socTemp());
-            text = String("SoC Temp: ") + buf + String("C");
-            pos.y += textSize.height;
-            putText(osd1, text, pos,
-                    fontFace, fontScale, fontColor, thickness, LINE_8, false);
-
+            updateOsd1(osd1, &since,
+                       fontFace, fontScale, thickness,
+                       fontColor, textSize);
             gettimeofday(&ts, NULL);
         }
 
@@ -396,7 +192,25 @@ void Camera::run(void)
 
             imencode(".jpg", screen, buff_rgb, params);
             _streamer.publish("/rgb", string(buff_rgb.begin(),
-                                                     buff_rgb.end()));
+                                             buff_rgb.end()));
+        }
+
+        if (!ptFaces.empty()) {
+            float panDeg, tiltDeg;
+
+            if (ptFaces[0].x > (CAMERA_RES_WIDTH / 2)) {
+                panDeg = -0.5;
+            } else {
+                panDeg = 0.5;
+            }
+            if (ptFaces[0].y > (CAMERA_RES_HEIGHT / 2)) {
+                tiltDeg = 0.5;
+            } else {
+                tiltDeg = -0.5;
+            }
+
+            pan(panDeg, true);
+            tilt(tiltDeg, true);
         }
 
         /* Sentry */
@@ -410,6 +224,265 @@ void Camera::run(void)
             }
         }
     } while (_running);
+}
+
+void Camera::detectFaces(Mat &frame, vector<Point> &ptFaces)
+{
+    vector<Rect> faces;
+    Mat gray, smallImg;
+    double scale = 4;
+    double fx = 1 / scale;
+
+    cvtColor(frame, gray, COLOR_BGR2GRAY);
+    resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR);
+    equalizeHist(smallImg, smallImg);
+    _cascade.detectMultiScale(smallImg, faces, 1.1, 2, CASCADE_SCALE_IMAGE,
+                              Size(5, 5), Size(480, 480));
+
+    ptFaces.clear();
+    for (size_t i = 0; i < faces.size(); i++) {
+        Rect r = faces[i];
+        Point center;
+        Scalar color = Scalar(255, 0, 0);
+        int radius;
+
+        double aspect_ratio = (double) r.width / r.height;
+        if (0.75 < aspect_ratio && aspect_ratio < 1.3) {
+            center.x = cvRound((r.x + r.width * 0.5) * scale);
+            center.y = cvRound((r.y + r.height * 0.5) * scale);
+            radius = cvRound((r.width + r.height) * 0.25 * scale);
+            circle(frame, center, radius, color, 3, 8, 0 );
+
+            ptFaces.push_back(center);
+        } else {
+            rectangle(frame, Point(cvRound(r.x * scale),
+                                   cvRound(r.y * scale)),
+                      Point(cvRound((r.x + r.width - 1) * scale),
+                            cvRound((r.y + r.height - 1) * scale)),
+                      color, 3, 8, 0);
+        }
+    }
+}
+
+void Camera::updateOsd1(Mat &osd1, const struct timeval *since,
+                        int fontFace, double fontScale, int thickness,
+                        const Scalar &fontColor, const Size &textSize)
+{
+    String text;
+    Point pos;
+    struct sysinfo info;
+    struct timeval now, tdiff;
+    unsigned int updays, uphours, upminutes, upseconds;
+    struct wifi_stat wifi_stat;
+    char buf[128];
+    time_t tt;
+    struct tm *tm;
+
+    gettimeofday(&now, NULL);
+
+    osd1.setTo(Scalar::all(0));
+    pos = Point(0, 0);
+
+    text = String("Charlotte's Rabbit Robotic System");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    tt = time(NULL);
+    tm = localtime(&tt);
+    strftime(buf, sizeof(buf) - 1, "%Y-%m-%d %H:%M:%S %Z", tm);
+    text = buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    sysinfo(&info);
+    updays = info.uptime / (60 * 60 * 24);
+    upminutes = info.uptime / 60;
+    uphours = (upminutes / 60) % 24;
+    upminutes %= 60;
+    upseconds = info.uptime % 60;
+    if (updays != 0) {
+        snprintf(buf, sizeof(buf) - 1, "%ud %.2u:%.2u:%.2u",
+                 updays, uphours, upminutes, upseconds);
+    } else {
+        snprintf(buf, sizeof(buf) - 1, "%.2u:%.2u:%.2u",
+                 uphours, upminutes, upseconds);
+    }
+
+    text = String("System Uptime: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    timersub(&now, since, &tdiff);
+    updays = tdiff.tv_sec / (60 * 60 * 24);
+    upminutes = tdiff.tv_sec / 60;
+    uphours = (upminutes / 60) % 24;
+    upminutes %= 60;
+    upseconds = tdiff.tv_sec % 60;
+    if (updays != 0) {
+        snprintf(buf, sizeof(buf) - 1, "%ud %.2u:%.2u:%.2u",
+                 updays, uphours, upminutes, upseconds);
+    } else {
+        snprintf(buf, sizeof(buf) - 1, "%.2u:%.2u:%.2u",
+                 uphours, upminutes, upseconds);
+    }
+    text = String("Rabbit Uptime: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%u.%.2u, %u.%.2u %u.%.2u",
+             LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
+             LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
+             LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
+
+    text = String("Load averages: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.2f", power->voltage());
+    text = String("Batt Voltage: ") + buf + String("V");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.2f", power->current());
+    text = String("Batt Current: ") + buf + String("A");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f", compass->bearing());
+    text = String("Heading: ") + buf + String(" deg");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String("Frame Rate: ");
+    snprintf(buf, sizeof(buf) - 1, "%.2f", frameRate());
+    text += buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f", panAt());
+    text = String("Pan: ") + buf + String(" deg ");
+    snprintf(buf, sizeof(buf) - 1, "%.1f", tiltAt());
+    text += String("Tilt: ") + buf + String(" deg");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String("Wheels: ") + wheels->stateStr();
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
+             rightArm->shoulderRotation(),
+             rightArm->shoulderExtension());
+    text = String("Right Shoulder: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f",
+             rightArm->elbowExtension());
+    text = String("Right Elbow: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
+             rightArm->wristExtension(),
+             rightArm->wristRotation());
+    text = String("Right Wrist: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f",
+             rightArm->gripperPosition());
+    text = String("Right Gripper: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
+             leftArm->shoulderRotation(),
+             leftArm->shoulderExtension());
+    text = String("Left Shoulder: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f",
+             leftArm->elbowExtension());
+    text = String("Left Elbow: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f %.1f",
+             leftArm->wristExtension(),
+             leftArm->wristRotation());
+    text = String("Left Wrist: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f",
+             leftArm->gripperPosition());
+    text = String("Left Gripper: ") + buf;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->temp());
+    text = String("Temperature: ") + buf + String("C");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->humidity());
+    text = String("Humidity: ") + buf + String("%");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->pressure());
+    text = String("Barometric Pressure: ") + buf + String("hPa");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    WIFI::stat(&wifi_stat);
+
+    text = String("AP: ") + wifi_stat.ap;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String("ESSID: ") + wifi_stat.essid;
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String();
+    text += "Chan: " + to_string(wifi_stat.chan) + " ";
+    text += "Link: " + to_string(wifi_stat.link_quality) + "% ";
+    text += "Signal: " + to_string(wifi_stat.signal_level) + "dBm";
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+    snprintf(buf, sizeof(buf) - 1, "%.2f", ambience->socTemp());
+    text = String("SoC Temp: ") + buf + String("C");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
 }
 
 void Camera::pan(float deg, bool relative)

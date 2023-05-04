@@ -38,7 +38,11 @@ public:
 private:
 
     static void *thread_func(void *args);
-    void run();
+    void run(void);
+    void detectFaces(Mat &frame, vector<Point> &ptFaces);
+    void updateOsd1(Mat &osd1, const struct timeval *since,
+                    int fontFace, double fontScale, int thickness,
+                    const Scalar &fontColor, const Size &textSize);
 
     VideoCapture *_vc;
     MJPEGStreamer _streamer;
@@ -52,6 +56,7 @@ private:
         bool enabled;
         int dir;
     } _sentry;
+    CascadeClassifier _cascade;
 
 };
 
