@@ -101,7 +101,7 @@ void Compass::run(void)
 
     clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
-    tloop.tv_nsec = 150000000;
+    tloop.tv_nsec = 200000000;
 
     while (_running) {
         timespecadd(&ts, &tloop, &ts);

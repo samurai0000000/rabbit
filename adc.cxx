@@ -35,7 +35,7 @@ ADC::ADC()
         MUX_AIN0_GND |
         PGA_FSR_6_144V |
         MODE_SING |
-        DR_64_SPS |
+        DR_860_SPS |
         COMP_MODE_TRAD |
         COMP_POL_LO |
         COMP_LAT_NO |
@@ -45,10 +45,13 @@ ADC::ADC()
         goto done;
     }
 
+    writeReg(LO_THRESH_REG, 0x8000);
+    writeReg(HI_THRESH_REG, 0x7fff);
+
 done:
 
     for (i = 0; i < ADC_CHANNELS; i++) {
-        _hist[i] = new MedianFilter<float>(20);
+        _hist[i] = new MedianFilter<float>(50);
     }
 
     _running = true;
@@ -127,14 +130,14 @@ void *ADC::thread_func(void *args)
 
 void ADC::run(void)
 {
-    struct timespec now, interval, next;
+    struct timespec ts, tloop;
 
-    interval.tv_sec = 0;
-    interval.tv_nsec = 200000000;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    tloop.tv_sec = 0;
+    tloop.tv_nsec = 100000000;
 
     while (_running) {
-        clock_gettime(CLOCK_REALTIME, &now);
-        timespecadd(&now, &interval, &next);
+        timespecadd(&ts, &tloop, &ts);
 
         convert(0);
         convert(1);
@@ -142,7 +145,7 @@ void ADC::run(void)
         convert(3);
 
         pthread_mutex_lock(&_mutex);
-        pthread_cond_timedwait(&_cond, &_mutex, &next);
+        pthread_cond_timedwait(&_cond, &_mutex, &ts);
         pthread_mutex_unlock(&_mutex);
     }
 }
@@ -191,7 +194,7 @@ void ADC::convert(unsigned int chan)
     }
     pthread_mutex_lock(&_mutex);
     clock_gettime(CLOCK_REALTIME, &now);
-    timespecadd(&next, &interval, &next);
+    timespecadd(&now, &interval, &next);
     pthread_cond_timedwait(&_cond, &_mutex, &next);
     pthread_mutex_unlock(&_mutex);
 
@@ -202,7 +205,7 @@ void ADC::convert(unsigned int chan)
     }
 
     /* Apply Multiplier */
-    v = (float) conv;
+    v = (float) ((int16_t) conv);
     switch (config & (7 << 9)) {
     case PGA_FSR_6_144V:    v = v * 6.144 / 32768.0; break;
     case PGA_FSR_4_096V:    v = v * 4.096 / 32768.0; break;
@@ -214,6 +217,8 @@ void ADC::convert(unsigned int chan)
         return;
     }
 
+    //printf("chan%u: %.3f\n", chan, v);
+    v = v * 2.20;
     _hist[chan]->addSample(v);
 }
 
@@ -223,7 +228,7 @@ float ADC::v(unsigned int chan) const
         return 0.0;
     }
 
-    return _hist[chan]->average() * 5.13 / 3.3;
+    return _hist[chan]->average();
 }
 
 /*
