@@ -19,7 +19,7 @@ public:
     float x(void);
     float y(void);
     float z(void);
-    float bearing(void);
+    float heading(void);
 
 private:
 
@@ -28,9 +28,14 @@ private:
 
     int _handle;
 
-    MedianFilter<int16_t> _histX;
-    MedianFilter<int16_t> _histY;
-    MedianFilter<int16_t> _histZ;
+    MedianFilter<float> _histX;
+    MedianFilter<float> _histY;
+    MedianFilter<float> _histZ;
+    int16_t _minX, _maxX, _offsetX, _avgDeltaX;
+    int16_t _minY, _maxY, _offsetY, _avgDeltaY;
+    int16_t _minZ, _maxZ, _offsetZ, _avgDeltaZ;
+    int16_t _avgDelta;
+    float _scaleX, _scaleY, _scaleZ;
 
     pthread_t _thread;
     pthread_mutex_t _mutex;

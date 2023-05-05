@@ -18,11 +18,39 @@
 #define COMPASS_I2C_BUS    1
 #define COMPASS_I2C_ADDR   0x0d
 
+#define MIN_X_VAL -1227
+#define MAX_X_VAL 935
+#define MIN_Y_VAL -1543
+#define MAX_Y_VAL 711
+#define MIN_Z_VAL -760
+#define MAX_Z_VAL 922
+
 Compass::Compass()
     : _handle(-1)
 {
     int ret;
     uint8_t chipid;
+
+    _minX = MIN_X_VAL;
+    _maxX = MAX_X_VAL;
+    _minY = MIN_Y_VAL;
+    _maxY = MAX_Y_VAL;
+    _minZ = MIN_Z_VAL;
+    _maxZ = MAX_Z_VAL;
+    _offsetX = (_minX + _maxX) / 2;
+    _offsetY = (_minY + _maxY) / 2;
+    _offsetZ = (_minZ + _maxZ) / 2;
+    _avgDeltaX = (_maxX - _minX) / 2;
+    _avgDeltaY = (_maxY - _minY) / 2;
+    _avgDeltaZ = (_maxZ - _minZ) / 2;
+    _avgDelta = (_avgDeltaX + _avgDeltaY + _avgDeltaZ) / 3;
+    if (_avgDelta == 0.0) {
+        _scaleX = _scaleY = _scaleZ = 1.0;
+    } else {
+        _scaleX = (float) _avgDelta / (float) _avgDeltaX;
+        _scaleY = (float) _avgDelta / (float) _avgDeltaY;
+        _scaleZ = (float) _avgDelta / (float) _avgDeltaZ;
+    }
 
     _handle = i2cOpen(COMPASS_I2C_BUS, COMPASS_I2C_ADDR, 0x0);
     if (_handle < 0) {
@@ -98,10 +126,11 @@ void Compass::run(void)
     uint8_t status;
     int16_t x, y, z;
     struct timespec ts, tloop;
+    bool dirtyX, dirtyY, dirtyZ;
 
     clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
-    tloop.tv_nsec = 200000000;
+    tloop.tv_nsec = 50000000;
 
     while (_running) {
         timespecadd(&ts, &tloop, &ts);
@@ -172,13 +201,68 @@ void Compass::run(void)
         }
         z |= (ret << 8);
 
-        /*
-         * Normalize and calculate the bearing
-         */
+        dirtyX = false;
+        dirtyY = false;
+        dirtyZ = false;
 
-        _histX.addSample(x);
-        _histY.addSample(y);
-        _histZ.addSample(z);
+        if (x < _minX) {
+            _minX = x;
+            dirtyX = true;
+        }
+
+        if (x > _maxX) {
+            _maxX = x;
+            dirtyX = true;
+        }
+
+        if (dirtyX) {
+            _offsetX = (_minX + _maxX) / 2;
+            _avgDeltaX = (_maxX - _minX) / 2;
+        }
+
+        if (y < _minY) {
+            _minY = y;
+            dirtyY = true;
+        }
+
+        if (y > _maxY) {
+            _maxY = y;
+            dirtyY = true;
+        }
+
+        if (dirtyY) {
+            _offsetY = (_minY + _maxY) / 2;
+            _avgDeltaY = (_maxY - _minY) / 2;
+        }
+
+        if (z < _minZ) {
+            _minZ = z;
+            dirtyZ = true;
+        }
+
+        if (z > _maxZ) {
+            _maxZ = z;
+            dirtyZ = true;
+        }
+
+        if (dirtyZ) {
+            _offsetZ = (_minZ + _maxZ) / 2;
+            _avgDeltaZ = (_maxZ - _minZ) / 2;
+        }
+
+        if (dirtyX || dirtyY || dirtyZ) {
+            _avgDelta = (_avgDeltaX + _avgDeltaY + _avgDeltaZ) / 3;
+            _scaleX = (float) _avgDelta / (float) _avgDeltaX;
+            _scaleY = (float) _avgDelta / (float) _avgDeltaY;
+            _scaleZ = (float) _avgDelta / (float) _avgDeltaZ;
+        }
+
+        //printf("%d <= x <= %d, %d <= y <=%d, %d <= z <= %d\n",
+        //       _minX, _maxX, _minY, _maxY, _minZ, _maxZ);
+
+        _histX.addSample(((float) x - _offsetX) * _scaleX);
+        _histY.addSample(((float) y - _offsetY) * _scaleY);
+        _histZ.addSample(((float) z - _offsetZ) * _scaleZ);
 
     done:
 
@@ -190,32 +274,29 @@ void Compass::run(void)
 
 float Compass::x(void)
 {
-    return (float) _histX.median() * 360.0 / 32768.0;
+    return _histX.average();
 }
 
 float Compass::y(void)
 {
-    return (float) _histY.median() * 360.0 / 32768.0;
+    return _histY.average();
 }
 
 float Compass::z(void)
 {
-    return (float) _histZ.median() * 360.0 / 32768.0;
+    return _histZ.average();
 }
 
-float Compass::bearing(void)
+float Compass::heading(void)
 {
-    float x, y, bearing;
+    float heading;
 
-    x = this->x();
-    y = this->y();
-
-    bearing = atan2f(y, x) * 180.0 / M_PI;
-    if (bearing < 0) {
-        bearing += 360.0;
+    heading = atan2f(y(), x()) * 180.0 / M_PI;
+    if (heading < 0) {
+        heading += 360.0;
     }
 
-    return bearing;
+    return heading;
 }
 
 /*

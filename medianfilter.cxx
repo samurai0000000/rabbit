@@ -120,9 +120,6 @@ T MedianFilter<T>::average(void)
  * Explicit instantiation of types to template:
  */
 
-template class MedianFilter<unsigned int>;
-template class MedianFilter<uint16_t>;
-template class MedianFilter<int16_t>;
 template class MedianFilter<float>;
 
 /*

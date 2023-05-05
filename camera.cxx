@@ -355,7 +355,7 @@ void Camera::updateOsd1(Mat &osd1, const struct timeval *since,
     putText(osd1, text, pos,
             fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-    snprintf(buf, sizeof(buf) - 1, "%.1f", compass->bearing());
+    snprintf(buf, sizeof(buf) - 1, "%.1f", compass->heading());
     text = String("Heading: ") + buf + String(" deg");
     pos.y += textSize.height;
     putText(osd1, text, pos,
