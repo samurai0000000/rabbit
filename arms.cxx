@@ -349,15 +349,15 @@ void Arm::surrender(void)
     clearSchedules();
 
     rotateShoulder(50.0, 1500);
-    extendShoulder(85.0, 1500);
-    extendElbow(45.0, 1500);
+    extendShoulder(65.0, 1500);
+    extendElbow(25, 1500);
     extendWrist(0.0, 1500);
     rotateWrist(0.0, 1500);
     setGripperPosition(20.0, 1500);
 
     rotateShoulder(90.0, 1500);
-    extendShoulder(85.0, 1500);
-    extendElbow(36.0, 1500);
+    extendShoulder(65.0, 1500);
+    extendElbow(25.0, 1500);
     extendWrist(0.0, 1500);
     rotateWrist(0.0, 1500);
     setGripperPosition(20.0, 1500);
@@ -392,27 +392,6 @@ void Arm::pickup(void)
     extendWrist(-5.0, 1500);
     rotateWrist(-90.0, 1500);
     setGripperPosition(28.0, 1500);
-
-    rotateShoulder(90, 1500);
-    extendShoulder(-70.0, 1500);
-    extendElbow(-80.0, 1500);
-    extendWrist(-40.0, 1500);
-    rotateWrist(-90.0, 1500);
-    setGripperPosition(28.0, 1500);
-
-    rotateShoulder(90, 1500);
-    extendShoulder(51.0, 1500);
-    extendElbow(-23.0, 1500);
-    extendWrist(-50.0, 1500);
-    rotateWrist(0.0, 1500);
-    setGripperPosition(28.0, 1500);
-
-    rotateShoulder(90, 1500);
-    extendShoulder(51.0, 1500);
-    extendElbow(-23.0, 1500);
-    extendWrist(-50.0, 1500);
-    rotateWrist(0.0, 1500);
-    setGripperPosition(0.0, 1500);
 
     rotateShoulder(0.0, 1500);
     extendShoulder(-85.0, 1500);
