@@ -487,8 +487,8 @@ int main(int argc, char **argv)
                     camera->pan(0);
                     camera->tilt(0);
                     wheels->halt();
-                    rightArm->rest();
-                    leftArm->rest();
+                    rightArm->freeze();
+                    leftArm->freeze();
                     break;
                 case 's':
                 case 'S':
@@ -558,17 +558,14 @@ int main(int argc, char **argv)
                     }
                     break;
                 case 'x':
-                case 'X':
                     rightArm->rest();
                     leftArm->rest();
                     break;
                 case 'y':
-                case 'Y':
                     rightArm->hug();
                     leftArm->hug();
                     break;
                 case 'z':
-                case 'Z':
                     rightArm->surrender();
                     leftArm->surrender();
                     break;
@@ -578,8 +575,28 @@ int main(int argc, char **argv)
                 case'A':
                     leftArm->pickup();
                     break;
-                case 'P':
+                case 'u':
+                    rightArm->extend();
+                    break;
+                case 'U':
+                    leftArm->extend();
+                    break;
+                case 'i':
+                    rightArm->hi();
+                    break;
+                case 'I':
+                    leftArm->hi();
+                    break;
+                case 'k':
+                    rightArm->xferRL();
+                    leftArm->xferRL();
+                    break;
+                case 'K':
+                    rightArm->xferLR();
+                    leftArm->xferLR();
+                    break;
                 case 'p':
+                case 'P':
                     chan -= 1;
                     if (chan >= SERVO_CHANNELS) {
                         chan = SERVO_CHANNELS - 1;

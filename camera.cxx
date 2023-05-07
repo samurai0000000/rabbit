@@ -71,8 +71,8 @@ Camera::~Camera()
 
     _streamer.stop();
 
-    servos->clearSchedule(PAN_SERVO);
-    servos->clearSchedule(TILT_SERVO);
+    servos->clearMotionSchedule(PAN_SERVO);
+    servos->clearMotionSchedule(TILT_SERVO);
 
     if (_vc) {
         delete _vc;
@@ -216,7 +216,7 @@ void Camera::run(void)
         /* Sentry */
         if (_sentry.enabled) {
             if (servos->hasMotionSchedule(PAN_SERVO) == false) {
-                servos->schedule(PAN_SERVO, sentry_motions);
+                servos->scheduleMotions(PAN_SERVO, sentry_motions);
             }
         } else {
             if (servos->hasMotionSchedule(PAN_SERVO) == true) {

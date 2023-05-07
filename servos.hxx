@@ -28,6 +28,12 @@ struct servo_motion_exec {
     float f_current_pulse;
 };
 
+struct servo_motion_sync {
+    uint32_t bitmap;
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
+};
+
 class Servos {
 
 public:
@@ -45,11 +51,13 @@ public:
                   bool ignoreRange = false, bool clearMotions = true);
     void setPct(unsigned int chan, unsigned int pct);
     void center(unsigned int chan);
-    void schedule(unsigned int chan,
-                  const vector<struct servo_motion> &motions,
-                  bool append = false);
-    void clearSchedule(unsigned int chan);
+    void scheduleMotions(unsigned int chan,
+                         const vector<struct servo_motion> &motions,
+                         bool append = false);
+    void clearMotionSchedule(unsigned int chan);
     bool hasMotionSchedule(unsigned int chan) const;
+    void syncMotionSchedule(uint32_t chan_mask);
+    bool lastMotionPulseInPlan(unsigned int chan, unsigned int *pulse) const;
 
 private:
 
@@ -72,7 +80,7 @@ private:
     pthread_cond_t _cond;
 
     vector<struct servo_motion_exec> _motions[SERVO_CHANNELS];
-
+    vector<struct servo_motion_sync *> _syncs;
 };
 
 inline unsigned int Servos::loRange(unsigned int chan)

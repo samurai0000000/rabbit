@@ -15,6 +15,7 @@
  * PCA9685
  * https://www.mouser.com/datasheet/2/737/PCA9685-932827.pdf
  * https://cdn-shop.adafruit.com/datasheets/PCA9685.pdf
+ * https://www.waveshare.com/wiki/Servo_Driver_HAT
  */
 #define PWM_I2C_BUS    1
 #define PWM_I2C_ADDR   0x40
@@ -206,13 +207,15 @@ void Servos::run(void)
     unsigned int pulse;
     unsigned int on, off;
     bool unfinished = false;
+    vector<struct servo_motion_sync *>::iterator it;
 
     clock_gettime(CLOCK_REALTIME, &ts);
     tn.tv_sec = 0;
     tn.tv_nsec = 1000000 * SERVO_SCHEDULE_INTERVAL_MS;
 
     do {
-        if (0) {
+#if 0
+        {
             struct timespec now, prev;
 
             clock_gettime(CLOCK_REALTIME, &now);
@@ -221,9 +224,14 @@ void Servos::run(void)
             prev.tv_sec = now.tv_sec;
             prev.tv_nsec = now.tv_nsec;
         }
+#endif
+        timespecadd(&ts, &tn, &ts);  /* Update time to next epoch */
 
-        timespecadd(&ts, &tn, &ts);
+        pthread_mutex_lock(&_mutex);
 
+        /*
+         * Service each channel.
+         */
         for (chan = 0; chan < SERVO_CHANNELS; chan++) {
             if (_motions[chan].empty()) {
                 continue;
@@ -247,8 +255,8 @@ void Servos::run(void)
                 _motions[chan].erase(_motions[chan].begin());
             }
 
-            //printf("interval %u target=%u current=%u\n",
-            //       e.elapsed_intervals, e.motion.pulse, pulse);
+            //printf("chan=%u interval=%u target=%u current=%u\n",
+            //       chan, e.elapsed_intervals, e.motion.pulse, pulse);
 
             on = 0;
             off = pulse * 4096 / (1000000 / _freq);
@@ -259,10 +267,7 @@ void Servos::run(void)
             }
         }
 
-        pthread_mutex_lock(&_mutex);
-        pthread_cond_timedwait(&_cond, &_mutex, &ts);
-        pthread_mutex_unlock(&_mutex);
-
+        /* Check if there is still motion to be scheduled */
         unfinished = false;
         for (chan = 0; chan < SERVO_CHANNELS; chan++) {
             if (!_motions[chan].empty()) {
@@ -270,12 +275,48 @@ void Servos::run(void)
                 break;
             }
         }
+
+        /* Broadcast to synchronizers */
+        for (it = _syncs.begin(); it != _syncs.end(); it++) {
+            uint32_t bitmap;
+            bool empty = true;
+
+            bitmap = (*it)->bitmap;
+            for (chan = 0; chan < SERVO_CHANNELS; chan++) {
+                if ((bitmap & (0x1 << chan)) == 0x0) {
+                    continue;
+                }
+
+                if (!_motions[chan].empty()) {
+                    empty = false;
+                    break;
+                }
+            }
+
+            if (empty) {
+                pthread_cond_broadcast(&(*it)->cond);
+            }
+        }
+
+        pthread_mutex_unlock(&_mutex);
+
+        /* Sleep until the next epoch */
+        pthread_mutex_lock(&_mutex);
+        pthread_cond_timedwait(&_cond, &_mutex, &ts);
+        pthread_mutex_unlock(&_mutex);
     } while (_running || unfinished);
+
+    /* Broadcast to all out-standing synchronizers */
+    pthread_mutex_lock(&_mutex);
+    for (it = _syncs.begin(); it != _syncs.end(); it++) {
+        pthread_cond_broadcast(&(*it)->cond);
+    }
+    pthread_mutex_unlock(&_mutex);
 }
 
-void Servos::schedule(unsigned int chan,
-                      const vector<struct servo_motion> &motions,
-                      bool append)
+void Servos::scheduleMotions(unsigned int chan,
+                             const vector<struct servo_motion> &motions,
+                             bool append)
 {
     unsigned int i;
     unsigned int cur_pulse;
@@ -331,9 +372,64 @@ void Servos::schedule(unsigned int chan,
     pthread_mutex_unlock(&_mutex);
 }
 
-void Servos::clearSchedule(unsigned int chan)
+void Servos::clearMotionSchedule(unsigned int chan)
 {
     _motions[chan].clear();
+}
+
+void Servos::syncMotionSchedule(uint32_t chan_mask)
+{
+    struct servo_motion_sync sync;
+    vector<struct servo_motion_sync *>::iterator it;
+
+    if (chan_mask == 0x0) {
+        return;
+    }
+
+    /* Set up */
+    sync.bitmap = chan_mask;
+    pthread_mutex_init(&sync.mutex, NULL);
+    pthread_cond_init(&sync.cond, NULL);
+
+    /* Add to _syncs vector */
+    pthread_mutex_lock(&_mutex);
+    _syncs.push_back(&sync);
+    pthread_mutex_unlock(&_mutex);
+
+    /* Wait for condition to be met and notified by running thread */
+    pthread_mutex_lock(&sync.mutex);
+    pthread_cond_wait(&sync.cond, &sync.mutex);
+    pthread_mutex_unlock(&sync.mutex);
+
+    /* Remove from _syncs vector */
+    pthread_mutex_lock(&_mutex);
+    for (it = _syncs.begin(); it != _syncs.end(); it++) {
+        if (*it == &sync) {
+            it = _syncs.erase(it);
+            break;
+        }
+    }
+    pthread_mutex_unlock(&_mutex);
+
+    /* Destroy */
+    pthread_mutex_destroy(&sync.mutex);
+    pthread_cond_destroy(&sync.cond);
+}
+
+bool Servos::lastMotionPulseInPlan(unsigned int chan, unsigned int *pulse) const
+{
+    bool hasLastPulse = false;
+
+    if (!_motions[chan].empty()) {
+        hasLastPulse = true;
+
+        if (pulse != NULL) {
+            const struct servo_motion_exec &exec = _motions[chan].back();
+            *pulse = exec.motion.pulse;
+        }
+    }
+
+    return hasLastPulse;
 }
 
 /*
