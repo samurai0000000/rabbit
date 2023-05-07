@@ -91,7 +91,7 @@ int ADC::readReg(uint8_t reg, uint16_t *val) const
 
     ret = i2cReadWordData(_handle, reg);
     if (ret < 0) {
-        fprintf(stderr, "%s: i2cReadWordData 0x%.2x failed!\n", __func__, reg);
+        fprintf(stderr, "ADC::readReg: i2cReadWordData 0x%.2x failed!\n", reg);
     } else {
         uint16_t v = ret;
         v = (v >> 8) | (v << 8);
@@ -113,7 +113,7 @@ int ADC::writeReg(uint8_t reg, uint16_t val) const
     val = (val >> 8) | (val << 8);
     ret = i2cWriteWordData(_handle, reg, val);
     if (ret != 0) {
-        fprintf(stderr, "%s: i2cWriteWordData 0x%.2xfailed!\n", __func__, reg);
+        fprintf(stderr, "ADC::writeReg i2cWriteWordData 0x%.2xfailed!\n", reg);
     }
 
     return ret;

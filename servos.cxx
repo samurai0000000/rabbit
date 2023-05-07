@@ -82,7 +82,8 @@ int Servos::readReg(uint8_t reg, uint8_t *val) const
 
     ret = i2cReadByteData(_handle, reg);
     if (ret < 0) {
-        fprintf(stderr, "%s: i2cReadByteData 0x%.2x failed!\n", __func__, reg);
+        fprintf(stderr, "Servos::readReg i2cReadByteData 0x%.2x failed!\n",
+                reg);
     } else {
         *val = ret;
         ret = 0;
@@ -101,7 +102,8 @@ int Servos::writeReg(uint8_t reg, uint8_t val) const
 
     ret = i2cWriteByteData(_handle, reg, val);
     if (ret != 0) {
-        fprintf(stderr, "%s: i2cWriteByteData 0x%.2x failed!\n", __func__, reg);
+        fprintf(stderr, "Servos::writeReg: i2cWriteByteData 0x%.2x failed!\n",
+                reg);
     }
 
     return ret;
