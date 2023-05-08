@@ -13,8 +13,6 @@
 #include <iostream>
 #include "rabbit.hxx"
 
-#define WHEEL_DRIVE_LIMIT_MS  100
-
 static int daemonize = 0;
 static struct termios t_old;
 
@@ -33,6 +31,8 @@ static void cleanup(void)
     if (!daemonize) {
         tcsetattr(fileno(stdin), TCSANOW, &t_old);
     }
+
+    websock_cleanup();
 
     if (camera) {
         delete camera;
@@ -86,259 +86,6 @@ static void sig_handler(int signal)
 {
     (void)(signal);
     exit(EXIT_SUCCESS);
-}
-
-static unsigned int chan = 12;
-
-enum rabbit_console_mode {
-    RABBIT_CONSOLE_MODE_CAMERA = 0,
-    RABBIT_CONSOLE_MODE_WHEEL = 1,
-    RABBIT_CONSOLE_MODE_R_SHOULDER = 2,
-    RABBIT_CONSOLE_MODE_R_ELBOW = 3,
-    RABBIT_CONSOLE_MODE_R_WRIST = 4,
-    RABBIT_CONSOLE_MODE_R_GRIPPER = 5,
-    RABBIT_CONSOLE_MODE_L_SHOULDER = 6,
-    RABBIT_CONSOLE_MODE_L_ELBOW = 7,
-    RABBIT_CONSOLE_MODE_L_WRIST = 8,
-    RABBIT_CONSOLE_MODE_L_GRIPPER = 9,
-};
-
-static enum rabbit_console_mode mode;
-
-static void action_up(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(-1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->fwd(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->rotateShoulder(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_ELBOW:
-        rightArm->extendElbow(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_WRIST:
-        rightArm->rotateWrist(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_GRIPPER:
-        rightArm->setGripperPosition(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->rotateShoulder(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_ELBOW:
-        leftArm->extendElbow(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_WRIST:
-        leftArm->rotateWrist(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_GRIPPER:
-        leftArm->setGripperPosition(1.0, 5, true);
-        break;
-    default:
-        break;
-    }
-}
-
-static void action_down(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->bwd(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->rotateShoulder(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_ELBOW:
-        rightArm->extendElbow(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_WRIST:
-        rightArm->rotateWrist(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_GRIPPER:
-        rightArm->setGripperPosition(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->rotateShoulder(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_ELBOW:
-        leftArm->extendElbow(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_WRIST:
-        leftArm->rotateWrist(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_GRIPPER:
-        leftArm->setGripperPosition(-1.0, 5, true);
-        break;
-    default:
-        break;
-    }
-}
-
-static void action_right(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->pan(-1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->ror(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->extendShoulder(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_ELBOW:
-        rightArm->extendElbow(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_WRIST:
-        rightArm->extendWrist(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_GRIPPER:
-        rightArm->setGripperPosition(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->extendShoulder(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_ELBOW:
-        leftArm->extendElbow(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_WRIST:
-        leftArm->extendWrist(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_GRIPPER:
-        leftArm->setGripperPosition(-1.0, 5, true);
-        break;
-    default:
-        break;
-    }
-}
-
-static void action_left(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->pan(1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->rol(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->extendShoulder(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_ELBOW:
-        rightArm->extendElbow(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_WRIST:
-        rightArm->extendWrist(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_R_GRIPPER:
-        rightArm->setGripperPosition(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->extendShoulder(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_ELBOW:
-        leftArm->extendElbow(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_WRIST:
-        leftArm->extendWrist(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_GRIPPER:
-        leftArm->setGripperPosition(1.0, 5, true);
-        break;
-    default:
-        break;
-    }
-}
-
-static void action_upright(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(-1, true);
-        camera->pan(-1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->fwr(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->extendWrist(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->extendWrist(-1.0, 5, true);
-        break;
-    default:
-        break;
-    }
-}
-
-static void action_upleft(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(-1, true);
-        camera->pan(1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->fwl(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->extendElbow(-1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->extendElbow(-1.0, 5, true);
-        break;
-    default:
-        break;
-    }
-}
-
-static void action_downright(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(1, true);
-        camera->pan(-1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->bwr(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->extendWrist(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->extendWrist(1.0, 5, true);
-        break;
-    default:
-        break;
-    }
-}
-
-static void action_downleft(void)
-{
-    switch (mode) {
-    case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(1, true);
-        camera->pan(1, true);
-        break;
-    case RABBIT_CONSOLE_MODE_WHEEL:
-        wheels->bwl(WHEEL_DRIVE_LIMIT_MS);
-        break;
-    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-        rightArm->extendElbow(1.0, 5, true);
-        break;
-    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-        leftArm->extendElbow(1.0, 5, true);
-        break;
-    default:
-        break;
-    }
 }
 
 static void print_help(int argc, char **argv)
@@ -422,14 +169,15 @@ int main(int argc, char **argv)
     compass = new Compass();
     ambience = new Ambience();
 
+    cout << "Rabbit 'bot' is alive!" << endl;
+
+    websock_init();
+
     if (daemonize) {
         for (;;) {
             sleep(60);
         }
     } else {
-        mode = RABBIT_CONSOLE_MODE_CAMERA;
-        cout << "Camera control active" << endl;
-
         for (;;) {
             int ret;
             int nfds;
@@ -461,222 +209,6 @@ int main(int argc, char **argv)
                 nread--;
 
                 switch (k1 = getchar()) {
-                case 'q':
-                case 'Q':
-                    exit(EXIT_SUCCESS);
-                    break;
-                case 'c':
-                case 'C':
-                    if (mode != RABBIT_CONSOLE_MODE_CAMERA) {
-                        mode = RABBIT_CONSOLE_MODE_CAMERA;
-                        cout << "Camera control active" << endl;
-                    }
-                    break;
-                case 'w':
-                case 'W':
-                    if (mode != RABBIT_CONSOLE_MODE_WHEEL) {
-                        mode = RABBIT_CONSOLE_MODE_WHEEL;
-                        cout << "Wheel control active" << endl;
-                    }
-                    break;
-                case 'v':
-                case 'V':
-                    camera->enVision(!camera->isVisionEn());
-                    break;
-                case ' ':
-                    camera->pan(0);
-                    camera->tilt(0);
-                    wheels->halt();
-                    rightArm->freeze();
-                    leftArm->freeze();
-                    break;
-                case 's':
-                case 'S':
-                    camera->enSentry(!camera->isSentryEn());
-                    cout << "Sentry "
-                         << (camera->isSentryEn() ? "enabled" : "disabled")
-                         << endl;
-                    break;
-                case 'r':
-                case 'R':
-                case '>':
-                    if (mode >= RABBIT_CONSOLE_MODE_R_SHOULDER &&
-                        mode <= RABBIT_CONSOLE_MODE_R_GRIPPER) {
-                        mode = (enum rabbit_console_mode)
-                            (((unsigned int) mode) + 1);
-                        if (mode > RABBIT_CONSOLE_MODE_R_GRIPPER) {
-                            mode = RABBIT_CONSOLE_MODE_R_SHOULDER;
-                        }
-                    } else {
-                        mode = RABBIT_CONSOLE_MODE_R_SHOULDER;
-                    }
-                    switch (mode) {
-                    case RABBIT_CONSOLE_MODE_R_SHOULDER:
-                        cout << "Right shoulder control active" << endl;
-                        break;
-                    case RABBIT_CONSOLE_MODE_R_ELBOW:
-                        cout << "Right elbow control active" << endl;
-                        break;
-                    case RABBIT_CONSOLE_MODE_R_WRIST:
-                        cout << "Right wrist control active" << endl;
-                        break;
-                    case RABBIT_CONSOLE_MODE_R_GRIPPER:
-                        cout << "Right gripper control active" << endl;
-                        break;
-                    default:
-                        break;
-                    }
-                    break;
-                case 'l':
-                case 'L':
-                case '<':
-                    if (mode >= RABBIT_CONSOLE_MODE_L_SHOULDER &&
-                        mode <= RABBIT_CONSOLE_MODE_L_GRIPPER) {
-                        mode = (enum rabbit_console_mode)
-                            (((unsigned int) mode) + 1);
-                        if (mode > RABBIT_CONSOLE_MODE_L_GRIPPER) {
-                            mode = RABBIT_CONSOLE_MODE_L_SHOULDER;
-                        }
-                    } else {
-                        mode = RABBIT_CONSOLE_MODE_L_SHOULDER;
-                    }
-                    switch (mode) {
-                    case RABBIT_CONSOLE_MODE_L_SHOULDER:
-                        cout << "Left shoulder control active" << endl;
-                        break;
-                    case RABBIT_CONSOLE_MODE_L_ELBOW:
-                        cout << "Left elbow control active" << endl;
-                        break;
-                    case RABBIT_CONSOLE_MODE_L_WRIST:
-                        cout << "Left wrist control active" << endl;
-                        break;
-                    case RABBIT_CONSOLE_MODE_L_GRIPPER:
-                        cout << "Left gripper control active" << endl;
-                        break;
-                    default:
-                        break;
-                    }
-                    break;
-                case 'x':
-                    rightArm->rest();
-                    leftArm->rest();
-                    break;
-                case 'y':
-                    rightArm->hug();
-                    leftArm->hug();
-                    break;
-                case 'z':
-                    rightArm->surrender();
-                    leftArm->surrender();
-                    break;
-                case 'a':
-                    rightArm->pickup();
-                    break;
-                case'A':
-                    leftArm->pickup();
-                    break;
-                case 'u':
-                    rightArm->extend();
-                    break;
-                case 'U':
-                    leftArm->extend();
-                    break;
-                case 'i':
-                    rightArm->hi();
-                    break;
-                case 'I':
-                    leftArm->hi();
-                    break;
-                case 'k':
-                    rightArm->xferRL();
-                    leftArm->xferRL();
-                    break;
-                case 'K':
-                    rightArm->xferLR();
-                    leftArm->xferLR();
-                    break;
-                case 'p':
-                case 'P':
-                    chan -= 1;
-                    if (chan >= SERVO_CHANNELS) {
-                        chan = SERVO_CHANNELS - 1;
-                    }
-                    cout << "Servo #" << to_string(chan) << " selected" << endl;
-                    break;
-                case 'N':
-                case 'n':
-                    chan += 1;
-                    if (chan >= SERVO_CHANNELS) {
-                        chan = 0;
-                    }
-                    cout << "Servo #" << to_string(chan) << " selected" << endl;
-                    break;
-                case '=':
-                    servos->center(chan);
-                    cout << "Servo #" << to_string(chan)
-                         << " centered to " << to_string(servos->pulse(chan))
-                         << endl;
-                    break;
-                case '^':
-                    servos->setPulse(chan, servos->loRange(chan));
-                    cout << "Servo #" << to_string(chan)
-                         << " set lo to " << to_string(servos->pulse(chan))
-                         << endl;
-                    break;
-                case '$':
-                    servos->setPulse(chan, servos->hiRange(chan));
-                    cout << "Servo #" << to_string(chan)
-                         << " set hi to " << to_string(servos->pulse(chan))
-                         << endl;
-                    break;
-                case '+':
-                    servos->setPulse(chan, servos->pulse(chan) + 1, true);
-                    cout << "Servo #" << to_string(chan)
-                         << " set to " << to_string(servos->pulse(chan))
-                         << endl;
-                    break;
-                case '-':
-                    servos->setPulse(chan, servos->pulse(chan) - 1, true);
-                    cout << "Servo #" << to_string(chan)
-                         << " set to " << to_string(servos->pulse(chan))
-                         << endl;
-                    break;
-                case '@':
-                    servos->setPulse(chan, servos->pulse(chan) + 10, true);
-                    cout << "Servo #" << to_string(chan)
-                         << " set to " << to_string(servos->pulse(chan))
-                         << endl;
-                    break;
-                case '!':
-                    servos->setPulse(chan, servos->pulse(chan) - 10, true);
-                    cout << "Servo #" << to_string(chan)
-                         << " set to " << to_string(servos->pulse(chan))
-                         << endl;
-                    break;
-                case '8':
-                    action_up();
-                    break;
-                case '2':
-                    action_down();
-                    break;
-                case '6':
-                    action_right();
-                    break;
-                case '4':
-                    action_left();
-                    break;
-                case '9':
-                    action_upright();
-                    break;
-                case '7':
-                    action_upleft();
-                    break;
-                case '3':
-                    action_downright();
-                    break;
-                case '1':
-                    action_downleft();
-                    break;
                 case 0x1b:
                     if (nread < 2) {
                         continue;
@@ -686,16 +218,17 @@ int main(int argc, char **argv)
                     }
 
                     if (k2 == 0x5b && k3 == 0x41) {
-                        action_up();
+                        rabbit_keycontrol('8');
                     } else if (k2 == 0x5b && k3 == 0x42) {
-                        action_down();
+                        rabbit_keycontrol('2');
                     } else if (k2 == 0x5b && k3 == 0x43) {
-                        action_right();
+                        rabbit_keycontrol('6');
                     } else if (k2 == 0x5b && k3 == 0x44) {
-                        action_left();
+                        rabbit_keycontrol('4');
                     }
                     break;
                 default:
+                    rabbit_keycontrol(k1);
                     break;
                 }
             }

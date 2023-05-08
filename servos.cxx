@@ -216,17 +216,8 @@ void Servos::run(void)
     tn.tv_nsec = 1000000 * SERVO_SCHEDULE_INTERVAL_MS;
 
     do {
-#if 0
-        {
-            struct timespec now, prev;
+        unfinished = false;          /* Reset unfinished variable */
 
-            clock_gettime(CLOCK_REALTIME, &now);
-            timespecsub(&now, &prev, &prev);
-            printf("time diff=%ld.%.09ld\n", prev.tv_sec, prev.tv_nsec);
-            prev.tv_sec = now.tv_sec;
-            prev.tv_nsec = now.tv_nsec;
-        }
-#endif
         timespecadd(&ts, &tn, &ts);  /* Update time to next epoch */
 
         pthread_mutex_lock(&_mutex);
@@ -270,7 +261,6 @@ void Servos::run(void)
         }
 
         /* Check if there is still motion to be scheduled */
-        unfinished = false;
         for (chan = 0; chan < SERVO_CHANNELS; chan++) {
             if (!_motions[chan].empty()) {
                 unfinished = true;

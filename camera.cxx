@@ -76,6 +76,7 @@ Camera::~Camera()
 
     if (_vc) {
         delete _vc;
+        _vc = NULL;
     }
 }
 
@@ -167,7 +168,9 @@ void Camera::run(void)
         }
 
         /* Perform face detection */
-        detectFaces(frame, ptFaces);
+        if (isVisionEn()) {
+            detectFaces(frame, ptFaces);
+        }
 
         /* Update frame rate */
         gettimeofday(&now, NULL);
@@ -211,6 +214,8 @@ void Camera::run(void)
 
             pan(panDeg, true);
             tilt(tiltDeg, true);
+
+            ptFaces.clear();
         }
 
         /* Sentry */

@@ -138,8 +138,9 @@ Ambience::~Ambience()
     pthread_mutex_destroy(&_mutex);
     pthread_cond_destroy(&_cond);
 
-    if (_bme280) {
+    if (_bme280 >= 0) {
         i2cClose(_bme280);
+        _bme280 = -1;
     }
 }
 

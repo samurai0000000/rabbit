@@ -108,6 +108,7 @@ Compass::~Compass()
     if (_handle >= 0) {
         i2cWriteByteData(_handle, CTRL_2_REG, SOFT_RST);
         i2cClose(_handle);
+        _handle = -1;
     }
 }
 

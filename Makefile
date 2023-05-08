@@ -32,7 +32,7 @@ build/x86_64/Makefile: CMakeLists.txt
 	@mkdir -p build/x86_64
 	@cd build/x86_64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ cmake ../..
 
-.PHONY: run install
+.PHONY: run install install-html
 
 run: build/aarch64/rabbit
 	@if [ `hostname` = "$(RPI_HOST)" ]; then \
@@ -47,7 +47,12 @@ install: build/$(ARCH)/rabbit
 	else \
 		ssh root@$(RPI_HOST) killall rabbit 2>/dev/null && sleep 2; \
 		scp $< root@$(RPI_HOST):/usr/local/bin/rabbit ; \
+		rsync -avh html root@$(RPI_HOST):/var/www; \
 	fi
+
+install-html:
+	@rsync -avh html root@$(RPI_HOST):/var/www
+
 
 #
 # Set up sysroot for cross-compiling

@@ -17,6 +17,7 @@
 #include "compass.hxx"
 #include "ambience.hxx"
 #include "wifi.hxx"
+#include "websock.h"
 
 extern Servos *servos;
 extern ADC *adc;
@@ -28,6 +29,8 @@ extern Ambience *ambience;
 extern WIFI *wifi;
 extern Arm *rightArm;
 extern Arm *leftArm;
+
+extern "C" void rabbit_keycontrol(uint8_t key);
 
 #endif
 

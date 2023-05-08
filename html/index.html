@@ -1,0 +1,25 @@
+<!-- Copyright (C) 2023, Charles Chiou -->
+<html>
+  <head>
+    <script src="rabbit.js"></script>
+    <script>
+      if (window.WebSocket) {
+	  rabbit_setup();
+      } else {
+	  alert("Browser does not support WebSocket!");
+      }
+    </script>
+  </head>
+
+  <title>Rabbit 'bot</title>
+  <body>
+    <h1>Rabbit 'bot</h1>
+    <table width="100%" height="100%">
+      <tr>
+	<td>
+	  <iframe src="rgb-stream" id="rgb-stream" frameborder="0" style="height: 100%; overflow: hidden; width: 100%" scrolling="no" onload="set_rgb_stream()"/>
+	</td>
+      </tr>
+    </table>
+  </body>
+</html>

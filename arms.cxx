@@ -41,12 +41,7 @@ Arm::Arm(unsigned int side)
 
 Arm::~Arm()
 {
-    planMotions(0.0, -85.0,
-                -90.0,
-                -40.0, -90.0,
-                20.0,
-                1500,
-                false);
+    rest();
 }
 
 void Arm::updateTrims(void)
