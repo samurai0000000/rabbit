@@ -41,7 +41,7 @@ Servos::Servos()
     }
 
     writeReg(MODE2_REG, MODE2_OUTDRV);
-    writeReg(MODE1_REG, MODE1_SLEEP | MODE1_ALLCALL);
+    writeReg(MODE1_REG, MODE1_SLEEP);
 
     prescale = 25000000;
     prescale /= 4096.0;
@@ -49,7 +49,7 @@ Servos::Servos()
     prescale -= 1.0;
     v = floor(prescale + 0.5);
     writeReg(PRE_SCALE_REG, v);
-    writeReg(MODE1_REG, MODE1_RESTART | MODE1_ALLCALL);
+    writeReg(MODE1_REG, MODE1_RESTART);
 
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -66,7 +66,7 @@ Servos::~Servos()
     pthread_cond_destroy(&_cond);
 
     if (_handle >= 0) {
-        i2cWriteByteData(_handle, MODE1_REG, MODE1_SLEEP | MODE1_ALLCALL);
+        i2cWriteByteData(_handle, MODE1_REG, MODE1_SLEEP);
         i2cClose(_handle);
         _handle = -1;
     }
