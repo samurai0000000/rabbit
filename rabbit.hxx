@@ -17,7 +17,8 @@
 #include "compass.hxx"
 #include "ambience.hxx"
 #include "wifi.hxx"
-#include "websock.h"
+#include "websock.hxx"
+#include "logging.hxx"
 
 extern Servos *servos;
 extern ADC *adc;

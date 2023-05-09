@@ -38,6 +38,19 @@
 
 using namespace std;
 
+static const char *state_string[10] = {
+    "halt",
+    "fwd",
+    "bwd",
+    "ror",
+    "rol",
+    "fwr",
+    "fwl",
+    "bwr",
+    "bwl",
+    "unknown",
+};
+
 Wheels::Wheels()
 {
     gpioSetMode(L298N_IN1, PI_OUTPUT);
@@ -347,24 +360,11 @@ unsigned int Wheels::state(void) const
 
 const char *Wheels::stateStr(void) const
 {
-    const char *s[10] = {
-        "halt",
-        "fwd",
-        "bwd",
-        "ror",
-        "rol",
-        "fwr",
-        "fwl",
-        "bwr",
-        "bwl",
-        "unknown",
-    };
-
     if (_state <= 8) {
-        return s[_state];
+        return state_string[_state];
     }
 
-    return s[9];
+    return state_string[9];
 }
 
 unsigned int Wheels::fwd_ms(void) const
@@ -468,6 +468,19 @@ void Wheels::change(unsigned int state)
     case 7: _bwr_ms += ms; break;
     case 8: _bwl_ms += ms; break;
     default:               break;
+    }
+
+    if (_state != state) {
+        char buf[64];
+
+        if (_state == 0) {
+            snprintf(buf, sizeof(buf) - 1, "Wheel %s -> %s\n",
+                     state_string[_state], state_string[state]);
+        } else {
+            snprintf(buf, sizeof(buf) - 1, "Wheel %s %ums -> %s\n",
+                     state_string[_state], ms, state_string[state]);
+        }
+        LOG(buf);
     }
 
     _state = state;

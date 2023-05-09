@@ -455,6 +455,7 @@ void Arm::rotateShoulder(float deg, unsigned int ms, bool relative)
     unsigned int newPulse;
     int offset;
     unsigned index = 0;
+    char buf[128];
 
     if (relative) {
         deg = shoulderRotation() + deg;
@@ -468,6 +469,11 @@ void Arm::rotateShoulder(float deg, unsigned int ms, bool relative)
     }
 
     setPulse(index, newPulse, ms);
+
+    snprintf(buf, sizeof(buf) - 1,
+             "%s arm rotate shoulder to %.1f degree in %ums\n",
+             _side == RIGHT_ARM ? "Right" : "Left", deg, ms);
+    LOG(buf);
 }
 
 void Arm::extendShoulder(float deg, unsigned int ms, bool relative)
@@ -475,6 +481,7 @@ void Arm::extendShoulder(float deg, unsigned int ms, bool relative)
     unsigned int newPulse;
     int offset;
     unsigned index = 1;
+    char buf[128];
 
     if (relative) {
         deg = shoulderExtension() + deg;
@@ -488,6 +495,10 @@ void Arm::extendShoulder(float deg, unsigned int ms, bool relative)
     }
 
     setPulse(index, newPulse, ms);
+    snprintf(buf, sizeof(buf) - 1,
+             "%s arm extend shoulder to %.1f degree in %ums\n",
+             _side == RIGHT_ARM ? "Right" : "Left", deg, ms);
+    LOG(buf);
 }
 
 void Arm::extendElbow(float deg, unsigned int ms, bool relative)
@@ -495,6 +506,7 @@ void Arm::extendElbow(float deg, unsigned int ms, bool relative)
     unsigned int newPulse;
     int offset;
     unsigned index = 2;
+    char buf[128];
 
     if (relative) {
         deg = elbowExtension() + deg;
@@ -508,6 +520,10 @@ void Arm::extendElbow(float deg, unsigned int ms, bool relative)
     }
 
     setPulse(index, newPulse, ms);
+    snprintf(buf, sizeof(buf) - 1,
+             "%s arm extend elbow to %.1f degree in %ums\n",
+             _side == RIGHT_ARM ? "Right" : "Left", deg, ms);
+    LOG(buf);
 }
 
 void Arm::extendWrist(float deg, unsigned int ms, bool relative)
@@ -515,6 +531,7 @@ void Arm::extendWrist(float deg, unsigned int ms, bool relative)
     unsigned int newPulse;
     int offset;
     unsigned index = 3;
+    char buf[128];
 
     if (relative) {
         deg = wristExtension() + deg;
@@ -528,6 +545,10 @@ void Arm::extendWrist(float deg, unsigned int ms, bool relative)
     }
 
     setPulse(index, newPulse, ms);
+    snprintf(buf, sizeof(buf) - 1,
+             "%s arm extend wrist to %.1f degree in %ums\n",
+             _side == RIGHT_ARM ? "Right" : "Left", deg, ms);
+    LOG(buf);
 }
 
 void Arm::rotateWrist(float deg, unsigned int ms, bool relative)
@@ -535,6 +556,7 @@ void Arm::rotateWrist(float deg, unsigned int ms, bool relative)
     unsigned int newPulse;
     int offset;
     unsigned index = 4;
+    char buf[128];
 
     if (relative) {
         deg = wristRotation() + deg;
@@ -548,12 +570,17 @@ void Arm::rotateWrist(float deg, unsigned int ms, bool relative)
     }
 
     setPulse(index, newPulse, ms);
+    snprintf(buf, sizeof(buf) - 1,
+             "%s arm rotate wrist to %.1f degree in %ums\n",
+             _side == RIGHT_ARM ? "Right" : "Left", deg, ms);
+    LOG(buf);
 }
 
 void Arm::setGripperPosition(float pos, unsigned int ms, bool relative)
 {
     unsigned int newPulse;
     unsigned index = 5;
+    char buf[128];
 
     if (relative) {
         pos = gripperPosition() + pos;
@@ -565,6 +592,10 @@ void Arm::setGripperPosition(float pos, unsigned int ms, bool relative)
     newPulse = (((unsigned int) pos) * _ppd[index]) + _loRange[index] ;
 
     setPulse(index, newPulse, ms);
+    snprintf(buf, sizeof(buf) - 1,
+             "%s arm set gripper position to %.1f in %ums\n",
+             _side == RIGHT_ARM ? "Right" : "Left", pos, ms);
+    LOG(buf);
 }
 
 void Arm::planMotions(float shoulderRotateDeg, float shoulderExtensionDeg,

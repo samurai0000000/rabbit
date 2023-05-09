@@ -60,32 +60,6 @@ private:
 
 };
 
-inline void Camera::enVision(bool enable)
-{
-    _vision = enable ? true : false;
-}
-
-inline bool Camera::isVisionEn(void) const
-{
-    return _vision;
-}
-
-inline void Camera::enSentry(bool enable)
-{
-    _sentry.enabled = enable ? true : false;
-    enVision(enable);
-}
-
-inline bool Camera::isSentryEn(void) const
-{
-    return _sentry.enabled;
-}
-
-inline float Camera::frameRate(void) const
-{
-    return _fr;
-}
-
 #endif
 
 /*

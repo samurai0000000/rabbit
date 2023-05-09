@@ -2,22 +2,32 @@
 <html>
   <head>
     <script src="rabbit.js"></script>
-    <script>
-      if (window.WebSocket) {
-	  rabbit_setup();
-      } else {
-	  alert("Browser does not support WebSocket!");
-      }
-    </script>
   </head>
-
-  <title>Rabbit 'bot</title>
-  <body>
-    <h1>Rabbit 'bot</h1>
-    <table width="100%" height="100%">
+  <title>Rabbit'bot by Charles and Charlotte Chiou</title>
+  <body onload="rabbit_setup();">
+    <h1>Rabbit'bot by Charles and Charlotte Chiou</h1>
+    <table width="940" border="1">
+      <tr width="940">
+	<td height="480">
+	  <iframe src="" id="rgb-stream" frameborder="0" style="height:100%; overflow:hidden; width:100%;" scrolling="no"></iframe>
+	</td>
+      </tr>
       <tr>
 	<td>
-	  <iframe src="rgb-stream" id="rgb-stream" frameborder="0" style="height: 100%; overflow: hidden; width: 100%" scrolling="no" onload="set_rgb_stream()"/>
+	  <table>
+	    <tr>
+	      <td>
+		<textarea readonly rows="10" cols="80" wrap="hard" id="rabbit-log" name="rabbit-log" style="outline:none; width=100%; flex:1; resize:none;"></textarea>
+	      </td>
+	      <td valign="top" align="right" width="0%">
+		<table>
+		  <tr><td><input type="button" id="rabbit-connect" name="rabbit-connect" value="Connect"  style="outline:none;"/></td></tr>
+		  <tr><td><input type="button" id="rabbit-refresh" name="rabbit-refresh" value="Refresh"  style="outline:none;"/></td></tr>
+		  <tr><td><input type="button" id="rabbit-logclear" name="rabbit-logclear" value="Clear Log"  style="outline:none;"/></td></tr>
+		</table>
+	      </td>
+	    </tr>
+	  </table>
 	</td>
       </tr>
     </table>

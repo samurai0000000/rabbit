@@ -4,10 +4,12 @@
  * Copyright (C) 2023, Charles Chiou
  */
 
+#include <string>
 #include "rabbit.hxx"
 
-#define WHEEL_DRIVE_LIMIT_MS  100
+using namespace std;
 
+#define WHEEL_DRIVE_LIMIT_MS  100
 
 static unsigned int chan = 12;
 
@@ -264,23 +266,26 @@ static void action_downleft(void)
 
 void rabbit_keycontrol(uint8_t key)
 {
+    string message;
+
     switch (key) {
     case 'q':
     case 'Q':
+        LOG("Rabbit'bot quits\n");
         exit(EXIT_SUCCESS);
         break;
     case 'c':
     case 'C':
         if (mode != RABBIT_CONSOLE_MODE_CAMERA) {
             mode = RABBIT_CONSOLE_MODE_CAMERA;
-            cout << "Camera control active" << endl;
+            LOG("Camera control active\n");
         }
         break;
     case 'w':
     case 'W':
         if (mode != RABBIT_CONSOLE_MODE_WHEEL) {
             mode = RABBIT_CONSOLE_MODE_WHEEL;
-            cout << "Wheel control active" << endl;
+            LOG("Wheel control active\n");
         }
         break;
     case 'v':
@@ -293,13 +298,11 @@ void rabbit_keycontrol(uint8_t key)
         wheels->halt();
         rightArm->freeze();
         leftArm->freeze();
+        LOG("Camera centered, wheels halted, arms frozen\n");
         break;
     case 's':
     case 'S':
         camera->enSentry(!camera->isSentryEn());
-        cout << "Sentry "
-             << (camera->isSentryEn() ? "enabled" : "disabled")
-             << endl;
         break;
     case 'r':
     case 'R':
@@ -316,16 +319,16 @@ void rabbit_keycontrol(uint8_t key)
         }
         switch (mode) {
         case RABBIT_CONSOLE_MODE_R_SHOULDER:
-            cout << "Right shoulder control active" << endl;
+            LOG("Right shoulder control active\n");
             break;
         case RABBIT_CONSOLE_MODE_R_ELBOW:
-            cout << "Right elbow control active" << endl;
+            LOG("Right elbow control active\n");
             break;
         case RABBIT_CONSOLE_MODE_R_WRIST:
-            cout << "Right wrist control active" << endl;
+            LOG("Right wrist control active\n");
             break;
         case RABBIT_CONSOLE_MODE_R_GRIPPER:
-            cout << "Right gripper control active" << endl;
+            LOG("Right gripper control active\n");
             break;
         default:
             break;
@@ -346,16 +349,16 @@ void rabbit_keycontrol(uint8_t key)
         }
         switch (mode) {
         case RABBIT_CONSOLE_MODE_L_SHOULDER:
-            cout << "Left shoulder control active" << endl;
+            LOG("Left shoulder control active\n");
             break;
         case RABBIT_CONSOLE_MODE_L_ELBOW:
-            cout << "Left elbow control active" << endl;
+            LOG("Left elbow control active\n");
             break;
         case RABBIT_CONSOLE_MODE_L_WRIST:
-            cout << "Left wrist control active" << endl;
+            LOG("Left wrist control active\n");
             break;
         case RABBIT_CONSOLE_MODE_L_GRIPPER:
-            cout << "Left gripper control active" << endl;
+            LOG("Left gripper control active\n");
             break;
         default:
             break;
@@ -364,40 +367,51 @@ void rabbit_keycontrol(uint8_t key)
     case 'x':
         rightArm->rest();
         leftArm->rest();
+        LOG("Move arms to rest\n");
         break;
     case 'y':
         rightArm->hug();
         leftArm->hug();
+        LOG("Move arms to hug\n");
         break;
     case 'z':
         rightArm->surrender();
         leftArm->surrender();
+        LOG("Move arms to surrender\n");
         break;
     case 'a':
         rightArm->pickup();
+        LOG("Right arm picks up\n");
         break;
     case'A':
         leftArm->pickup();
+        LOG("Left arm picks up\n");
         break;
     case 'u':
         rightArm->extend();
+        LOG("Right arm extends\n");
         break;
     case 'U':
         leftArm->extend();
+        LOG("Left arm extends\n");
         break;
     case 'i':
         rightArm->hi();
+        LOG("Right arm waves hi\n");
         break;
     case 'I':
         leftArm->hi();
+        LOG("Left arm waves hi\n");
         break;
     case 'k':
         rightArm->xferRL();
         leftArm->xferRL();
+        LOG("Transfer grip object from right to left\n");
         break;
     case 'K':
         rightArm->xferLR();
         leftArm->xferLR();
+        LOG("Transfer grip object from left to right\n");
         break;
     case 'p':
     case 'P':
@@ -405,7 +419,8 @@ void rabbit_keycontrol(uint8_t key)
         if (chan >= SERVO_CHANNELS) {
             chan = SERVO_CHANNELS - 1;
         }
-        cout << "Servo #" << to_string(chan) << " selected" << endl;
+        message = string("Servo #") + to_string(chan) + " selected\n";
+        LOG(message.c_str());
         break;
     case 'N':
     case 'n':
@@ -413,49 +428,50 @@ void rabbit_keycontrol(uint8_t key)
         if (chan >= SERVO_CHANNELS) {
             chan = 0;
         }
-        cout << "Servo #" << to_string(chan) << " selected" << endl;
+        message = string("Servo #") + to_string(chan) + " selected\n";
+        LOG(message.c_str());
         break;
     case '=':
         servos->center(chan);
-        cout << "Servo #" << to_string(chan)
-             << " centered to " << to_string(servos->pulse(chan))
-             << endl;
+        message = string("Servo #") + to_string(chan) +
+            " centered to " + to_string(servos->pulse(chan)) + "\n";
+        LOG(message.c_str());
         break;
     case '^':
         servos->setPulse(chan, servos->loRange(chan));
-        cout << "Servo #" << to_string(chan)
-             << " set lo to " << to_string(servos->pulse(chan))
-             << endl;
+        message = string("Servo #") + to_string(chan) +
+            " set lo to " + to_string(servos->pulse(chan)) + "\n";
+        LOG(message.c_str());
         break;
     case '$':
         servos->setPulse(chan, servos->hiRange(chan));
-        cout << "Servo #" << to_string(chan)
-             << " set hi to " << to_string(servos->pulse(chan))
-             << endl;
+        message = string("Servo #") + to_string(chan) +
+            " set hi to " + to_string(servos->pulse(chan)) + "\n";
+        LOG(message.c_str());
         break;
     case '+':
         servos->setPulse(chan, servos->pulse(chan) + 1, true);
-        cout << "Servo #" << to_string(chan)
-             << " set to " << to_string(servos->pulse(chan))
-             << endl;
+        message = string("Servo #") + to_string(chan) +
+            " set to " + to_string(servos->pulse(chan)) + "\n";
+        LOG(message.c_str());
         break;
     case '-':
         servos->setPulse(chan, servos->pulse(chan) - 1, true);
-        cout << "Servo #" << to_string(chan)
-             << " set to " << to_string(servos->pulse(chan))
-             << endl;
+        message = string("Servo #") + to_string(chan) +
+            " set to " + to_string(servos->pulse(chan)) + "\n";
+        LOG(message.c_str());
         break;
     case '@':
         servos->setPulse(chan, servos->pulse(chan) + 10, true);
-        cout << "Servo #" << to_string(chan)
-             << " set to " << to_string(servos->pulse(chan))
-             << endl;
+        message = string("Servo #") + to_string(chan) +
+            " set to " + to_string(servos->pulse(chan)) + "\n";
+        LOG(message.c_str());
         break;
     case '!':
         servos->setPulse(chan, servos->pulse(chan) - 10, true);
-        cout << "Servo #" << to_string(chan)
-             << " set to " << to_string(servos->pulse(chan))
-             << endl;
+        message = string("Servo #") + to_string(chan) +
+            " set to " + to_string(servos->pulse(chan)) + "\n";
+        LOG(message.c_str());
         break;
     case '8':
         action_up();

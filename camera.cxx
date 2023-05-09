@@ -490,10 +490,49 @@ void Camera::updateOsd1(Mat &osd1, const struct timeval *since,
             fontFace, fontScale, fontColor, thickness, LINE_8, false);
 }
 
+void Camera::enVision(bool enable)
+{
+    enable = (enable ? true : false);
+
+    if (_vision != enable) {
+        _vision = enable;
+        if (enable) {
+            LOG("Camera vision enabled\n");
+        } else {
+            LOG("Camera vision disabled\n");
+        }
+    }
+}
+
+bool Camera::isVisionEn(void) const
+{
+    return _vision;
+}
+
+void Camera::enSentry(bool enable)
+{
+    enable = (enable ? true : false);
+
+    if (_sentry.enabled != enable) {
+        _sentry.enabled = enable;
+        if (enable) {
+            LOG("Camera sentry mode enabled\n");
+        } else {
+            LOG("Camera sentry mode disabled\n");
+        }
+    }
+}
+
+bool Camera::isSentryEn(void) const
+{
+    return _sentry.enabled;
+}
+
 void Camera::pan(float deg, bool relative)
 {
     unsigned int pulse;
     unsigned int center;
+    char buf[128];
 
     if (relative) {
         pulse = servos->pulse(PAN_SERVO);
@@ -506,12 +545,16 @@ void Camera::pan(float deg, bool relative)
         pulse = (unsigned int) ((float) center - deg * PAN_ANGLE_MULT);
         servos->setPulse(PAN_SERVO, pulse);
     }
+
+    snprintf(buf, sizeof(buf) - 1, "Camera pan to %.1f\n", panAt());
+    LOG(buf);
 }
 
 void Camera::tilt(float deg, bool relative)
 {
     unsigned int pulse;
     unsigned int center;
+    char buf[128];
 
     if (relative) {
         pulse = servos->pulse(TILT_SERVO);
@@ -524,6 +567,9 @@ void Camera::tilt(float deg, bool relative)
         pulse = (unsigned int) ((float) center - deg * TILT_ANGLE_MULT);
         servos->setPulse(TILT_SERVO, pulse);
     }
+
+    snprintf(buf, sizeof(buf) - 1, "Camera tilt to %.1f\n", tiltAt());
+    LOG(buf);
 }
 
 float Camera::panAt(void) const
@@ -548,6 +594,11 @@ float Camera::tiltAt(void) const
         TILT_LO_PULSE;
 
     return ((float) pulse - (float) center) / TILT_ANGLE_MULT * -1.0;
+}
+
+float Camera::frameRate(void) const
+{
+    return _fr;
 }
 
 /*

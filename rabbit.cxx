@@ -169,7 +169,7 @@ int main(int argc, char **argv)
     compass = new Compass();
     ambience = new Ambience();
 
-    cout << "Rabbit 'bot' is alive!" << endl;
+    cout << "Rabbit'bot is alive!" << endl;
 
     websock_init();
 
