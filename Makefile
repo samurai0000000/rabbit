@@ -6,7 +6,15 @@ ARCH :=		$(shell uname -m)
 MAKEFLAGS =	--no-print-dir
 RPI_HOST ?=	rabbit
 
-TARGETS +=	build/$(ARCH)/rabbit
+TARGETS =	build/$(ARCH)/rabbit
+
+ifeq ($(ARCH),x86_64)
+ARCH_ENVVARS =	CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++
+endif
+
+ifeq ($(ARCH),aarch64)
+TARGETS +=	build/ros/rabbit_node
+endif
 
 .PHONY: default clean distclean $(TARGETS)
 
@@ -18,19 +26,16 @@ clean:
 distclean:
 	rm -rf build
 
-build/aarch64/rabbit: build/aarch64/Makefile
-	@$(MAKE) -C build/aarch64
+#
+# Built the rabbit'bot controller
+#
 
-build/aarch64/Makefile: CMakeLists.txt
-	@mkdir -p build/aarch64
-	@cd build/aarch64 && cmake ../..
+build/$(ARCH)/rabbit: build/$(ARCH)/Makefile
+	@$(MAKE) -C build/$(ARCH)
 
-build/x86_64/rabbit: build/x86_64/Makefile
-	@$(MAKE) -C build/x86_64
-
-build/x86_64/Makefile: CMakeLists.txt
-	@mkdir -p build/x86_64
-	@cd build/x86_64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ cmake ../..
+build/$(ARCH)/Makefile: controller/CMakeLists.txt
+	@mkdir -p build/$(ARCH)
+	@cd build/$(ARCH) && $(ARCH_ENVVARS) cmake ../../controller
 
 .PHONY: run install install-html
 
@@ -53,6 +58,24 @@ install: build/$(ARCH)/rabbit
 install-html:
 	@rsync -avh html root@$(RPI_HOST):/var/www
 
+#
+# Build rabbit'bot ROS nodes
+#
+
+ifneq ($(findstring build/ros/rabbit_node,$(TARGETS)),)
+
+.PHONY: ros
+
+ros: build/ros/rabbit_node
+
+build/ros/rabbit_node: build/ros/Makefile
+	@$(MAKE) -C build/ros
+
+build/ros/Makefile: ros/CMakeLists.txt
+	@mkdir -p build/ros
+	@cd build/ros && cmake ../../ros
+
+endif
 
 #
 # Set up sysroot for cross-compiling
@@ -63,7 +86,7 @@ install-html:
 sync-rpi4rootfs:
 	@mkdir -p rpi4rootfs/usr
 	@cd rpi4rootfs/usr && rsync -avh \
-		$(RPI_HOST):/usr/include $(RPI_HOST):/usr/lib .
+		$(RPI_HOST):/usr/include $(RPI_HOST):/usr/lib $(RPI_HOST):/usr/share .
 	@cd rpi4rootfs/usr/lib/aarch64-linux-gnu && \
 		rm -f libblas.so.3 && \
 		ln -s blas/libblas.so.3 libblas.so.3
@@ -73,4 +96,7 @@ sync-rpi4rootfs:
 	@cd rpi4rootfs/usr/lib/aarch64-linux-gnu && \
 		rm -f libpthread.so && \
 		ln -s libpthread-2.31.so libpthread.so
+	@cd rpi4rootfs/usr/lib/aarch64-linux-gnu && \
+		rm -f librt.so && \
+		ln -s librt.so.1 librt.so
 	@cd rpi4rootfs && rm -d lib && ln -s usr/lib lib
