@@ -13,7 +13,7 @@ ARCH_ENVVARS =	CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++
 endif
 
 ifeq ($(ARCH),aarch64)
-TARGETS +=	build/ros/rabbit_node
+TARGETS +=	build/ros/rabbit/devel/lib/rabbit/node
 endif
 
 .PHONY: default clean distclean $(TARGETS)
@@ -62,18 +62,18 @@ install-html:
 # Build rabbit'bot ROS nodes
 #
 
-ifneq ($(findstring build/ros/rabbit_node,$(TARGETS)),)
+ifneq ($(findstring build/ros/rabbit/devel/lib/rabbit/node,$(TARGETS)),)
 
 .PHONY: ros
 
-ros: build/ros/rabbit_node
+ros: build/ros/rabbit/devel/lib/rabbit/node
 
-build/ros/rabbit_node: build/ros/Makefile
-	@$(MAKE) -C build/ros
+build/ros/rabbit/devel/lib/rabbit/node: build/ros/rabbit/Makefile
+	@$(MAKE) -C build/ros/rabbit
 
-build/ros/Makefile: ros/CMakeLists.txt
-	@mkdir -p build/ros
-	@cd build/ros && cmake ../../ros
+build/ros/rabbit/Makefile: ros/rabbit/CMakeLists.txt
+	@mkdir -p build/ros/rabbit
+	@cd build/ros/rabbit && cmake ../../../ros/rabbit
 
 endif
 
