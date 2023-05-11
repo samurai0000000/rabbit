@@ -25,6 +25,7 @@ Arm *leftArm = NULL;
 Power *power = NULL;
 Compass *compass = NULL;
 Ambience *ambience = NULL;
+Speech *speech = NULL;
 
 static void cleanup(void)
 {
@@ -52,6 +53,11 @@ static void cleanup(void)
     if (leftArm) {
         delete leftArm;
         leftArm = NULL;
+    }
+
+    if (speech) {
+        delete speech;
+        speech = NULL;
     }
 
     if (power) {
@@ -165,9 +171,9 @@ int main(int argc, char **argv)
     wheels = new Wheels();
     rightArm = new Arm(RIGHT_ARM);
     leftArm = new Arm(LEFT_ARM);
-    power = new Power();
     compass = new Compass();
     ambience = new Ambience();
+    speech = new Speech();
 
     cout << "Rabbit'bot is alive!" << endl;
 

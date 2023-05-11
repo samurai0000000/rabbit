@@ -10,6 +10,7 @@
 #include <iostream>
 #include "rabbit.hxx"
 
+#define V4L_CAPTURE_DEVICE    0
 #define CAMERA_RES_WIDTH    640
 #define CAMERA_RES_HEIGHT   480
 
@@ -38,7 +39,7 @@ Camera::Camera()
       _sentry()
 {
     try {
-        _vc = new VideoCapture(0, CAP_V4L);
+        _vc = new VideoCapture(V4L_CAPTURE_DEVICE, CAP_V4L);
         _vc->set(CAP_PROP_FRAME_WIDTH, CAMERA_RES_WIDTH);
         _vc->set(CAP_PROP_FRAME_HEIGHT, CAMERA_RES_HEIGHT);
    } catch(cv::Exception &e) {
@@ -137,8 +138,9 @@ void Camera::run(void)
     sentry_motions.push_back(motion);
 
     do {
+        struct timespec twait;
+
         if (!isVisionEn() && !_streamer.hasClient("/rgb")) {
-            struct timespec twait;
             if (_vc->isOpened()) {
                 _vc->release();
             }
@@ -151,7 +153,7 @@ void Camera::run(void)
             continue;
         } else {
             if (!_vc->isOpened()) {
-                _vc->open(0, CAP_V4L);
+                _vc->open(V4L_CAPTURE_DEVICE, CAP_V4L);
                 _vc->set(CAP_PROP_FRAME_WIDTH, CAMERA_RES_WIDTH);
                 _vc->set(CAP_PROP_FRAME_HEIGHT, CAMERA_RES_HEIGHT);
             }
@@ -162,6 +164,11 @@ void Camera::run(void)
 
         if (frame.empty()) {
             cerr << "empty frame!" << endl;
+            pthread_mutex_lock(&_mutex);
+            clock_gettime(CLOCK_REALTIME, &twait);
+            twait.tv_sec += 1;
+            pthread_cond_timedwait(&_cond, &_mutex, &twait);
+            pthread_mutex_unlock(&_mutex);
             continue;
         } else {
             frame_count++;
@@ -497,8 +504,10 @@ void Camera::enVision(bool enable)
     if (_vision != enable) {
         _vision = enable;
         if (enable) {
+            speech->speak("Camera vision enabled");
             LOG("Camera vision enabled\n");
         } else {
+            speech->speak("Camera vision disabled");
             LOG("Camera vision disabled\n");
         }
     }
@@ -516,8 +525,10 @@ void Camera::enSentry(bool enable)
     if (_sentry.enabled != enable) {
         _sentry.enabled = enable;
         if (enable) {
+            speech->speak("Camera sentry mode enabled");
             LOG("Camera sentry mode enabled\n");
         } else {
+            speech->speak("Camera sentry mode disabled");
             LOG("Camera sentry mode disabled\n");
         }
     }

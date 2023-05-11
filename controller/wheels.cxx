@@ -480,6 +480,37 @@ void Wheels::change(unsigned int state)
             snprintf(buf, sizeof(buf) - 1, "Wheel %s %ums -> %s\n",
                      state_string[_state], ms, state_string[state]);
         }
+
+        switch (state) {
+        case 0:
+            if (ms > 1000) {
+                //speech->speak("Halt");
+            }
+            break;
+        case 1:
+        case 5:
+        case 6:
+            if (_state != 1 && _state != 5 && _state != 6) {
+                //speech->speak("Forward");
+            }
+            break;
+        case 2:
+        case 7:
+        case 8:
+            if (_state != 2 && _state != 7 && _state != 8) {
+                //speech->speak("Backward");
+            }
+            break;
+        case 3:
+            //speech->speak("Spin right");
+            break;
+        case 4:
+            //speech->speak("Spin left");
+            break;
+        default:
+            break;
+        }
+
         LOG(buf);
     }
 

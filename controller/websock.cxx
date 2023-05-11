@@ -10,7 +10,7 @@
 #include <string.h>
 #include <vector>
 #include <ws.h>
-#include "websock.hxx"
+#include "rabbit.hxx"
 
 using namespace std;
 
@@ -29,6 +29,7 @@ static void onopen(ws_cli_conn_t *client)
 	fprintf(stderr, "websocket connected from %s\n", cli);
     snprintf(buf, sizeof(buf) - 1,
              "%s has connected to the rabbit'bot, welcome!\n", cli);
+    speech->speak("A web client just connected and joined");
     websock_broadcast(buf);
 }
 
@@ -48,6 +49,7 @@ static void onclose(ws_cli_conn_t *client)
         }
     }
 
+    speech->speak("A web client has left the session");
     snprintf(buf, sizeof(buf) - 1,
              "%s has disconnected from the rabbit'bot, bye!\n", cli);
     websock_broadcast(buf);

@@ -655,8 +655,14 @@ void Arm::planMotions(float shoulderRotateDeg, float shoulderExtensionDeg,
 
 void Arm::rest(void)
 {
-    clearMotions();
+    if (_side == RIGHT_ARM) {
+        LOG("Move right arm to rest\n");
+        speech->speak("Resting both arms");
+    } else {
+        LOG("Move left arm to rest\n");
+    }
 
+    clearMotions();
     planMotions(0.0, -85.0,
                 -90.0,
                 -40.0, -90.0,
@@ -667,13 +673,26 @@ void Arm::rest(void)
 
 void Arm::freeze(void)
 {
+    if (_side == RIGHT_ARM) {
+        LOG("Freeze right arm\n");
+        speech->speak("Freezing both arms");
+    } else {
+        LOG("Freeze left arm\n");
+    }
+
     clearMotions();
 }
 
 void Arm::surrender(void)
 {
-    clearMotions();
+    if (_side == RIGHT_ARM) {
+        speech->speak("I surrender");
+        LOG("Move right arm up\n");
+    } else {
+        LOG("Move left arm up\n");
+    }
 
+    clearMotions();
     planMotions(50.0, 70.0,
                 25.0,
                 0.0, 0.0,
@@ -690,8 +709,14 @@ void Arm::surrender(void)
 
 void Arm::hug(void)
 {
-    clearMotions();
+    if (_side == RIGHT_ARM) {
+        speech->speak("I need a big hug");
+        LOG("Move right arm forward\n");
+    } else {
+        LOG("Move left arm forward\n");
+    }
 
+    clearMotions();
     planMotions(10.0, 85.0,
                 45.0,
                 0.0, 0.0,
@@ -701,8 +726,15 @@ void Arm::hug(void)
 
 void Arm::extend(void)
 {
-    clearMotions();
+    if (_side == RIGHT_ARM) {
+        speech->speak("Stretching my right arm");
+        LOG("Extend right arm\n");
+    } else {
+        speech->speak("Stretching my left arm");
+        LOG("Extend left arm\n");
+    }
 
+    clearMotions();
     planMotions(10.0, 0.0,
                 45.0,
                 0.0, 0.0,
@@ -712,14 +744,20 @@ void Arm::extend(void)
 
 void Arm::hi(void)
 {
-    clearMotions();
+    if (_side == RIGHT_ARM) {
+        speech->speak("Hello, it is very nice to see you");
+        LOG("Wave right arm to say hi\n");
+    } else {
+        speech->speak("I am very pleased to see you");
+        LOG("Wave left arm to say hi\n");
+    }
 
+    clearMotions();
     planMotions(50.0, 65.0,
                 25.0,
                 0.0, 0.0,
                 20.0,
                 1500);
-
     planMotions(90.0, 65.0,
                 25.0,
                 0.0, -90.0,
@@ -732,7 +770,6 @@ void Arm::hi(void)
                     45.0, NAN,
                     NAN,
                     500);
-
         planMotions(NAN, NAN,
                     NAN,
                     0.0, NAN,
@@ -743,26 +780,30 @@ void Arm::hi(void)
 
 void Arm::pickup(void)
 {
-    clearMotions();
+    if (_side == RIGHT_ARM) {
+        speech->speak("Picking up object with right arm");
+        LOG("Right arm picks up\n");
+    } else {
+        speech->speak("Picking up object with left arm");
+        LOG("Left arm picks up\n");
+    }
 
+    clearMotions();
     planMotions(NAN, NAN,
                 NAN,
                 NAN, NAN,
                 0.0,
                 1500);
-
     planMotions(-32.5, 40.0,
                 -25.0,
                 -5.0, -90.0,
                 0.0,
                 1500);
-
     planMotions(NAN, NAN,
                 NAN,
                 NAN, NAN,
                 30.0,
                 1500);
-
     planMotions(0.0, -85.0,
                 -90.0,
                 -40.0, -90.0,
@@ -783,6 +824,11 @@ void Arm::xferRL(void)
     static const float xfer_L_WE_Deg = -85.0;
     static const float xfer_L_WR_Deg = -90.0;
     bool inPosition = false;
+
+    if (_side == RIGHT_ARM) {
+        speech->speak("Transfer grip object from right to left");
+        LOG("Transfer grip object from right to left\n");
+    }
 
     clearMotions();
 
@@ -812,7 +858,6 @@ void Arm::xferRL(void)
                         0.0, xfer_R_WR_Deg,
                         NAN,
                         1500, true);
-
             planMotions(xfer_R_SR_Deg - 10.0, xfer_R_SE_Deg,
                         xfer_R_EE_Deg,
                         xfer_R_WE_Deg, NAN,
@@ -825,7 +870,6 @@ void Arm::xferRL(void)
                         0.0, xfer_L_WR_Deg,
                         0.0,
                         1500, true);
-
             planMotions(xfer_L_SR_Deg + 10.0, xfer_L_SE_Deg,
                         xfer_L_EE_Deg,
                         xfer_L_WE_Deg, NAN,
@@ -889,6 +933,11 @@ void Arm::xferLR(void)
     static const float xfer_L_WR_Deg = -90.0;
     bool inPosition = false;
 
+    if (_side == RIGHT_ARM) {
+        speech->speak("Transfer grip object from left to right");
+        LOG("Transfer grip object from left to right\n");
+    }
+
     clearMotions();
 
     if (_side == RIGHT_ARM) {
@@ -917,7 +966,6 @@ void Arm::xferLR(void)
                         0.0, xfer_R_WR_Deg,
                         0.0,
                         1500, true);
-
             planMotions(xfer_R_SR_Deg + 10.0, xfer_R_SE_Deg,
                         xfer_R_EE_Deg,
                         xfer_R_WE_Deg, NAN,
@@ -930,7 +978,6 @@ void Arm::xferLR(void)
                         0.0, xfer_L_WR_Deg,
                         NAN,
                         1500, true);
-
             planMotions(xfer_L_SR_Deg - 10.0, xfer_L_SE_Deg,
                         xfer_L_EE_Deg,
                         xfer_L_WE_Deg, NAN,

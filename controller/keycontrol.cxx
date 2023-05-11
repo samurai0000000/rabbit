@@ -367,51 +367,40 @@ void rabbit_keycontrol(uint8_t key)
     case 'x':
         rightArm->rest();
         leftArm->rest();
-        LOG("Move arms to rest\n");
-        break;
-    case 'y':
-        rightArm->hug();
-        leftArm->hug();
-        LOG("Move arms to hug\n");
         break;
     case 'z':
         rightArm->surrender();
         leftArm->surrender();
-        LOG("Move arms to surrender\n");
+        break;
+    case 'y':
+        rightArm->hug();
+        leftArm->hug();
         break;
     case 'a':
         rightArm->pickup();
-        LOG("Right arm picks up\n");
         break;
     case'A':
         leftArm->pickup();
-        LOG("Left arm picks up\n");
         break;
     case 'u':
         rightArm->extend();
-        LOG("Right arm extends\n");
         break;
     case 'U':
         leftArm->extend();
-        LOG("Left arm extends\n");
         break;
     case 'i':
         rightArm->hi();
-        LOG("Right arm waves hi\n");
         break;
     case 'I':
         leftArm->hi();
-        LOG("Left arm waves hi\n");
         break;
     case 'k':
         rightArm->xferRL();
         leftArm->xferRL();
-        LOG("Transfer grip object from right to left\n");
         break;
     case 'K':
         rightArm->xferLR();
         leftArm->xferLR();
-        LOG("Transfer grip object from left to right\n");
         break;
     case 'p':
     case 'P':

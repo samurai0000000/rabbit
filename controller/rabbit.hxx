@@ -17,6 +17,7 @@
 #include "compass.hxx"
 #include "ambience.hxx"
 #include "wifi.hxx"
+#include "speech.hxx"
 #include "websock.hxx"
 #include "logging.hxx"
 
@@ -24,12 +25,13 @@ extern Servos *servos;
 extern ADC *adc;
 extern Camera *camera;
 extern Wheels *wheels;
+extern Arm *rightArm;
+extern Arm *leftArm;
 extern Power *power;
 extern Compass *compass;
 extern Ambience *ambience;
 extern WIFI *wifi;
-extern Arm *rightArm;
-extern Arm *leftArm;
+extern Speech *speech;
 
 extern "C" void rabbit_keycontrol(uint8_t key);
 

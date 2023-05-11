@@ -1,5 +1,5 @@
 /*
- * amvience.hxx
+ * ambience.hxx
  *
  * Copyright (C) 2023, Charles Chiou
  */
