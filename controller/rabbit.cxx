@@ -10,6 +10,8 @@
 #include <signal.h>
 #include <termios.h>
 #include <sys/select.h>
+#include <time.h>
+#include <sys/time.h>
 #include <iostream>
 #include "rabbit.hxx"
 
@@ -26,11 +28,19 @@ Power *power = NULL;
 Compass *compass = NULL;
 Ambience *ambience = NULL;
 Speech *speech = NULL;
+Crond *crond = NULL;
+
+static void announce_clock(void);
 
 static void cleanup(void)
 {
     if (!daemonize) {
         tcsetattr(fileno(stdin), TCSANOW, &t_old);
+    }
+
+    if (crond) {
+        delete crond;
+        crond = NULL;
     }
 
     websock_cleanup();
@@ -174,6 +184,8 @@ int main(int argc, char **argv)
     compass = new Compass();
     ambience = new Ambience();
     speech = new Speech();
+    crond = new Crond();
+    crond->activate(announce_clock, "*/2 * * * *");
 
     cout << "Rabbit'bot is alive!" << endl;
 
@@ -242,6 +254,44 @@ int main(int argc, char **argv)
     }
 
     return 0;
+}
+
+static void announce_clock(void)
+{
+    struct timeval now;
+    const struct tm *tm;
+    const char *timeofday;
+    char announcement[256];
+
+    gettimeofday(&now, NULL);
+    tm = localtime(&now.tv_sec);
+
+    if (tm->tm_hour == 0) {
+        timeofday = "midnight";
+    } else if (tm->tm_hour >= 1 && tm->tm_hour <= 11) {
+        timeofday = "in the morning";
+    } else if (tm->tm_hour == 12) {
+        timeofday = "at noon";
+    } else if (tm->tm_hour >= 13 && tm->tm_hour <= 18) {
+        timeofday = "in the afternoon";
+    } else {
+        timeofday = "in the evening";
+    }
+
+    if (tm->tm_min == 0) {
+        snprintf(announcement, sizeof(announcement) - 1,
+                 "Now is %d o'clock %s\n",
+                 tm->tm_hour % 12, timeofday);
+    } else {
+        snprintf(announcement, sizeof(announcement) - 1,
+                 "Now is %d o'clock and %d %s %s\n",
+                 tm->tm_hour % 12, tm->tm_min,
+                 tm->tm_min == 1 ? "minute" : "minutes",
+                 timeofday);
+    }
+
+    LOG(announcement);
+    speech->speak(announcement);
 }
 
 /*

@@ -20,6 +20,7 @@
 #include "speech.hxx"
 #include "websock.hxx"
 #include "logging.hxx"
+#include "crond.hxx"
 
 extern Servos *servos;
 extern ADC *adc;
@@ -32,6 +33,7 @@ extern Compass *compass;
 extern Ambience *ambience;
 extern WIFI *wifi;
 extern Speech *speech;
+extern Crond *crond;
 
 extern "C" void rabbit_keycontrol(uint8_t key);
 
