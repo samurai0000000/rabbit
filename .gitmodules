@@ -1,9 +1,9 @@
 [submodule "cpp-mjpeg-streamer"]
-	path = cpp-mjpeg-streamer
+	path = 3rdparty/cpp-mjpeg-streamer
 	url = https://github.com/nadjieb/cpp-mjpeg-streamer.git
 [submodule "BME280_driver"]
-	path = BME280_driver
+	path = 3rdparty/BME280_driver
 	url = https://github.com/boschsensortec/BME280_driver.git
 [submodule "wsServer"]
-	path = wsServer
+	path = 3rdparty/wsServer
 	url = https://github.com/Theldus/wsServer.git
