@@ -36,7 +36,7 @@ Camera::Camera()
       _running(false),
       _vision(0),
       _fr(0.0),
-      _sentry()
+      _sentry(false)
 {
     try {
         _vc = new VideoCapture(V4L_CAPTURE_DEVICE, CAP_V4L);
@@ -226,7 +226,7 @@ void Camera::run(void)
         }
 
         /* Sentry */
-        if (_sentry.enabled) {
+        if (_sentry) {
             if (servos->hasMotionSchedule(PAN_SERVO) == false) {
                 servos->scheduleMotions(PAN_SERVO, sentry_motions);
             }
@@ -380,10 +380,26 @@ void Camera::updateOsd1(Mat &osd1, const struct timeval *since,
     putText(osd1, text, pos,
             fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-    snprintf(buf, sizeof(buf) - 1, "%.1f", panAt());
-    text = String("Pan: ") + buf + String(" deg ");
+    snprintf(buf, sizeof(buf) - 1, "%.1f", this->panAt());
+    text = String("Camera Pan: ") + buf + String(" deg ");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
     snprintf(buf, sizeof(buf) - 1, "%.1f", tiltAt());
-    text += String("Tilt: ") + buf + String(" deg");
+    text = String("Camera Tilt: ") + buf + String(" deg");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f", head->rotationAt());
+    text = String("Head Rotation: ") + buf + String(" deg ");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    snprintf(buf, sizeof(buf) - 1, "%.1f", head->tiltAt());
+    text = String("Head Tilt: ") + buf + String(" deg");
     pos.y += textSize.height;
     putText(osd1, text, pos,
             fontFace, fontScale, fontColor, thickness, LINE_8, false);
@@ -522,8 +538,8 @@ void Camera::enSentry(bool enable)
 {
     enable = (enable ? true : false);
 
-    if (_sentry.enabled != enable) {
-        _sentry.enabled = enable;
+    if (_sentry != enable) {
+        _sentry = enable;
         if (enable) {
             speech->speak("Camera sentry mode enabled");
             LOG("Camera sentry mode enabled\n");
@@ -536,7 +552,7 @@ void Camera::enSentry(bool enable)
 
 bool Camera::isSentryEn(void) const
 {
-    return _sentry.enabled;
+    return _sentry;
 }
 
 void Camera::pan(float deg, bool relative)

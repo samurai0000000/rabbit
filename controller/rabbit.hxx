@@ -16,6 +16,7 @@
 #include "power.hxx"
 #include "compass.hxx"
 #include "ambience.hxx"
+#include "head.hxx"
 #include "wifi.hxx"
 #include "speech.hxx"
 #include "websock.hxx"
@@ -31,6 +32,7 @@ extern Arm *leftArm;
 extern Power *power;
 extern Compass *compass;
 extern Ambience *ambience;
+extern Head *head;
 extern WIFI *wifi;
 extern Speech *speech;
 extern Crond *crond;

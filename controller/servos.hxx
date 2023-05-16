@@ -9,8 +9,9 @@
 
 #include <vector>
 
-#define SERVO_CHANNELS 16
-#define SERVO_SCHEDULE_INTERVAL_MS 50
+#define SERVO_CONTROLLERS            2
+#define SERVO_CHANNELS              (16 * SERVO_CONTROLLERS)
+#define SERVO_SCHEDULE_INTERVAL_MS  50
 
 using namespace std;
 
@@ -61,25 +62,25 @@ public:
 
 private:
 
-    int readReg(uint8_t reg, uint8_t *val) const;
-    int writeReg(uint8_t reg, uint8_t val) const;
+    int readReg(unsigned int id, uint8_t reg, uint8_t *val) const;
+    int writeReg(unsigned int id, uint8_t reg, uint8_t val) const;
     void setPwm(unsigned int chan, unsigned int on, unsigned int off);
 
     static void *thread_func(void *);
     void run(void);
 
-    int _handle;
+    int _handle[SERVO_CONTROLLERS];
     unsigned int _freq;
-    unsigned int _lo[SERVO_CHANNELS];
-    unsigned int _hi[SERVO_CHANNELS];
-    unsigned int _pulse[SERVO_CHANNELS];
+    unsigned int _lo[SERVO_CHANNELS * SERVO_CONTROLLERS];
+    unsigned int _hi[SERVO_CHANNELS * SERVO_CONTROLLERS];
+    unsigned int _pulse[SERVO_CHANNELS * SERVO_CONTROLLERS];
 
     bool _running;
     pthread_t _thread;
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;
 
-    vector<struct servo_motion_exec> _motions[SERVO_CHANNELS];
+    vector<struct servo_motion_exec> _motions[SERVO_CHANNELS * SERVO_CONTROLLERS];
     vector<struct servo_motion_sync *> _syncs;
 };
 

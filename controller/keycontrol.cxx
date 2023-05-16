@@ -24,6 +24,7 @@ enum rabbit_console_mode {
     RABBIT_CONSOLE_MODE_L_ELBOW = 7,
     RABBIT_CONSOLE_MODE_L_WRIST = 8,
     RABBIT_CONSOLE_MODE_L_GRIPPER = 9,
+    RABBIT_CONSOLE_MODE_HEAD = 10,
 };
 
 static enum rabbit_console_mode mode = RABBIT_CONSOLE_MODE_CAMERA;
@@ -32,7 +33,7 @@ static void action_up(void)
 {
     switch (mode) {
     case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(-1, true);
+        camera->tilt(-1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->fwd(WHEEL_DRIVE_LIMIT_MS);
@@ -61,6 +62,9 @@ static void action_up(void)
     case RABBIT_CONSOLE_MODE_L_GRIPPER:
         leftArm->setGripperPosition(1.0, 5, true);
         break;
+    case RABBIT_CONSOLE_MODE_HEAD:
+        head->tilt(1.0, true);
+        break;
     default:
         break;
     }
@@ -70,7 +74,7 @@ static void action_down(void)
 {
     switch (mode) {
     case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(1, true);
+        camera->tilt(1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->bwd(WHEEL_DRIVE_LIMIT_MS);
@@ -98,6 +102,9 @@ static void action_down(void)
         break;
     case RABBIT_CONSOLE_MODE_L_GRIPPER:
         leftArm->setGripperPosition(-1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_HEAD:
+        head->tilt(-1.0, true);
         break;
     default:
         break;
@@ -137,6 +144,9 @@ static void action_right(void)
     case RABBIT_CONSOLE_MODE_L_GRIPPER:
         leftArm->setGripperPosition(-1.0, 5, true);
         break;
+    case RABBIT_CONSOLE_MODE_HEAD:
+        head->rotate(-1.0, true);
+        break;
     default:
         break;
     }
@@ -146,7 +156,7 @@ static void action_left(void)
 {
     switch (mode) {
     case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->pan(1, true);
+        camera->pan(1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->rol(WHEEL_DRIVE_LIMIT_MS);
@@ -175,6 +185,9 @@ static void action_left(void)
     case RABBIT_CONSOLE_MODE_L_GRIPPER:
         leftArm->setGripperPosition(1.0, 5, true);
         break;
+    case RABBIT_CONSOLE_MODE_HEAD:
+        head->rotate(1.0, true);
+        break;
     default:
         break;
     }
@@ -184,8 +197,8 @@ static void action_upright(void)
 {
     switch (mode) {
     case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(-1, true);
-        camera->pan(-1, true);
+        camera->tilt(-1.0, true);
+        camera->pan(-1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->fwr(WHEEL_DRIVE_LIMIT_MS);
@@ -196,6 +209,10 @@ static void action_upright(void)
     case RABBIT_CONSOLE_MODE_L_SHOULDER:
         leftArm->extendWrist(-1.0, 5, true);
         break;
+    case RABBIT_CONSOLE_MODE_HEAD:
+        head->tilt(-1.0, true);
+        head->rotate(-1.0, true);
+        break;
     default:
         break;
     }
@@ -205,8 +222,8 @@ static void action_upleft(void)
 {
     switch (mode) {
     case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(-1, true);
-        camera->pan(1, true);
+        camera->tilt(-1.0, true);
+        camera->pan(1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->fwl(WHEEL_DRIVE_LIMIT_MS);
@@ -217,6 +234,9 @@ static void action_upleft(void)
     case RABBIT_CONSOLE_MODE_L_SHOULDER:
         leftArm->extendElbow(-1.0, 5, true);
         break;
+    case RABBIT_CONSOLE_MODE_HEAD:
+        head->tilt(-1.0, true);
+        head->rotate(1.0, true);
     default:
         break;
     }
@@ -226,8 +246,8 @@ static void action_downright(void)
 {
     switch (mode) {
     case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(1, true);
-        camera->pan(-1, true);
+        camera->tilt(1.0, true);
+        camera->pan(-1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->bwr(WHEEL_DRIVE_LIMIT_MS);
@@ -238,6 +258,10 @@ static void action_downright(void)
     case RABBIT_CONSOLE_MODE_L_SHOULDER:
         leftArm->extendWrist(1.0, 5, true);
         break;
+    case RABBIT_CONSOLE_MODE_HEAD:
+        head->tilt(1.0, true);
+        head->rotate(-1.0, true);
+        break;
     default:
         break;
     }
@@ -247,8 +271,8 @@ static void action_downleft(void)
 {
     switch (mode) {
     case RABBIT_CONSOLE_MODE_CAMERA:
-        camera->tilt(1, true);
-        camera->pan(1, true);
+        camera->tilt(1.0, true);
+        camera->pan(1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_WHEEL:
         wheels->bwl(WHEEL_DRIVE_LIMIT_MS);
@@ -258,6 +282,10 @@ static void action_downleft(void)
         break;
     case RABBIT_CONSOLE_MODE_L_SHOULDER:
         leftArm->extendElbow(1.0, 5, true);
+        break;
+    case RABBIT_CONSOLE_MODE_HEAD:
+        head->tilt(1.0, true);
+        head->rotate(1.0, true);
         break;
     default:
         break;
@@ -288,21 +316,33 @@ void rabbit_keycontrol(uint8_t key)
             LOG("Wheel control active\n");
         }
         break;
+    case 'h':
+    case 'H':
+        if (mode != RABBIT_CONSOLE_MODE_HEAD) {
+            mode = RABBIT_CONSOLE_MODE_HEAD;
+            LOG("HEAD control active\n");
+        }
+        break;
     case 'v':
     case 'V':
         camera->enVision(!camera->isVisionEn());
         break;
     case ' ':
-        camera->pan(0);
-        camera->tilt(0);
         wheels->halt();
         rightArm->freeze();
         leftArm->freeze();
-        LOG("Camera centered, wheels halted, arms frozen\n");
+        camera->pan(0.0);
+        camera->tilt(0.0);
+        head->rotate(0.0);
+        head->tilt(0.0);
         break;
     case 's':
     case 'S':
-        camera->enSentry(!camera->isSentryEn());
+        if (mode == RABBIT_CONSOLE_MODE_CAMERA) {
+            camera->enSentry(!camera->isSentryEn());
+        } else if (mode == RABBIT_CONSOLE_MODE_HEAD) {
+            head->enSentry(!head->isSentryEn());
+        }
         break;
     case 'r':
     case 'R':

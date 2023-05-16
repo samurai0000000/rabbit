@@ -52,10 +52,7 @@ private:
     bool _running;
     bool _vision;
     float _fr;
-    struct {
-        bool enabled;
-        int dir;
-    } _sentry;
+    bool _sentry;
     CascadeClassifier _cascade;
 
 };

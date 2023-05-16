@@ -18,38 +18,41 @@
  * https://www.waveshare.com/wiki/Servo_Driver_HAT
  */
 #define PWM_I2C_BUS    1
-#define PWM_I2C_ADDR   0x40
 #define PWM_FREQ_KHZ   50
+static const unsigned int PWM_I2C_ADDR[SERVO_CONTROLLERS] = {
+    0x40,
+    0x41,
+};
 
 Servos::Servos()
-    : _handle(-1),
+    : _handle(),
       _freq(PWM_FREQ_KHZ)
 {
     unsigned int i;
     uint8_t v;
     float prescale;
 
-    _handle = i2cOpen(PWM_I2C_BUS, PWM_I2C_ADDR, 0x0);
-    if (_handle < 0) {
-        cerr << "Open PCA9685 failed" << endl;
-        return;
-    }
-
     for (i = 0; i < SERVO_CHANNELS; i++) {
         _lo[i] = 450;
         _hi[i] = 2500;
     }
-
-    writeReg(MODE2_REG, MODE2_OUTDRV);
-    writeReg(MODE1_REG, MODE1_SLEEP);
 
     prescale = 25000000;
     prescale /= 4096.0;
     prescale /= (float) _freq;
     prescale -= 1.0;
     v = floor(prescale + 0.5);
-    writeReg(PRE_SCALE_REG, v);
-    writeReg(MODE1_REG, MODE1_RESTART);
+
+    for (i = 0; i < SERVO_CONTROLLERS; i++) {
+        _handle[i] = i2cOpen(PWM_I2C_BUS, PWM_I2C_ADDR[i], 0x0);
+        if (_handle[i] < 0) {
+            cerr << "Open PCA9685 failed" << endl;
+        }
+
+        writeReg(i, MODE2_REG, MODE2_OUTDRV);
+        writeReg(i, PRE_SCALE_REG, v);
+        writeReg(i, MODE1_REG, MODE1_RESTART);
+    }
 
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -59,28 +62,32 @@ Servos::Servos()
 
 Servos::~Servos()
 {
+    unsigned int i;
+
     _running = false;
     pthread_cond_broadcast(&_cond);
     pthread_join(_thread, NULL);
     pthread_mutex_destroy(&_mutex);
     pthread_cond_destroy(&_cond);
 
-    if (_handle >= 0) {
-        i2cWriteByteData(_handle, MODE1_REG, MODE1_SLEEP);
-        i2cClose(_handle);
-        _handle = -1;
+    for (i = 0; i < SERVO_CONTROLLERS; i++) {
+        if (_handle[i] >= 0) {
+            i2cWriteByteData(_handle[i], MODE1_REG, MODE1_SLEEP);
+            i2cClose(_handle[i]);
+            _handle[i] = -1;
+        }
     }
 }
 
-int Servos::readReg(uint8_t reg, uint8_t *val) const
+int Servos::readReg(unsigned int id, uint8_t reg, uint8_t *val) const
 {
     int ret = 0;
 
-    if (_handle < 0) {
-        return _handle;
+    if (_handle[id] < 0) {
+        return _handle[id];
     }
 
-    ret = i2cReadByteData(_handle, reg);
+    ret = i2cReadByteData(_handle[id], reg);
     if (ret < 0) {
         fprintf(stderr, "Servos::readReg i2cReadByteData 0x%.2x failed!\n",
                 reg);
@@ -92,15 +99,15 @@ int Servos::readReg(uint8_t reg, uint8_t *val) const
     return ret;
 }
 
-int Servos::writeReg(uint8_t reg, uint8_t val) const
+int Servos::writeReg(unsigned int id, uint8_t reg, uint8_t val) const
 {
     int ret = 0;
 
-    if (_handle < 0) {
-        return _handle;
+    if (_handle[id] < 0) {
+        return _handle[id];
     }
 
-    ret = i2cWriteByteData(_handle, reg, val);
+    ret = i2cWriteByteData(_handle[id], reg, val);
     if (ret != 0) {
         fprintf(stderr, "Servos::writeReg: i2cWriteByteData 0x%.2x failed!\n",
                 reg);
@@ -111,14 +118,15 @@ int Servos::writeReg(uint8_t reg, uint8_t val) const
 
 void Servos::setPwm(unsigned int chan, unsigned int on, unsigned int off)
 {
-    if (_handle < 0) {
-        return;
-    }
+    unsigned int id;
 
-    writeReg(LED_ON_L_REG(chan), on & 0xff);
-    writeReg(LED_ON_H_REG(chan), on >> 8);
-    writeReg(LED_OFF_L_REG(chan), off & 0xff);
-    writeReg(LED_OFF_H_REG(chan), off >> 8);
+    id = chan / 16;
+    chan = chan % 16;
+
+    writeReg(id, LED_ON_L_REG(chan), on & 0xff);
+    writeReg(id, LED_ON_H_REG(chan), on >> 8);
+    writeReg(id, LED_OFF_L_REG(chan), off & 0xff);
+    writeReg(id, LED_OFF_H_REG(chan), off >> 8);
 }
 
 void Servos::setRange(unsigned int chan, unsigned int lo, unsigned int hi)

@@ -27,6 +27,7 @@ Arm *leftArm = NULL;
 Power *power = NULL;
 Compass *compass = NULL;
 Ambience *ambience = NULL;
+Head *head = NULL;
 Speech *speech = NULL;
 Crond *crond = NULL;
 
@@ -78,6 +79,11 @@ static void cleanup(void)
     if (compass) {
         delete compass;
         compass = NULL;
+    }
+
+    if (head) {
+        delete head;
+        head = NULL;
     }
 
     if (ambience) {
@@ -183,6 +189,7 @@ int main(int argc, char **argv)
     leftArm = new Arm(LEFT_ARM);
     compass = new Compass();
     ambience = new Ambience();
+    head = new Head();
     speech = new Speech();
     crond = new Crond();
     crond->activate(announce_clock, "*/2 * * * *");
