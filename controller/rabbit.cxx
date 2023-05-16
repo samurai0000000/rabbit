@@ -28,6 +28,7 @@ Power *power = NULL;
 Compass *compass = NULL;
 Ambience *ambience = NULL;
 Head *head = NULL;
+Mouth *mouth = NULL;
 Speech *speech = NULL;
 Crond *crond = NULL;
 
@@ -84,6 +85,11 @@ static void cleanup(void)
     if (head) {
         delete head;
         head = NULL;
+    }
+
+    if (mouth) {
+        delete mouth;
+        mouth = NULL;
     }
 
     if (ambience) {
@@ -190,6 +196,7 @@ int main(int argc, char **argv)
     compass = new Compass();
     ambience = new Ambience();
     head = new Head();
+    mouth = new Mouth();
     speech = new Speech();
     crond = new Crond();
     crond->activate(announce_clock, "*/2 * * * *");

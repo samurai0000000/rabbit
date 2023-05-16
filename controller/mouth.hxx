@@ -14,6 +14,14 @@ public:
     Mouth();
     ~Mouth();
 
+    unsigned int intensity(void) const;
+    void setIntensity(unsigned int intensity);
+
+    void cylon(bool enable);
+    bool cylonEnabled(void) const;
+    void draw(const uint32_t fb[8]);
+    void smile(void);
+    void beh(void);
     void displayText(const char *text,
                      bool scroll = true,
                      unsigned int speed = 1);
@@ -26,6 +34,10 @@ private:
     void writeMax7219(uint8_t reg, uint8_t data) const;
 
     int _handle;
+    unsigned int _intensity;
+    uint32_t _fb[8];
+
+    bool _cylon;
 
     bool _running;
     pthread_t _thread;

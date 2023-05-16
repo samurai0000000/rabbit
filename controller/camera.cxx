@@ -128,17 +128,28 @@ void Camera::run(void)
     motion.ms = 50;
     sentry_motions.push_back(motion);
     motion.pulse = PAN_HI_PULSE;
-    motion.ms = 2000;
+    motion.ms = 10000;
     sentry_motions.push_back(motion);
     motion.pulse = PAN_LO_PULSE;
-    motion.ms = 4000;
+    motion.ms = 20000;
     sentry_motions.push_back(motion);
     motion.pulse = (PAN_HI_PULSE - PAN_LO_PULSE) / 2 + PAN_LO_PULSE;
-    motion.ms = 2000;
+    motion.ms = 10000;
     sentry_motions.push_back(motion);
 
     do {
         struct timespec twait;
+
+        /* Sentry */
+        if (_sentry) {
+            if (servos->hasMotionSchedule(PAN_SERVO) == false) {
+                servos->scheduleMotions(PAN_SERVO, sentry_motions);
+            }
+        } else {
+            if (servos->hasMotionSchedule(PAN_SERVO) == true) {
+                servos->center(PAN_SERVO);
+            }
+        }
 
         if (!isVisionEn() && !_streamer.hasClient("/rgb")) {
             if (_vc->isOpened()) {
@@ -223,17 +234,6 @@ void Camera::run(void)
             tilt(tiltDeg, true);
 
             ptFaces.clear();
-        }
-
-        /* Sentry */
-        if (_sentry) {
-            if (servos->hasMotionSchedule(PAN_SERVO) == false) {
-                servos->scheduleMotions(PAN_SERVO, sentry_motions);
-            }
-        } else {
-            if (servos->hasMotionSchedule(PAN_SERVO) == true) {
-                servos->center(PAN_SERVO);
-            }
         }
     } while (_running);
 }

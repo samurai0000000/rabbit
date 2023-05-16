@@ -320,7 +320,7 @@ void rabbit_keycontrol(uint8_t key)
     case 'H':
         if (mode != RABBIT_CONSOLE_MODE_HEAD) {
             mode = RABBIT_CONSOLE_MODE_HEAD;
-            LOG("HEAD control active\n");
+            LOG("Head control active\n");
         }
         break;
     case 'v':

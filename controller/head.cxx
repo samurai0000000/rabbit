@@ -46,6 +46,9 @@ Head::~Head()
     pthread_join(_thread, NULL);
     pthread_mutex_destroy(&_mutex);
     pthread_cond_destroy(&_cond);
+
+    rotate(0.0);
+    tilt(0.0);
 }
 
 void *Head::thread_func(void *args)
@@ -64,8 +67,8 @@ void Head::run(void)
     struct servo_motion motion;
 
     clock_gettime(CLOCK_REALTIME, &ts);
-    tloop.tv_sec = 1;
-    tloop.tv_nsec = 0;
+    tloop.tv_sec = 0;
+    tloop.tv_nsec = 200000000;
 
     /* Set up sentry motion vector */
     motion.pulse = (HEAD_ROTATION_HI_PULSE - HEAD_ROTATION_LO_PULSE) / 2 +
@@ -73,14 +76,14 @@ void Head::run(void)
     motion.ms = 50;
     sentry_motions.push_back(motion);
     motion.pulse = HEAD_ROTATION_HI_PULSE;
-    motion.ms = 2000;
+    motion.ms = 5000;
     sentry_motions.push_back(motion);
     motion.pulse = HEAD_ROTATION_LO_PULSE;
-    motion.ms = 4000;
+    motion.ms = 10000;
     sentry_motions.push_back(motion);
     motion.pulse = (HEAD_ROTATION_HI_PULSE - HEAD_ROTATION_LO_PULSE) / 2 +
         HEAD_ROTATION_LO_PULSE;
-    motion.ms = 2000;
+    motion.ms = 5000;
     sentry_motions.push_back(motion);
 
     while (_running) {
@@ -110,9 +113,11 @@ void Head::enSentry(bool enable)
     if (_sentry != enable) {
         _sentry = enable;
         if (enable) {
+            mouth->cylon(true);
             speech->speak("Head sentry mode enabled");
             LOG("Head sentry mode enabled\n");
         } else {
+            mouth->cylon(false);
             speech->speak("Head sentry mode disabled");
             LOG("Head sentry mode disabled\n");
         }
