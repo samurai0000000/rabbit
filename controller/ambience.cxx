@@ -13,6 +13,12 @@
 /*
  * BME280
  * https://www.mouser.com/datasheet/2/783/BST-BME280-DS002-1509607.pdf
+ *
+ * 4pin:
+ *   red    3.3v
+ *   black   gnd
+ *   oragne  scl
+ *   brown   sda
  */
 #define BME280_I2C_BUS  1
 #define BME280_I2C_ADDR 0x76

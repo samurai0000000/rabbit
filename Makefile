@@ -9,7 +9,11 @@ RPI_HOST ?=	rabbit
 TARGETS =	build/$(ARCH)/rabbit
 
 ifeq ($(ARCH),x86_64)
+ifeq ($(RPI_HOST),coyote)
+ARCH_ENVVARS =	CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++
+else
 ARCH_ENVVARS =	CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++
+endif
 endif
 
 ifeq ($(ARCH),aarch64)
@@ -99,4 +103,24 @@ sync-rpi4rootfs:
 	@cd rpi4rootfs/usr/lib/aarch64-linux-gnu && \
 		rm -f librt.so && \
 		ln -s librt.so.1 librt.so
-	@cd rpi4rootfs && rm -d lib && ln -s usr/lib lib
+	@cd rpi4rootfs && rm -f lib && ln -s usr/lib lib
+
+.PHONY: sync-rpi4rootfs
+
+sync-rpi2rootfs:
+	@mkdir -p rpi2rootfs/usr
+	@cd rpi2rootfs/usr && rsync -avh \
+		$(RPI_HOST):/usr/include $(RPI_HOST):/usr/lib $(RPI_HOST):/usr/share .
+	@cd rpi2rootfs/usr/lib/arm-linux-gnueabihf && \
+		rm -f libblas.so.3 && \
+		ln -s blas/libblas.so.3 libblas.so.3
+	@cd rpi2rootfs/usr/lib/arm-linux-gnueabihf && \
+		rm -f liblapack.so.3 && \
+		ln -s lapack/liblapack.so.3 liblapack.so.3
+	@cd rpi2rootfs/usr/lib/arm-linux-gnueabihf && \
+		rm -f libpthread.so && \
+		ln -s libpthread-2.31.so libpthread.so
+	@cd rpi2rootfs/usr/lib/arm-linux-gnueabihf && \
+		rm -f librt.so && \
+		ln -s librt.so.1 librt.so
+	@cd rpi2rootfs && rm -f lib && ln -s usr/lib lib

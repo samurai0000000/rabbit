@@ -6,17 +6,20 @@ cmake_minimum_required(VERSION 3.0)
 
 project(rabbit)
 
-if (CMAKE_SYSTEM_PROCESSOR MATCHES x86_64)
-#	set(CMAKE_C_COMPILER /usr/bin/aarch64-linux-gnu-gcc)
-#	set(CMAKE_CXX_COMPILER /usr/bin/aarch64-linux-gnu-g++)
-	set(CMAKE_SYSROOT ${CMAKE_CURRENT_LIST_DIR}/../rpi4rootfs)
-	add_link_options(-L ${CMAKE_CURRENT_LIST_DIR}/../rpi4rootfs/usr/lib/aarch64-linux-gnu)
-endif ()
-
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -frtti")
+
+if (CMAKE_SYSTEM_PROCESSOR MATCHES x86_64)
+	if ($ENV{CC} STREQUAL "arm-linux-gnueabihf-gcc")
+		set(CMAKE_SYSROOT ${CMAKE_CURRENT_LIST_DIR}/../rpi2rootfs)
+		add_link_options(-L ${CMAKE_CURRENT_LIST_DIR}/../rpi2rootfs/usr/lib/arm-linux-gnueabihf)
+	else()
+		set(CMAKE_SYSROOT ${CMAKE_CURRENT_LIST_DIR}/../rpi4rootfs)
+		add_link_options(-L ${CMAKE_CURRENT_LIST_DIR}/../rpi4rootfs/usr/lib/aarch64-linux-gnu)
+	endif()
+endif ()
 
 find_package(OpenCV REQUIRED)
 add_compile_options(-Wall -Wextra -Werror)
