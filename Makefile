@@ -9,6 +9,8 @@ RPI_HOST ?=	rabbit
 TARGETS =	build/$(ARCH)/rabbit
 
 ifeq ($(ARCH),x86_64)
+PICO_SDK =	$(realpath 3rdparty/pico-sdk)
+TARGETS +=	build/pico/rabbit_mcu.uf2
 ifeq ($(RPI_HOST),coyote)
 ARCH_ENVVARS =	CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++
 else
@@ -124,3 +126,19 @@ sync-rpi2rootfs:
 		rm -f librt.so && \
 		ln -s librt.so.1 librt.so
 	@cd rpi2rootfs && rm -f lib && ln -s usr/lib lib
+
+#
+# Build RPi Pico MCU
+#
+
+build/pico/rabbit_mcu.uf2: build/pico/Makefile
+	$(MAKE) -C build/pico
+
+build/pico/Makefile: mcu/CMakeLists.txt
+	@mkdir -p build/pico
+	@cd build/pico && PICO_SDK=$(PICO_SDK) cmake ../../mcu
+
+.PHONY: flash-mcu
+
+flash-mcu: build/pico/rabbit_mcu.uf2
+	@scp $< magpie:/H:/

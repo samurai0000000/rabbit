@@ -158,7 +158,6 @@ void LiDAR::run(void)
         if (FD_ISSET(_handle, &readfds)) {
             ret = read(_handle, &buf[count], 1);
             if (ret == 0) {
-                printf("zero!\n");
                 continue;
             } else if (ret < 0) {
                 perror("read");

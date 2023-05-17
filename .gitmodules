@@ -7,3 +7,6 @@
 [submodule "wsServer"]
 	path = 3rdparty/wsServer
 	url = https://github.com/Theldus/wsServer.git
+[submodule "pico-sdk"]
+	path = 3rdparty/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk
