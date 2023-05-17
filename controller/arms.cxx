@@ -681,7 +681,6 @@ void Arm::freeze(void)
 {
     if (_side == RIGHT_ARM) {
         LOG("Freeze right arm\n");
-        speech->speak("Freezing both arms");
     } else {
         LOG("Freeze left arm\n");
     }
