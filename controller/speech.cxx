@@ -6,7 +6,8 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/times.h>
+#include <sys/time.h>
+#include <bsd/sys/time.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -14,22 +15,23 @@
 #include <pthread.h>
 #include <math.h>
 #include <alsa/asoundlib.h>
-#include "speech.hxx"
+#include "rabbit.hxx"
+
+using namespace std;
 
 Speech::Speech()
     :
-#if defined(ESPEAK_POPEN)
-    _espeak(NULL),
-#else
-    _pid(-1),
-    _stdin(),
-#endif
-    _vol(100),
-    _wpm(120)
+    _vol(100)
 {
     pthread_mutex_init(&_mutex, NULL);
 
     setVolume(88);
+
+    _running = true;
+    pthread_mutex_init(&_mutex, NULL);
+    pthread_cond_init(&_cond, NULL);
+    pthread_create(&_thread, NULL, Speech::thread_func, this);
+
     speak("The rabbit bot is ready to see the world!");
 }
 
@@ -37,130 +39,108 @@ Speech::~Speech()
 {
     speak("The rabbit bot is going to sleep!");
 
-#if defined(ESPEAK_POPEN)
-    if (_espeak) {
-        pclose(_espeak);
-        _espeak = NULL;
-    }
-#endif
-#if defined(ESPEAK_FORK)
-    if (_pid != -1) {
-        int wstatus;
-
-        close(_stdin[1]);
-        _stdin[1] = -1;
-
-        waitpid(_pid, &wstatus, 0);
-        _pid = -1;
-    }
-#endif
-
+    _running = false;
+    pthread_cond_broadcast(&_cond);
+    pthread_join(_thread, NULL);
     pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
 }
 
-#if defined(ESPEAK_FORK)
+void *Speech::thread_func(void *args)
+{
+    Speech *speech = (Speech *) args;
+
+    speech->run();
+
+    return NULL;
+}
 
 static void atexit_do_nothing(void)
 {
 
 }
 
-#endif
-
-void Speech::speak(const char *message, bool immediate, int wpm)
+void Speech::run(void)
 {
-    int ret;
-    char cmd[256];
+    while (_running || _messages.empty() == false) {
+        if (_messages.empty()) {
+            struct timespec ts, twait;
+
+            twait.tv_sec = 1;
+            twait.tv_nsec = 0;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            timespecadd(&ts, &twait, &ts);
+            pthread_mutex_lock(&_mutex);
+            pthread_cond_timedwait(&_cond, &_mutex, &ts);
+            pthread_mutex_unlock(&_mutex);
+        } else {
+            int ret;
+            char cmd[256];
+            pid_t pid = -1;
+            int espeak_stdin[2] = { -1, -1, };
+            int wstatus;
+            string message;
+            unsigned int mode;
+
+            snprintf(cmd, sizeof(cmd) - 1,
+                     "/usr/bin/espeak -s %d 2>/dev/null", 120);
+
+            ret = pipe(espeak_stdin);
+            if (ret != 0) {
+                perror("espeak");
+            } else {
+
+                pid = fork();
+                if (pid == -1) {
+                    close(espeak_stdin[0]);
+                    close(espeak_stdin[1]);
+                    perror("fork");
+                } else if (pid == 0) {
+                    /* Child */
+                    atexit(atexit_do_nothing);
+                    signal(SIGTERM, NULL);
+                    signal(SIGINT, NULL);
+
+                    close(espeak_stdin[1]);
+                    dup2(espeak_stdin[0], STDIN_FILENO);
+
+                    ret = execl("/bin/sh", "sh", "-c", cmd, NULL);
+                    exit(ret);
+                } else {
+                    /* Parent */
+                    close(espeak_stdin[0]);
+                    espeak_stdin[0] = -1;
+
+                    mode = mouth->mode();
+                    mouth->speak();
+                    message = _messages.at(0);
+                    ret = write(espeak_stdin[1], message.c_str(), message.length());
+                    (void)(ret);
+                    ret = write(espeak_stdin[1], "\n", 1);
+                    (void)(ret);
+                    close(espeak_stdin[1]);
+
+                    waitpid(pid, &wstatus, 0);
+                    _messages.erase(_messages.begin());
+                    mouth->setMode(mode);
+                }
+            }
+        }
+    }
+}
+
+void Speech::speak(const char *message, bool immediate)
+{
+    (void)(immediate);
 
     if (message == NULL) {
-        goto done;
+        return;
     }
-
-    if (wpm <= 0) {
-        wpm = _wpm;
-    }
-
-    snprintf(cmd, sizeof(cmd) - 1,
-             "/usr/bin/espeak -s %d 2>/dev/null", wpm);
 
     pthread_mutex_lock(&_mutex);
-
-#if defined(ESPEAK_PIPE)
-    if ((_espeak != NULL) &&
-        ((immediate == true) || (wpm != _wpm))) {
-        ret = system("killall espeak >/dev/null 2>&1");
-        (void)(ret);
-        pclose(_espeak);
-        _espeak = NULL;
-    }
-
-    if (_espeak == NULL) {
-        _espeak = popen(cmd, "w");
-        if (_espeak == NULL) {
-            perror(cmd);
-            goto done;
-        }
-    }
-
-    fwrite(message, 1, strlen(message), _espeak);
-    fwrite("\n", 1, 1, _espeak);
-    fflush(_espeak);
-#endif
-
-#if defined(ESPEAK_FORK)
-    if ((_pid != -1) &&
-        ((immediate == true) || (wpm != _wpm))) {
-        int wstatus;
-
-        close(_stdin[1]);
-        _stdin[1] = -1;
-
-        ret = kill(_pid, SIGKILL);
-        do {
-            (void)(ret);
-            waitpid(_pid, &wstatus, 0);
-        } while (!WIFEXITED(wstatus) && !WIFSIGNALED(wstatus));
-        _pid = -1;
-    }
-
-    if (_pid == -1) {
-        ret = pipe(_stdin);
-        if (ret != 0) {
-            goto done;
-        }
-
-        _pid = fork();
-        if (_pid == -1) {
-            close(_stdin[0]);
-            close(_stdin[1]);
-            goto done;
-        } else if (_pid == 0) {
-            /* Child */
-            atexit(atexit_do_nothing);
-            signal(SIGTERM, NULL);
-            signal(SIGINT, NULL);
-
-            close(_stdin[1]);
-            dup2(_stdin[0], STDIN_FILENO);
-
-            ret = execl("/bin/sh", "sh", "-c", cmd, NULL);
-            exit(ret);
-        } else {
-            /* Parent */
-            close(_stdin[0]);
-            _stdin[0] = -1;
-        }
-    }
-
-    ret = write(_stdin[1], message, strlen(message));
-    (void)(ret);
-    ret = write(_stdin[1], "\n", 1);
-    (void)(ret);
-#endif
-
-done:
-
+    _messages.push_back(message);
     pthread_mutex_unlock(&_mutex);
+    pthread_cond_broadcast(&_cond);
 }
 
 unsigned int Speech::volume(void) const

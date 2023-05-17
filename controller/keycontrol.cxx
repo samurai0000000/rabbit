@@ -405,40 +405,51 @@ void rabbit_keycontrol(uint8_t key)
         }
         break;
     case 'x':
+        mouth->beh();
         rightArm->rest();
         leftArm->rest();
         break;
     case 'z':
+        mouth->beh();
         rightArm->surrender();
         leftArm->surrender();
         break;
     case 'y':
+        mouth->smile();
         rightArm->hug();
         leftArm->hug();
         break;
     case 'a':
+        mouth->beh();
         rightArm->pickup();
         break;
     case'A':
+        mouth->beh();
         leftArm->pickup();
         break;
     case 'u':
+        mouth->beh();
         rightArm->extend();
         break;
     case 'U':
+        mouth->beh();
         leftArm->extend();
         break;
     case 'i':
+        mouth->smile();
         rightArm->hi();
         break;
     case 'I':
+        mouth->smile();
         leftArm->hi();
         break;
     case 'k':
+        mouth->beh();
         rightArm->xferRL();
         leftArm->xferRL();
         break;
     case 'K':
+        mouth->beh();
         rightArm->xferLR();
         leftArm->xferLR();
         break;

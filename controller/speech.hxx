@@ -7,8 +7,8 @@
 #ifndef SPEECH_HXX
 #define SPEECH_HXX
 
-//#define ESPEAK_POPEN
-#define ESPEAK_FORK
+#include <string>
+#include <vector>
 
 class Speech {
 
@@ -17,25 +17,24 @@ public:
     Speech();
     ~Speech();
 
-    void speak(const char *message, bool immediate = false, int wpm = -1);
+    void speak(const char *message, bool immediate = false);
 
     unsigned int volume(void) const;
     void setVolume(unsigned int vol);
 
 private:
 
-#if defined(ESPEAK_POPEN)
-    FILE *_espeak;
-#endif
-#if defined(ESPEAK_FORK)
-    pid_t _pid;
-    int _stdin[2];
-#endif
+    static void *thread_func(void *args);
+    void run(void);
 
     unsigned int _vol;
-    int _wpm;
 
+    std::vector<std::string> _messages;
+
+    bool _running;
+    pthread_t _thread;
     pthread_mutex_t _mutex;
+    pthread_cond_t _cond;
 
 };
 

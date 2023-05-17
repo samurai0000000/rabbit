@@ -36,11 +36,19 @@
  * blue      clk   spi_clk(11)
  */
 
+enum mouth_mode {
+    MOUTH_BEH,
+    MOUTH_SMILE,
+    MOUTH_CYLON,
+    MOUTH_SPEAK,
+    MOUTH_TEXT,
+};
+
 Mouth::Mouth()
   : _handle(-1),
     _intensity(0),
     _fb(),
-    _cylon(false)
+    _mode(MOUTH_BEH)
 {
     _handle = spiOpen(MAX7219_SPI_CHAN, MAX7219_SPI_SPEED, MAX7219_SPI_MODE);
     if (_handle < 0) {
@@ -94,13 +102,258 @@ void *Mouth::thread_func(void *args)
     return NULL;
 }
 
+void Mouth::behCycle(unsigned int cycle)
+{
+    static const uint32_t bitmap[][8] = {
+        {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x0007e000,
+            0x03ffffc0,
+            0x0007e000,
+            0x00000000,
+            0x00000000,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x0003c000,
+            0x07ffffe0,
+            0x0003c000,
+            0x00000000,
+            0x00000000,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x00018000,
+            0x0ffffff0,
+            0x00018000,
+            0x00000000,
+            0x00000000,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x1ffffff8,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+        },
+    };
+    static int x = 0, dir = 0;
+
+    if ((cycle % 20) == 0) {
+        draw(&bitmap[x][0]);
+
+        if (dir == 0) {
+            x++;
+        } else {
+            x--;
+        }
+
+        if (x >= (int) ((sizeof(bitmap) / 32) - 1)) {
+            x = (sizeof(bitmap) / 32) - 1;
+            dir = 1;
+        } else if (x < 0) {
+            x = 1;
+            dir = 0;
+        }
+    }
+}
+
+void Mouth::smileCycle(unsigned int cycle)
+{
+    static const uint32_t bitmap[][8] = {
+        {
+            0xc0000003,
+            0xc0000003,
+            0x3000000c,
+            0x3000000c,
+            0x0c000030,
+            0x0c000030,
+            0x03ffffc0,
+            0x03ffffc0,
+        }, {
+            0x00000000,
+            0xc0000003,
+            0x3000000c,
+            0x3000000c,
+            0x0c000030,
+            0x0c000030,
+            0x03ffffc0,
+            0x03ffffc0,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x3000000c,
+            0x0c000030,
+            0x0c000030,
+            0x03ffffc0,
+            0x03ffffc0,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x0c000030,
+            0x0c000030,
+            0x03ffffc0,
+            0x03ffffc0,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x0c000030,
+            0x03ffffc0,
+            0x03ffffc0,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x03ffffc0,
+            0x03ffffc0,
+        },
+    };
+    static int x = 0, dir = 0;
+
+    if ((cycle % 20) == 0) {
+        draw(&bitmap[x][0]);
+
+        if (dir == 0) {
+            x++;
+        } else {
+            x--;
+        }
+
+        if (x >= (int) ((sizeof(bitmap) / 32) - 1)) {
+            x = (sizeof(bitmap) / 32) - 1;
+            dir = 1;
+        } else if (x < 0) {
+            x = 0;
+            dir = 0;
+        }
+    }
+}
+
+void Mouth::cylonCycle(unsigned int cycle)
+{
+    static int x = 0, dir = 0;
+    unsigned int i;
+
+
+    if (cycle) {
+        for (i = 0; i < 8; i++) {
+            _fb[i] = (0x1 << x);
+        }
+
+        if (dir == 0) {
+            x++;
+        } else {
+            x--;
+        }
+
+        if (x > 31) {
+            x = 31;
+            dir = 1;
+        } else if (x < 0) {
+            x = 0;
+            dir = 0;
+        }
+    }
+}
+
+void Mouth::speakCycle(unsigned int cycle)
+{
+    static const uint32_t bitmap[][8] = {
+        {
+            0x00000000,
+            0x3fffffc0,
+            0x300000c0,
+            0x300000c0,
+            0x300000c0,
+            0x300000c0,
+            0x3fffffc0,
+            0x00000000,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x3fffffc0,
+            0x300000c0,
+            0x300000c0,
+            0x300000c0,
+            0x3fffffc0,
+            0x00000000,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x3fffffc0,
+            0x300000c0,
+            0x300000c0,
+            0x3fffffc0,
+            0x00000000,
+            0x00000000,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x3fffffc0,
+            0x300000c0,
+            0x3fffffc0,
+            0x00000000,
+            0x00000000,
+        }, {
+            0x00000000,
+            0x00000000,
+            0x00000000,
+            0x3fffffc0,
+            0x3fffffc0,
+            0x00000000,
+            0x00000000,
+            0x00000000,
+        },
+    };
+    static int x = 0, dir = 0;
+
+    if ((cycle % 5) == 0) {
+        draw(&bitmap[x][0]);
+
+        if (dir == 0) {
+            x++;
+        } else {
+            x--;
+        }
+
+        if (x >= (int) ((sizeof(bitmap) / 32) - 1)) {
+            x = (sizeof(bitmap) / 32) - 1;
+            dir = 1;
+        } else if (x < 0) {
+            x = 0;
+            dir = 0;
+        }
+    }
+}
+
+void Mouth::textCycle(unsigned int cycle)
+{
+    (void)(cycle);
+}
+
 void Mouth::run(void)
 {
     struct timespec ts, tloop;
     unsigned int l_intensity;
     uint32_t l_fb[8];
     char xmit[MAX7219_COUNT * 2];
-    int cylon_x = 0, cylon_dir = 0;
+    unsigned int cycle;
 
     l_intensity = _intensity;
     memset(l_fb, 0x0, sizeof(l_fb));
@@ -109,30 +362,39 @@ void Mouth::run(void)
     tloop.tv_sec = 0;
     tloop.tv_nsec = 20000000;
 
-    while (_running) {
+    for (cycle = 0; _running; cycle++) {
         int ret;
         unsigned int i;
 
         timespecadd(&ts, &tloop, &ts);
 
-        if (_cylon){
-            for (i = 0; i < 8; i++) {
-                _fb[i] = (0x1 << cylon_x);
-            }
+        switch (_mode) {
+        case MOUTH_BEH:
+            behCycle(cycle);
+            break;
+        case MOUTH_SMILE:
+            smileCycle(cycle);
+            break;
+        case MOUTH_CYLON:
+            cylonCycle(cycle);
+            break;
+        case MOUTH_SPEAK:
+            speakCycle(cycle);
+            break;
+        case MOUTH_TEXT:
+            textCycle(cycle);
+            break;
+        default:
+            break;
+        }
 
-            if (cylon_dir == 0) {
-                cylon_x++;
-            } else {
-                cylon_x--;
-            }
-
-            if (cylon_x > 31) {
-                cylon_x = 31;
-                cylon_dir = 1;
-            } else if (cylon_x < 0) {
-                cylon_x = 0;
-                cylon_dir = 0;
-            }
+        /* Periodically reprogram the registers */
+        if (cycle % 256 == 0) {
+            writeMax7219(DECODE_MODE_REG, 0);
+            writeMax7219(INTENSITY_REG, _intensity);
+            writeMax7219(SCAN_LIMIT_REG, 7);
+            writeMax7219(SHUTDOWN_REG, 1);
+            writeMax7219(DISPLAY_TEST_REG, 0);
         }
 
         /* Update intensity */
@@ -194,62 +456,47 @@ void Mouth::setIntensity(unsigned int intensity)
     _intensity = intensity;
 }
 
-void Mouth::cylon(bool enable)
-{
-    if (enable == false && _cylon) {
-        beh();
-    }
-
-    _cylon = enable ? true : false;
-}
-
-bool Mouth::cylonEnabled(void) const
-{
-    return _cylon;
-}
-
 void Mouth::draw(const uint32_t fb[8])
 {
     memcpy(_fb, fb, sizeof(_fb));
 }
 
-void Mouth::smile(void)
+unsigned int Mouth::mode(void) const
 {
-    static const uint32_t bitmap[8] = {
-        0xc0000003,
-        0xc0000003,
-        0x3000000c,
-        0x3000000c,
-        0x0c000030,
-        0x0c000030,
-        0x03ffffc0,
-        0x03ffffc0,
-    };
+    return _mode;
+}
 
-    draw(bitmap);
+void Mouth::setMode(unsigned int mode)
+{
+    _mode = mode;
 }
 
 void Mouth::beh(void)
 {
-    static const uint32_t bitmap[8] = {
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0x03ffffc0,
-        0x00000000,
-        0x00000000,
-        0x00000000,
-    };
+    setMode(MOUTH_BEH);
+}
 
-    draw(bitmap);
+void Mouth::smile(void)
+{
+    setMode(MOUTH_SMILE);
+}
+
+void Mouth::cylon(void)
+{
+    setMode(MOUTH_CYLON);
+}
+
+void Mouth::speak(void)
+{
+    setMode(MOUTH_SPEAK);
 }
 
 void Mouth::displayText(const char *text, bool scroll, unsigned int speed)
 {
-    (void)(text);
-    (void)(scroll);
-    (void)(speed);
+    _text = text;
+    _scroll = scroll;
+    _speed = speed;
+    setMode(MOUTH_TEXT);
 }
 
 /*

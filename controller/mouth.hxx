@@ -7,6 +7,8 @@
 #ifndef MOUTH_HXX
 #define LOUTH_HXX
 
+#include <string>
+
 class Mouth {
 
 public:
@@ -17,11 +19,14 @@ public:
     unsigned int intensity(void) const;
     void setIntensity(unsigned int intensity);
 
-    void cylon(bool enable);
-    bool cylonEnabled(void) const;
     void draw(const uint32_t fb[8]);
-    void smile(void);
+
+    unsigned int mode(void) const;
+    void setMode(unsigned int mode);
     void beh(void);
+    void smile(void);
+    void cylon(void);
+    void speak(void);
     void displayText(const char *text,
                      bool scroll = true,
                      unsigned int speed = 1);
@@ -33,11 +38,20 @@ private:
 
     void writeMax7219(uint8_t reg, uint8_t data) const;
 
+    void behCycle(unsigned int cycle);
+    void smileCycle(unsigned int cycle);
+    void cylonCycle(unsigned int cycle);
+    void speakCycle(unsigned int cycle);
+    void textCycle(unsigned int cycle);
+
     int _handle;
     unsigned int _intensity;
     uint32_t _fb[8];
 
-    bool _cylon;
+    int _mode;
+    std::string _text;
+    bool _scroll;
+    unsigned int _speed;
 
     bool _running;
     pthread_t _thread;

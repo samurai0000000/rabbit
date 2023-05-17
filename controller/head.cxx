@@ -68,7 +68,7 @@ void Head::run(void)
 
     clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
-    tloop.tv_nsec = 200000000;
+    tloop.tv_nsec = 100000000;
 
     /* Set up sentry motion vector */
     motion.pulse = (HEAD_ROTATION_HI_PULSE - HEAD_ROTATION_LO_PULSE) / 2 +
@@ -113,11 +113,11 @@ void Head::enSentry(bool enable)
     if (_sentry != enable) {
         _sentry = enable;
         if (enable) {
-            mouth->cylon(true);
+            mouth->cylon();
             speech->speak("Head sentry mode enabled");
             LOG("Head sentry mode enabled\n");
         } else {
-            mouth->cylon(false);
+            mouth->beh();
             speech->speak("Head sentry mode disabled");
             LOG("Head sentry mode disabled\n");
         }
