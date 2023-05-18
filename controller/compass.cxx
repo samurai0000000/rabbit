@@ -28,9 +28,6 @@
 Compass::Compass()
     : _handle(-1)
 {
-    int ret;
-    uint8_t chipid;
-
     _minX = MIN_X_VAL;
     _maxX = MAX_X_VAL;
     _minY = MIN_Y_VAL;
@@ -51,45 +48,6 @@ Compass::Compass()
         _scaleY = (float) _avgDelta / (float) _avgDeltaY;
         _scaleZ = (float) _avgDelta / (float) _avgDeltaZ;
     }
-
-    _handle = i2cOpen(COMPASS_I2C_BUS, COMPASS_I2C_ADDR, 0x0);
-    if (_handle < 0) {
-        goto done;
-    }
-
-    ret = i2cReadByteData(_handle, CHIPID_REG);
-    if (ret < 0) {
-        fprintf(stderr, "QMC5883L read CHIPID_REG failed!\n");
-        goto done;
-    } else {
-        chipid = (uint8_t) ret;
-    }
-
-    if (chipid != CHIPID_VAL) {
-        fprintf(stderr, "QMC5883L chip ID incorrect (0x%.2x)!\n", chipid);
-        goto done;
-    }
-
-    ret = i2cWriteByteData(_handle, CTRL_2_REG, SOFT_RST);
-    if (ret != 0) {
-        fprintf(stderr, "QMC5883L write CTRL_2_REG failed!\n");
-        goto done;
-    }
-
-    ret = i2cWriteByteData(_handle, CTRL_1_REG,
-                           OSR_512 | RNG_8G | ODR_100HZ | MODE_CONTINUOUS);
-    if (ret != 0) {
-        fprintf(stderr, "QMC5883L write CTRL_1_REG failed!\n");
-        goto done;
-    }
-
-    ret = i2cWriteByteData(_handle, SR_PERIOD_REG, 0x01);
-    if (ret != 0) {
-        fprintf(stderr, "QMC5883L write SR_PERIOD_REG failed!\n");
-        goto done;
-    }
-
-done:
 
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -112,6 +70,66 @@ Compass::~Compass()
     }
 }
 
+void Compass::probeOpenDevice(void)
+{
+    int ret = 0;
+    uint8_t chipid;
+
+    if (_handle == -1) {
+        _handle = i2cOpen(COMPASS_I2C_BUS, COMPASS_I2C_ADDR, 0x0);
+        if (_handle < 0) {
+            _handle = -1;
+            goto done;
+        }
+
+        if (i2cReadByteData(_handle, 0x0) < 0) {
+            i2cClose(_handle);
+            _handle = -1;
+            goto done;
+        }
+
+        ret = i2cReadByteData(_handle, CHIPID_REG);
+        if (ret < 0) {
+            fprintf(stderr, "QMC5883L read CHIPID_REG failed!\n");
+            goto done;
+        } else {
+            chipid = (uint8_t) ret;
+        }
+
+        if (chipid != CHIPID_VAL) {
+            fprintf(stderr, "QMC5883L chip ID incorrect (0x%.2x)!\n", chipid);
+            goto done;
+        }
+
+        ret = i2cWriteByteData(_handle, CTRL_2_REG, SOFT_RST);
+        if (ret != 0) {
+            fprintf(stderr, "QMC5883L write CTRL_2_REG failed!\n");
+            goto done;
+        }
+
+        ret = i2cWriteByteData(_handle, CTRL_1_REG,
+                               OSR_512 | RNG_8G | ODR_100HZ | MODE_CONTINUOUS);
+        if (ret != 0) {
+            fprintf(stderr, "QMC5883L write CTRL_1_REG failed!\n");
+            goto done;
+        }
+
+        ret = i2cWriteByteData(_handle, SR_PERIOD_REG, 0x01);
+        if (ret != 0) {
+            fprintf(stderr, "QMC5883L write SR_PERIOD_REG failed!\n");
+            goto done;
+        }
+    }
+
+done:
+
+    if (_handle != -1 && ret != 0) {
+        i2cClose(_handle);
+        _handle = -1;
+    }
+
+}
+
 void *Compass::thread_func(void *args)
 {
     Compass *compass = (Compass *) args;
@@ -123,7 +141,7 @@ void *Compass::thread_func(void *args)
 
 void Compass::run(void)
 {
-    int ret;
+    int ret = 0;
     uint8_t status;
     int16_t x, y, z;
     struct timespec ts, tloop;
@@ -135,6 +153,14 @@ void Compass::run(void)
 
     while (_running) {
         timespecadd(&ts, &tloop, &ts);
+
+        /* Probe and open device */
+        if (_handle == -1) {
+            probeOpenDevice();
+            if (_handle == -1) {
+                goto done;
+            }
+        }
 
         /* Check status register for data ready */
         ret = i2cReadByteData(_handle, STATUS_REG);
@@ -265,7 +291,14 @@ void Compass::run(void)
         _histY.addSample(((float) y - _offsetY) * _scaleY);
         _histZ.addSample(((float) z - _offsetZ) * _scaleZ);
 
+        ret = 0;
+
     done:
+
+        if (ret != 0) {
+            i2cClose(_handle);
+            _handle = -1;
+        }
 
         pthread_mutex_lock(&_mutex);
         pthread_cond_timedwait(&_cond, &_mutex, &ts);

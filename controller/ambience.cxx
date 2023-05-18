@@ -27,10 +27,16 @@ static int8_t user_i2c_read(uint8_t reg_addr, uint8_t *data,
                             uint32_t len, void *intf_ptr)
 {
     int ret = 0;
+    int handle;
+
+    handle = (int) (intptr_t) intf_ptr;
+    if (handle == -1) {
+        return BME280_E_COMM_FAIL;
+    }
 
     while (len > 0) {
         //printf("i2c read 0x%.2x\n", reg_addr);
-        ret = i2cReadByteData((int) (intptr_t) intf_ptr, reg_addr);
+        ret = i2cReadByteData(handle, reg_addr);
         if (ret < 0) {
             fprintf(stderr, "BME280 read reg 0x%.2x failed!\n", reg_addr);
             return BME280_E_COMM_FAIL;
@@ -49,10 +55,16 @@ static int8_t user_i2c_write(uint8_t reg_addr, const uint8_t *data,
                              uint32_t len, void *intf_ptr)
 {
     int ret = 0;
+    int handle;
+
+    handle = (int) (intptr_t) intf_ptr;
+    if (handle == -1) {
+        return BME280_E_COMM_FAIL;
+    }
 
     while (len > 0) {
         //printf("i2c write 0x%.2x 0x%.2x\n", reg_addr, *data);
-        ret = i2cWriteByteData((int) (intptr_t) intf_ptr, reg_addr, *data);
+        ret = i2cWriteByteData(handle, reg_addr, *data);
         if (ret < 0) {
             fprintf(stderr, "BME280 read reg 0x%.2x failed!\n", reg_addr);
             return BME280_E_COMM_FAIL;
@@ -78,11 +90,52 @@ Ambience::Ambience()
       _bme280(-1),
       _running(false)
 {
+    _running = true;
+    pthread_mutex_init(&_mutex, NULL);
+    pthread_cond_init(&_cond, NULL);
+    pthread_create(&_thread, NULL, Ambience::thread_func, this);
+}
+
+Ambience::~Ambience()
+{
+    _running = false;
+    pthread_cond_broadcast(&_cond);
+    pthread_join(_thread, NULL);
+    pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
+
+    if (_bme280 >= 0) {
+        i2cClose(_bme280);
+        _bme280 = -1;
+    }
+}
+
+void *Ambience::thread_func(void *args)
+{
+    Ambience *ambience = (Ambience *) args;
+
+    ambience->run();
+
+    return NULL;
+}
+
+void Ambience::probeOpenDevice(void)
+{
     int8_t rslt = BME280_OK;
+
+    if (_bme280 != -1) {
+        return;
+    }
 
     _bme280 = i2cOpen(BME280_I2C_BUS, BME280_I2C_ADDR, 0);
     if (_bme280 < 0) {
-        cerr << "Open BME280 failed" << endl;
+        _bme280 = -1;
+        goto bme280_done;
+    }
+
+    if (i2cReadByteData(_bme280, 0x0) < 0) {
+        i2cClose(_bme280);
+        _bme280 = -1;
         goto bme280_done;
     }
 
@@ -130,33 +183,10 @@ Ambience::Ambience()
 
 bme280_done:
 
-    _running = true;
-    pthread_mutex_init(&_mutex, NULL);
-    pthread_cond_init(&_cond, NULL);
-    pthread_create(&_thread, NULL, Ambience::thread_func, this);
-}
-
-Ambience::~Ambience()
-{
-    _running = false;
-    pthread_cond_broadcast(&_cond);
-    pthread_join(_thread, NULL);
-    pthread_mutex_destroy(&_mutex);
-    pthread_cond_destroy(&_cond);
-
-    if (_bme280 >= 0) {
+    if ((_bme280 != -1) && (rslt != BME280_OK)) {
         i2cClose(_bme280);
         _bme280 = -1;
     }
-}
-
-void *Ambience::thread_func(void *args)
-{
-    Ambience *ambience = (Ambience *) args;
-
-    ambience->run();
-
-    return NULL;
 }
 
 void Ambience::run(void)
@@ -194,6 +224,19 @@ void Ambience::run(void)
             fin = NULL;
         }
 
+        /* Probe and open device */
+        if (_bme280 == -1) {
+            probeOpenDevice();
+            if (_bme280 == -1) {
+                clock_gettime(CLOCK_REALTIME, &ts);
+                timespecadd(&ts, &tloop, &ts);
+                pthread_mutex_lock(&_mutex);
+                pthread_cond_timedwait(&_cond, &_mutex, &ts);
+                pthread_mutex_unlock(&_mutex);
+                continue;
+            }
+        }
+
         /* Set the BME sensor to forced mode */
         rslt = bme280_set_sensor_mode(BME280_POWERMODE_FORCED, &_dev);
         if (rslt != BME280_OK) {
@@ -225,9 +268,9 @@ void Ambience::run(void)
         _histHumidity.addSample(data.humidity);
         _humidity = _histHumidity.median();
 
-        pthread_mutex_lock(&_mutex);
         clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tloop, &ts);
+        pthread_mutex_lock(&_mutex);
         pthread_cond_timedwait(&_cond, &_mutex, &ts);
         pthread_mutex_unlock(&_mutex);
     }

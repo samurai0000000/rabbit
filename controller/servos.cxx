@@ -29,29 +29,14 @@ Servos::Servos()
       _freq(PWM_FREQ_KHZ)
 {
     unsigned int i;
-    uint8_t v;
-    float prescale;
+
+    for (i = 0; i < SERVO_CONTROLLERS; i++) {
+        _handle[i] = -1;
+    }
 
     for (i = 0; i < SERVO_CHANNELS; i++) {
         _lo[i] = 450;
         _hi[i] = 2500;
-    }
-
-    prescale = 25000000;
-    prescale /= 4096.0;
-    prescale /= (float) _freq;
-    prescale -= 1.0;
-    v = floor(prescale + 0.5);
-
-    for (i = 0; i < SERVO_CONTROLLERS; i++) {
-        _handle[i] = i2cOpen(PWM_I2C_BUS, PWM_I2C_ADDR[i], 0x0);
-        if (_handle[i] < 0) {
-            cerr << "Open PCA9685 failed" << endl;
-        }
-
-        writeReg(i, MODE2_REG, MODE2_OUTDRV);
-        writeReg(i, PRE_SCALE_REG, v);
-        writeReg(i, MODE1_REG, MODE1_RESTART);
     }
 
     _running = true;
@@ -79,7 +64,41 @@ Servos::~Servos()
     }
 }
 
-int Servos::readReg(unsigned int id, uint8_t reg, uint8_t *val) const
+void Servos::probeOpenDevice(void)
+{
+    unsigned int i;
+
+    for (i = 0; i < SERVO_CONTROLLERS; i++) {
+        if (_handle[i] == -1) {
+            _handle[i] = i2cOpen(PWM_I2C_BUS, PWM_I2C_ADDR[i], 0x0);
+            if (_handle[i] < 0) {
+                _handle[i] = -1;
+                continue;
+            } else {
+                uint8_t v;
+                float prescale;
+
+                if (i2cReadByteData(_handle[i], 0x0) < 0) {
+                    i2cClose(_handle[i]);
+                    _handle[i] = -1;
+                    continue;
+                }
+
+                prescale = 25000000;
+                prescale /= 4096.0;
+                prescale /= (float) _freq;
+                prescale -= 1.0;
+                v = floor(prescale + 0.5);
+
+                writeReg(i, MODE2_REG, MODE2_OUTDRV);
+                writeReg(i, PRE_SCALE_REG, v);
+                writeReg(i, MODE1_REG, MODE1_RESTART);
+            }
+        }
+    }
+}
+
+int Servos::readReg(unsigned int id, uint8_t reg, uint8_t *val)
 {
     int ret = 0;
 
@@ -91,6 +110,8 @@ int Servos::readReg(unsigned int id, uint8_t reg, uint8_t *val) const
     if (ret < 0) {
         fprintf(stderr, "Servos::readReg i2cReadByteData 0x%.2x failed!\n",
                 reg);
+        i2cClose(_handle[id]);
+        _handle[id] = -1;
     } else {
         *val = ret;
         ret = 0;
@@ -99,7 +120,7 @@ int Servos::readReg(unsigned int id, uint8_t reg, uint8_t *val) const
     return ret;
 }
 
-int Servos::writeReg(unsigned int id, uint8_t reg, uint8_t val) const
+int Servos::writeReg(unsigned int id, uint8_t reg, uint8_t val)
 {
     int ret = 0;
 
@@ -111,6 +132,8 @@ int Servos::writeReg(unsigned int id, uint8_t reg, uint8_t val) const
     if (ret != 0) {
         fprintf(stderr, "Servos::writeReg: i2cWriteByteData 0x%.2x failed!\n",
                 reg);
+        i2cClose(_handle[id]);
+        _handle[id] = -1;
     }
 
     return ret;
@@ -228,14 +251,20 @@ void Servos::run(void)
 
         timespecadd(&ts, &tn, &ts);  /* Update time to next epoch */
 
+        probeOpenDevice();           /* Probe and open device(s) */
+
         pthread_mutex_lock(&_mutex);
 
         /*
          * Service each channel.
          */
         for (chan = 0; chan < SERVO_CHANNELS; chan++) {
+            if ((chan % 16 == 0) && _handle[chan / 16] == -1) {
+                continue;  // Servo controller is offline
+            }
+
             if (_motions[chan].empty()) {
-                continue;
+                continue;  // Empty schedule for channel
             }
 
             struct servo_motion_exec &e = _motions[chan].at(0);

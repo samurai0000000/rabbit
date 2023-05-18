@@ -17,6 +17,7 @@ public:
     Ambience();
     ~Ambience();
 
+    bool isDeviceOnline(void) const;
     float socTemp(void) const;
     float temp(void) const;
     float pressure(void) const;
@@ -24,6 +25,7 @@ public:
 
 private:
 
+    void probeOpenDevice(void);
     static void *thread_func(void *args);
     void run(void);
 
@@ -46,6 +48,11 @@ private:
     pthread_cond_t _cond;
     bool _running;
 };
+
+inline bool Ambience::isDeviceOnline(void) const
+{
+    return _bme280 != -1;
+}
 
 inline float Ambience::socTemp(void) const
 {

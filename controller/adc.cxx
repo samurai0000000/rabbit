@@ -22,14 +22,7 @@ ADC::ADC()
       _config(0),
       _running(false)
 {
-    int ret;
     unsigned int i;
-
-    _handle = i2cOpen(ADC_I2C_BUS, ADC_I2C_ADDR, 0x0);
-    if (_handle < 0) {
-        fprintf(stderr, "Open ADS1115 failed!\n");
-        goto done;
-    }
 
     _config =
         MUX_AIN0_GND |
@@ -40,15 +33,6 @@ ADC::ADC()
         COMP_POL_LO |
         COMP_LAT_NO |
         COMP_QUE_DIS;
-    ret = writeReg(CONFIG_REG, _config);
-    if (ret != 0) {
-        goto done;
-    }
-
-    writeReg(LO_THRESH_REG, 0x8000);
-    writeReg(HI_THRESH_REG, 0x7fff);
-
-done:
 
     for (i = 0; i < ADC_CHANNELS; i++) {
         _hist[i] = new MedianFilter<float>(50);
@@ -81,7 +65,28 @@ ADC::~ADC()
     }
 }
 
-int ADC::readReg(uint8_t reg, uint16_t *val) const
+void ADC::probeOpenDevice(void)
+{
+    if (_handle == -1) {
+        _handle = i2cOpen(ADC_I2C_BUS, ADC_I2C_ADDR, 0x0);
+        if (_handle < 0) {
+            _handle = -1;
+            return;
+        }
+
+        if (i2cReadByteData(_handle, 0x0) < 0) {
+            i2cClose(_handle);
+            _handle = -1;
+            return;
+        }
+
+        writeReg(CONFIG_REG, _config);
+        writeReg(LO_THRESH_REG, 0x8000);
+        writeReg(HI_THRESH_REG, 0x7fff);
+    }
+}
+
+int ADC::readReg(uint8_t reg, uint16_t *val)
 {
     int ret = 0;
 
@@ -92,6 +97,8 @@ int ADC::readReg(uint8_t reg, uint16_t *val) const
     ret = i2cReadWordData(_handle, reg);
     if (ret < 0) {
         fprintf(stderr, "ADC::readReg: i2cReadWordData 0x%.2x failed!\n", reg);
+        i2cClose(_handle);
+        _handle = -1;
     } else {
         uint16_t v = ret;
         v = (v >> 8) | (v << 8);
@@ -102,7 +109,7 @@ int ADC::readReg(uint8_t reg, uint16_t *val) const
     return ret;
 }
 
-int ADC::writeReg(uint8_t reg, uint16_t val) const
+int ADC::writeReg(uint8_t reg, uint16_t val)
 {
     int ret = 0;
 
@@ -114,6 +121,8 @@ int ADC::writeReg(uint8_t reg, uint16_t val) const
     ret = i2cWriteWordData(_handle, reg, val);
     if (ret != 0) {
         fprintf(stderr, "ADC::writeReg i2cWriteWordData 0x%.2xfailed!\n", reg);
+        i2cClose(_handle);
+        _handle = -1;
     }
 
     return ret;
@@ -139,10 +148,14 @@ void ADC::run(void)
     while (_running) {
         timespecadd(&ts, &tloop, &ts);
 
-        convert(0);
-        convert(1);
-        convert(2);
-        convert(3);
+        if (_handle == -1) {
+            probeOpenDevice();
+        } else {
+            convert(0);
+            convert(1);
+            convert(2);
+            convert(3);
+        }
 
         pthread_mutex_lock(&_mutex);
         pthread_cond_timedwait(&_cond, &_mutex, &ts);

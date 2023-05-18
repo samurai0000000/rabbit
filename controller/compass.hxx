@@ -16,6 +16,7 @@ public:
     Compass();
     ~Compass();
 
+    bool isDeviceOnline(void) const;
     float x(void);
     float y(void);
     float z(void);
@@ -23,6 +24,7 @@ public:
 
 private:
 
+    void probeOpenDevice(void);
     static void *thread_func(void *);
     void run(void);
 
@@ -37,11 +39,17 @@ private:
     int16_t _avgDelta;
     float _scaleX, _scaleY, _scaleZ;
 
+    bool _running;
     pthread_t _thread;
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;
-    bool _running;
+
 };
+
+inline bool Compass::isDeviceOnline(void) const
+{
+    return _handle != -1;
+}
 
 #endif
 

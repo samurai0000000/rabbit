@@ -42,7 +42,7 @@ public:
     Servos();
     ~Servos();
 
-public:
+    bool isDeviceOnline(void) const;
 
     void setRange(unsigned int chan, unsigned int lo, unsigned int hi);
     unsigned int loRange(unsigned int chan);
@@ -62,8 +62,9 @@ public:
 
 private:
 
-    int readReg(unsigned int id, uint8_t reg, uint8_t *val) const;
-    int writeReg(unsigned int id, uint8_t reg, uint8_t val) const;
+    void probeOpenDevice(void);
+    int readReg(unsigned int id, uint8_t reg, uint8_t *val);
+    int writeReg(unsigned int id, uint8_t reg, uint8_t val);
     void setPwm(unsigned int chan, unsigned int on, unsigned int off);
 
     static void *thread_func(void *);
@@ -83,6 +84,19 @@ private:
     vector<struct servo_motion_exec> _motions[SERVO_CHANNELS * SERVO_CONTROLLERS];
     vector<struct servo_motion_sync *> _syncs;
 };
+
+inline bool Servos::isDeviceOnline(void) const
+{
+    unsigned int i;
+
+    for (i = 0; i < SERVO_CONTROLLERS; i++) {
+        if (_handle[i] == -1) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 inline unsigned int Servos::loRange(unsigned int chan)
 {
