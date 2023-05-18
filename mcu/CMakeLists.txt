@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
-add_executable(rabbit_mcu main.c)
+add_compile_options(-Wall -Wextra -Werror)
+add_compile_options(-g -O2)
+add_executable(rabbit_mcu main.c ir.c ultrasound.c led.c)
 target_link_libraries(rabbit_mcu pico_stdlib)
 pico_add_extra_outputs(rabbit_mcu)

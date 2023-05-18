@@ -6,21 +6,29 @@
 
 #include <stdio.h>
 #include <pico/stdlib.h>
+#include "rabbit_mcu.h"
 
-#define LED_PIN 25
-
-int main(int argc, char **argv)
+int main(void)
 {
-    setup_default_uart();
-    printf("Hello, world!\n");
+    unsigned int usid = 0;
 
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
+    ir_init();
+    ultrasound_init();
+    led_init();
+
     while (true) {
-        gpio_put(LED_PIN, 1);
-        sleep_ms(250);
-        gpio_put(LED_PIN, 0);
-        sleep_ms(500);
+        ir_refresh();
+        ultrasound_trigger(usid);
+        usid++;
+        usid %= ULTRASOUND_DEVICES;
+
+        if (ir_triggered()) {
+            led_set(true);
+        } else {
+            led_set(false);
+        }
+
+        sleep_ms(5);
     }
 
     return 0;
@@ -28,7 +36,7 @@ int main(int argc, char **argv)
 
 /*
  * Local variables:
- * mode: C++
+ * mode: C
  * c-file-style: "BSD"
  * c-basic-offset: 4
  * tab-width: 4

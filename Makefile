@@ -36,6 +36,10 @@ distclean:
 # Built the rabbit'bot controller
 #
 
+.PHONY: controller
+
+controller: build/$(ARCH)/rabbit
+
 build/$(ARCH)/rabbit: build/$(ARCH)/Makefile
 	@$(MAKE) -C build/$(ARCH)
 
@@ -130,6 +134,10 @@ sync-rpi2rootfs:
 #
 # Build RPi Pico MCU
 #
+
+.PHONY: mcu
+
+mcu: build/pico/rabbit_mcu.uf2
 
 build/pico/rabbit_mcu.uf2: build/pico/Makefile
 	$(MAKE) -C build/pico
