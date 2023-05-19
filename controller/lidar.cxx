@@ -16,7 +16,7 @@
 #include <sys/time.h>
 #include <bsd/sys/time.h>
 #include <pthread.h>
-#include "lidar.hxx"
+#include "rabbit.hxx"
 
 /*
  * CLDR-08SB
@@ -26,7 +26,13 @@
  */
 
 #define LIDAR_TTY        "/dev/ttyUSB0"
-#define LIDAR_BAUD_RATE          B115200
+#define LIDAR_BAUD_RATE         B115200
+#define LIDAR_ON_SERVO               18
+#define LIDAR_ON_LO_PULSE             0
+#define LIDAR_ON_HI_PULSE         19990
+#define LIDAR_ROT_SERVO              19
+#define LIDAR_ROT_LO_PULSE         3000
+#define LIDAR_ROT_HI_PULSE        19990
 
 struct cldr_message {
     uint16_t ph;
@@ -39,9 +45,19 @@ struct cldr_message {
 
 LiDAR::LiDAR()
     : _handle(-1),
-      _speed(50),
-      _operational(true)
+      _speed(25),
+      _operational(false)
 {
+    servos->setRange(LIDAR_ON_SERVO, LIDAR_ON_LO_PULSE, LIDAR_ON_HI_PULSE);
+    if (_operational) {
+        servos->setPulse(LIDAR_ON_SERVO, LIDAR_ON_HI_PULSE);
+    } else {
+        servos->setPulse(LIDAR_ON_SERVO, LIDAR_ON_LO_PULSE);
+    }
+
+    servos->setRange(LIDAR_ROT_SERVO, LIDAR_ROT_LO_PULSE, LIDAR_ROT_HI_PULSE);
+    setSpeed(_speed);
+
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
@@ -69,6 +85,16 @@ void *LiDAR::thread_func(void *args)
 void LiDAR::processData(const void *buf, size_t size)
 {
     const struct cldr_message *message = (const struct cldr_message *) buf;
+    unsigned int i;
+
+    if (0) {
+        // Debug: print the packet
+        const uint8_t *raw = (const uint8_t *) buf;
+        for (i = 0; i < size; i++) {
+            printf("%.2x ", raw[i]);
+        }
+        printf("\n");
+    }
 
     (void)(message);
     (void)(size);
@@ -99,7 +125,7 @@ void LiDAR::run(void)
         .tv_sec = 0,
         .tv_usec = 100000,
     };
-    uint8_t buf[1024];
+    uint8_t buf[4096];
     unsigned int count = 1;
 
     while (_running) {
@@ -198,18 +224,21 @@ void LiDAR::run(void)
     }
 }
 
-void LiDAR::start(void)
+void LiDAR::enable(bool en)
 {
-    if (_operational == false) {
-        _operational = true;
-        pthread_cond_broadcast(&_cond);
-    }
-}
+    en = en ? true : false;
 
-void LiDAR::stop(void)
-{
-    if (_operational == true) {
+    if (en == true && _operational == false) {
+        _operational = true;
+        servos->setPulse(LIDAR_ON_SERVO, LIDAR_ON_HI_PULSE);
+        pthread_cond_broadcast(&_cond);
+        LOG("LiDAR enabled\n");
+        speech->speak("Lie Dar enabled");
+    } else if (en == false && _operational == true) {
         _operational = false;
+        servos->setPulse(LIDAR_ON_SERVO, LIDAR_ON_LO_PULSE);
+        LOG("LiDAR disabled\n");
+        speech->speak("Lie Dar disabled");
     }
 }
 
@@ -220,10 +249,15 @@ unsigned int LiDAR::speed(void) const
 
 void LiDAR::setSpeed(unsigned int speed)
 {
-    if (_speed == speed) {
-        return;
+    unsigned int pulse;
+
+    if (speed > 100) {
+        speed = 100;
     }
 
+    pulse = (speed * ((LIDAR_ROT_HI_PULSE - LIDAR_ROT_LO_PULSE)) / 100) +
+        LIDAR_ROT_LO_PULSE;
+    servos->setPulse(LIDAR_ROT_SERVO, pulse);
     _speed = speed;
 }
 

@@ -186,7 +186,7 @@ void Servos::setPulse(unsigned int chan, unsigned int pulse,
     on = 0;
     off = pulse * 4096 / (1000000 / _freq);
     if (off >= 4096) {
-        return;
+        off = 4096;
     }
 
     pthread_mutex_lock(&_mutex);

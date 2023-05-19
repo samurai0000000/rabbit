@@ -14,8 +14,8 @@ public:
     LiDAR();
     ~LiDAR();
 
-    void start(void);
-    void stop(void);
+    bool isEnabled(void) const;
+    void enable(bool en);
 
     unsigned int speed(void) const;
     void setSpeed(unsigned int speed);
@@ -37,6 +37,11 @@ private:
     pthread_cond_t _cond;
 
 };
+
+inline bool LiDAR::isEnabled(void) const
+{
+    return _operational;
+}
 
 #endif
 

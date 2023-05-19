@@ -336,6 +336,10 @@ void rabbit_keycontrol(uint8_t key)
         head->rotate(0.0);
         head->tilt(0.0);
         break;
+    case 'd':
+    case 'D':
+        lidar->enable(!lidar->isEnabled());
+        break;
     case 's':
     case 'S':
         if (mode == RABBIT_CONSOLE_MODE_CAMERA) {

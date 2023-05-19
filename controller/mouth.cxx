@@ -46,7 +46,7 @@ enum mouth_mode {
 
 Mouth::Mouth()
   : _handle(-1),
-    _intensity(0),
+    _intensity(3),
     _fb(),
     _mode(MOUTH_BEH)
 {
