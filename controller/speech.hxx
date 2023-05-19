@@ -29,6 +29,7 @@ private:
 
     unsigned int _vol;
 
+    pid_t _pid;
     std::vector<std::string> _messages;
 
     bool _running;

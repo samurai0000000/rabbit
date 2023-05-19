@@ -20,12 +20,12 @@
 using namespace std;
 
 Speech::Speech()
-    :
-    _vol(100)
+    : _vol(100),
+      _pid(-1)
 {
     pthread_mutex_init(&_mutex, NULL);
 
-    setVolume(88);
+    setVolume(85);
 
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -55,9 +55,15 @@ void *Speech::thread_func(void *args)
     return NULL;
 }
 
-static void atexit_do_nothing(void)
+static void espeak_atexit(void)
 {
 
+}
+
+static void espeak_sighandler(int signal)
+{
+    (void)(signal);
+    exit(0);
 }
 
 void Speech::run(void)
@@ -76,7 +82,6 @@ void Speech::run(void)
         } else {
             int ret;
             char cmd[256];
-            pid_t pid = -1;
             int espeak_stdin[2] = { -1, -1, };
             int wstatus;
             string message;
@@ -90,16 +95,19 @@ void Speech::run(void)
                 perror("espeak");
             } else {
 
-                pid = fork();
-                if (pid == -1) {
+                pthread_mutex_lock(&_mutex);
+                mode = mouth->mode();
+
+                _pid = fork();
+                if (_pid == -1) {
                     close(espeak_stdin[0]);
                     close(espeak_stdin[1]);
                     perror("fork");
-                } else if (pid == 0) {
+                } else if (_pid == 0) {
                     /* Child */
-                    atexit(atexit_do_nothing);
-                    signal(SIGTERM, NULL);
-                    signal(SIGINT, NULL);
+                    atexit(espeak_atexit);
+                    signal(SIGTERM, espeak_sighandler);
+                    signal(SIGINT, espeak_sighandler);
 
                     close(espeak_stdin[1]);
                     dup2(espeak_stdin[0], STDIN_FILENO);
@@ -111,17 +119,22 @@ void Speech::run(void)
                     close(espeak_stdin[0]);
                     espeak_stdin[0] = -1;
 
-                    mode = mouth->mode();
-                    mouth->speak();
                     message = _messages.at(0);
                     ret = write(espeak_stdin[1], message.c_str(), message.length());
                     (void)(ret);
                     ret = write(espeak_stdin[1], "\n", 1);
                     (void)(ret);
                     close(espeak_stdin[1]);
-
-                    waitpid(pid, &wstatus, 0);
                     _messages.erase(_messages.begin());
+                }
+
+
+                pthread_mutex_unlock(&_mutex);
+
+                if (_pid != -1) {
+                    mouth->speak();
+                    waitpid(_pid, &wstatus, 0);
+                    _pid = -1;
                     mouth->setMode(mode);
                 }
             }
@@ -131,15 +144,20 @@ void Speech::run(void)
 
 void Speech::speak(const char *message, bool immediate)
 {
-    (void)(immediate);
-
     if (message == NULL) {
         return;
     }
 
     pthread_mutex_lock(&_mutex);
+    if (immediate) {
+        if (_pid != -1) {
+            kill(_pid, SIGTERM);
+        }
+        _messages.clear();
+    }
     _messages.push_back(message);
     pthread_mutex_unlock(&_mutex);
+
     pthread_cond_broadcast(&_cond);
 }
 
