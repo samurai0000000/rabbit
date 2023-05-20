@@ -27,6 +27,10 @@ extern void ultrasound_trigger(unsigned int id);
 extern void led_init(void);
 extern void led_set(bool on);
 
+extern float temperature_c;
+extern void onboard_temp_init(void);
+extern float onboard_temp_refresh(void);
+
 #endif
 
 /*

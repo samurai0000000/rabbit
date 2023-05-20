@@ -42,6 +42,8 @@ static bool sample_us(repeating_timer_t *timer)
     usid++;
     usid %= ULTRASOUND_DEVICES;
 
+    onboard_temp_refresh();
+
     return true;
 }
 
@@ -57,6 +59,7 @@ int main(void)
     ir_init();
     ultrasound_init();
     led_init();
+    onboard_temp_init();
 
     if (add_repeating_timer_us(-IR_SAMPLING_INTERVAL_US,
                                sample_ir, NULL, &timer1) ==
