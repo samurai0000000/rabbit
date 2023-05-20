@@ -9,9 +9,6 @@ extern void rabbit_panic(const char *msg);
 
 extern void rs232_init(void);
 extern int rs232_printf(const char *fmt, ...);
-#if !defined(_STDIO_H) && !defined(printf)
-#define printf rs232_printf
-#endif
 
 #define IR_DEVICES  4
 extern bool ir_state[IR_DEVICES];

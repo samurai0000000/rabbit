@@ -4,6 +4,7 @@
  * Copyright (C) 2023, Charles Chiou
  */
 
+#include <stdio.h>
 #include <pico/stdlib.h>
 #include <pico/util/queue.h>
 #include "rabbit_mcu.h"
@@ -47,6 +48,39 @@ static bool sample_us(repeating_timer_t *timer)
     return true;
 }
 
+static const char *encode_result(void)
+{
+    static char buf[64];
+    char *s = buf;
+    int l = sizeof(buf);
+    unsigned int i;
+
+    for (i = 0; i < IR_DEVICES; i++) {
+        *s = ir_state[i] ? '1' : '0';
+        s++;
+        l--;
+    }
+
+    *s = ':';
+    s++;
+    l--;
+
+    for (i = 0; i < ULTRASOUND_DEVICES; i++) {
+        l -= snprintf(s, l - 1, "%u", ultrasound_d_mm[i]);
+        if (i != (ULTRASOUND_DEVICES - 1)) {
+            *s = ',';
+            s++;
+            l--;
+        }
+    }
+
+    *s = '\n';
+    s++;
+    l--;
+
+    return buf;
+}
+
 int main(void)
 {
     repeating_timer_t timer1;
@@ -54,7 +88,7 @@ int main(void)
     unsigned int i;
 
     rs232_init();
-    printf("Rabbit MCU\n");
+    rs232_printf("Rabbit MCU\n");
 
     ir_init();
     ultrasound_init();
@@ -74,11 +108,17 @@ int main(void)
     }
 
     while (true) {
+
+        /* Send official result via USB CDC */
+        printf(encode_result());
+
+        /* Debug over RS-232 */
         for (i = 0; i < ULTRASOUND_DEVICES; i++) {
             if (ultrasound_d_mm[i] != 0) {
-                printf("US%u: %u mm\n", i, ultrasound_d_mm[i]);
+                rs232_printf("US%u: %u mm\n", i, ultrasound_d_mm[i]);
             }
         }
+
 
         sleep_ms(500);
     }

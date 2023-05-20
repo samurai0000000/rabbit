@@ -15,7 +15,7 @@ pico_sdk_init()
 
 add_compile_options(-Wall -Wextra -Werror)
 add_compile_options(-g -O2)
-add_executable(rabbit_mcu main.c rs232.c ir.c ultrasound.c led.c onboard_temp.c usbdev.c)
+add_executable(rabbit_mcu main.c rs232.c ir.c ultrasound.c led.c onboard_temp.c)
 target_link_libraries(rabbit_mcu pico_stdlib hardware_adc)
 pico_enable_stdio_uart(rabbit_mcu 0)
 pico_enable_stdio_usb(rabbit_mcu 1)
