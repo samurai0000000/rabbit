@@ -25,7 +25,7 @@ Speech::Speech()
 {
     pthread_mutex_init(&_mutex, NULL);
 
-    setVolume(85);
+    setVolume(80);
 
     _running = true;
     pthread_mutex_init(&_mutex, NULL);

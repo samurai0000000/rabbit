@@ -17,12 +17,16 @@
 #define PAN_SERVO            12
 #define PAN_LO_PULSE        640
 #define PAN_HI_PULSE       2180
-#define PAN_ANGLE_MULT       14
+#define PAN_ANGLE_RANGE     140
+#define PAN_ANGLE_MULT      ((PAN_HI_PULSE - PAN_LO_PULSE) /    \
+                             PAN_ANGLE_RANGE)
 
 #define TILT_SERVO           13
 #define TILT_LO_PULSE       800
 #define TILT_HI_PULSE      1550
-#define TILT_ANGLE_MULT      14
+#define TILT_ANGLE_RANGE     90
+#define TILT_ANGLE_MULT     ((TILT_HI_PULSE - TILT_LO_PULSE) /  \
+                             TILT_ANGLE_RANGE)
 
 #ifndef FSHIFT
 # define FSHIFT 16         /* nr of bits of precision */
@@ -400,6 +404,17 @@ void Camera::updateOsd1(Mat &osd1, const struct timeval *since,
 
     snprintf(buf, sizeof(buf) - 1, "%.1f", head->tiltAt());
     text = String("Head Tilt: ") + buf + String(" deg");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String("LiDAR: ") + (lidar->isEnabled() ? "on" : "off");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String("LiDAR Speed: ") +
+        (lidar->isEnabled() ? to_string(lidar->speed()) : "off");
     pos.y += textSize.height;
     putText(osd1, text, pos,
             fontFace, fontScale, fontColor, thickness, LINE_8, false);

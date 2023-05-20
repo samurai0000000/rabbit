@@ -11,13 +11,15 @@
 #define HEAD_ROTATION_SERVO         16
 #define HEAD_ROTATION_LO_PULSE     610
 #define HEAD_ROTATION_HI_PULSE    2260
-#define HEAD_ROTATION_ANGLE_MULT  ((HEAD_ROTATION_HI_PULSE - HEAD_ROTATION_LO_PULSE) \
+#define HEAD_ROTATION_ANGLE_MULT  ((HEAD_ROTATION_HI_PULSE -    \
+                                    HEAD_ROTATION_LO_PULSE)     \
                                    / 180)
 
 #define HEAD_TILT_SERVO             17
 #define HEAD_TILT_LO_PULSE         600
 #define HEAD_TILT_HI_PULSE        2300
-#define HEAD_TILT_ANGLE_MULT       ((HEAD_TILT_HI_PULSE - HEAD_TILT_LO_PULSE) \
+#define HEAD_TILT_ANGLE_MULT      ((HEAD_TILT_HI_PULSE - \
+                                    HEAD_TILT_LO_PULSE)  \
                                    / 180)
 
 Head::Head()
@@ -162,18 +164,17 @@ void Head::tilt(float deg, bool relative)
     unsigned int center;
     char buf[128];
 
-    deg = -deg;
-
     if (relative) {
         pulse = servos->pulse(HEAD_TILT_SERVO);
-        pulse = (unsigned int) ((float) pulse + (HEAD_TILT_ANGLE_MULT * deg));
+        pulse = (unsigned int) ((float) pulse - (HEAD_TILT_ANGLE_MULT * deg));
         servos->setPulse(HEAD_TILT_SERVO, pulse);
         _tilt += deg;
     } else {
         center =
-            ((servos->hiRange(HEAD_TILT_SERVO) - servos->loRange(HEAD_TILT_SERVO)) / 2) +
+            ((servos->hiRange(HEAD_TILT_SERVO) -
+              servos->loRange(HEAD_TILT_SERVO)) / 2) +
             HEAD_TILT_LO_PULSE;
-        pulse = (unsigned int) ((float) center - deg * HEAD_TILT_ANGLE_MULT);
+        pulse = (unsigned int) ((float) center + deg * HEAD_TILT_ANGLE_MULT);
         servos->setPulse(HEAD_TILT_SERVO, pulse);
         _tilt = deg;
     }
