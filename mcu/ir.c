@@ -4,7 +4,6 @@
  * Copyright (C) 2023, Charles Chiou
  */
 
-#include <stdio.h>
 #include <pico/stdlib.h>
 #include "rabbit_mcu.h"
 

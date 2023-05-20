@@ -4,7 +4,6 @@
  * Copyright (C) 2023, Charles Chiou
  */
 
-#include <stdio.h>
 #include <pico/stdlib.h>
 #include "rabbit_mcu.h"
 
@@ -21,23 +20,24 @@ struct ultrasound_state {
 };
 
 struct ultrasound_pin ULTRASOUND_PINS[ULTRASOUND_DEVICES] = {
-    {  0,  1, },
     {  2,  3, },
     {  4,  5, },
     {  6,  7, },
     {  8,  9, },
     { 10, 11, },
+    { 12, 13, },
 };
 
 struct ultrasound_state ultrasound_state[ULTRASOUND_DEVICES]
 __attribute__((section(".data.bss")));
 
-unsigned int ultrasound_tdiff[ULTRASOUND_DEVICES]
+unsigned int ultrasound_d_mm[ULTRASOUND_DEVICES]
 __attribute__((section(".data.bss")));
 
 static void ultrasound_gpio_interrupt(uint gpio, uint32_t mask)
 {
     unsigned int i;
+    unsigned int tdiff;
 
     for (i = 0; i < ULTRASOUND_DEVICES; i++) {
         if (gpio != ULTRASOUND_PINS[i].echo) {
@@ -52,7 +52,12 @@ static void ultrasound_gpio_interrupt(uint gpio, uint32_t mask)
             ultrasound_state[i].t_rise = time_us_64();
         } else if (mask & GPIO_IRQ_EDGE_FALL) {
             ultrasound_state[i].t_fall = time_us_64();
-            ultrasound_tdiff[i] = ultrasound_state[i].t_fall - ultrasound_state[i].t_rise;
+            if (ultrasound_state[i].t_fall > ultrasound_state[i].t_rise) {
+                tdiff =
+                    ultrasound_state[i].t_fall -
+                    ultrasound_state[i].t_rise;
+                ultrasound_d_mm[i] = (tdiff * 331 / 1000) / 2;
+            }
             ultrasound_state[i].active = false;
         }
     }
@@ -69,10 +74,11 @@ void ultrasound_init(void)
         gpio_init(ULTRASOUND_PINS[i].echo);
         gpio_set_dir(ULTRASOUND_PINS[i].echo, GPIO_IN);
         gpio_disable_pulls(ULTRASOUND_PINS[i].echo);
-        gpio_set_irq_enabled_with_callback(ULTRASOUND_PINS[i].echo,
-                                           GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL,
-                                           true,
-                                           ultrasound_gpio_interrupt);
+        gpio_set_irq_enabled_with_callback(
+            ULTRASOUND_PINS[i].echo,
+            GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL,
+            true,
+            ultrasound_gpio_interrupt);
     }
 }
 
