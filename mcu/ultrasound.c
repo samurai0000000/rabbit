@@ -52,7 +52,8 @@ static void ultrasound_gpio_interrupt(uint gpio, uint32_t mask)
             ultrasound_state[i].t_rise = time_us_64();
         } else if (mask & GPIO_IRQ_EDGE_FALL) {
             ultrasound_state[i].t_fall = time_us_64();
-            if (ultrasound_state[i].t_fall > ultrasound_state[i].t_rise) {
+            if ((ultrasound_state[i].t_fall > ultrasound_state[i].t_rise) &&
+                (ultrasound_state[i].t_rise != 0)) {
                 tdiff =
                     ultrasound_state[i].t_fall -
                     ultrasound_state[i].t_rise;
@@ -95,6 +96,19 @@ void ultrasound_trigger(unsigned int id)
     ultrasound_state[id].t_fall = 0;
     sleep_us(5);
     gpio_put(ULTRASOUND_PINS[id].trigger, false);
+}
+
+void ultrasound_clear(unsigned int id)
+{
+    if (id >= ULTRASOUND_DEVICES) {
+        return;
+    }
+
+    ultrasound_state[id].active = 1;
+    ultrasound_state[id].t_trigger = time_us_64();
+    ultrasound_state[id].t_rise = 0;
+    ultrasound_state[id].t_fall = 0;
+    ultrasound_d_mm[id] = 0;
 }
 
 /*

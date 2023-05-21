@@ -7,6 +7,8 @@
 
 extern void rabbit_panic(const char *msg);
 
+extern unsigned int rs232_rx_chars;
+extern unsigned int rs232_rx_lines;
 extern void rs232_init(void);
 extern int rs232_printf(const char *fmt, ...);
 
@@ -20,6 +22,7 @@ extern bool ir_triggered(void);
 extern unsigned int ultrasound_d_mm[ULTRASOUND_DEVICES];
 extern void ultrasound_init(void);
 extern void ultrasound_trigger(unsigned int id);
+extern void ultrasound_clear(unsigned int id);
 
 extern void led_init(void);
 extern void led_set(bool on);
@@ -27,6 +30,8 @@ extern void led_set(bool on);
 extern float temperature_c;
 extern void onboard_temp_init(void);
 extern float onboard_temp_refresh(void);
+
+#define usb_printf printf
 
 #endif
 
