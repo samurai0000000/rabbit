@@ -5,8 +5,6 @@
 #ifndef RABBIT_MCU_H
 #define RABBIT_MCU_H
 
-extern void rabbit_panic(const char *msg);
-
 extern unsigned int rs232_rx_chars;
 extern unsigned int rs232_rx_lines;
 extern void rs232_init(void);

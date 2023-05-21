@@ -5,20 +5,61 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <pico/stdlib.h>
 #include <pico/unique_id.h>
 #include "rabbit_mcu.h"
 
-#define IR_SAMPLING_INTERVAL_US    500
-#define US_SAMPLING_INTERVAL_US   5000
-#define PUSH_DATA_INTERVAL_US     5000
-#define MAIN_LOOP_DELAY_MS         500
+#define IR_SAMPLING_INTERVAL_US     500
+#define US_SAMPLING_INTERVAL_US    5000
+#define USB_PUSH_DATA_INTERVAL_US  5000
+#define USB_PARSE_CMD_INTERVAL_US  1000
+#define MAIN_LOOP_DELAY_MS          500
 
-void rabbit_panic(const char *msg)
+const char *get_banner(void)
 {
-    printf("panic: %s\n", msg);
-    printf("halt!\n");
-    for (;;);
+    static char banner[32];
+    pico_unique_board_id_t board_id;
+    size_t l = sizeof(banner);
+    char *s = banner;
+    unsigned int i;
+    int ret;
+
+    pico_get_unique_board_id(&board_id);
+
+    ret = snprintf(s, l - 1, "Rabbit MCU on ");
+    s += ret;
+    l -= ret;
+    for (i = 0; i < PICO_UNIQUE_BOARD_ID_SIZE_BYTES; i++) {
+        uint8_t dh, dl;
+
+        dh = (board_id.id[i] >> 4);
+        dl = (board_id.id[i] & 0xf);
+        if (dh < 10) {
+            *s = '0' + dh;
+        } else {
+            *s = 'a' + (dh - 10);
+        }
+        s++;
+        l--;
+        if (dl < 10) {
+            *s = '0' + dl;
+        } else {
+            *s = 'a' + (dl - 10);
+        }
+        s++;
+        l--;
+    }
+
+    *s = '\n';
+    s++;
+    l--;
+
+    *s = '\0';
+    s++;
+    l--;
+
+    return banner;
 }
 
 static bool sample_ir(repeating_timer_t *timer)
@@ -90,65 +131,59 @@ static const char *encode_result(void)
     return line;
 }
 
-static bool push_data(repeating_timer_t *timer)
+static bool usb_push_enabled = false;
+
+static bool usb_push_data(repeating_timer_t *timer)
 {
     (void)(timer);
 
     /* Send official result via USB CDC */
-    usb_printf(encode_result());
+    if (usb_push_enabled) {
+        usb_printf(encode_result());
+    }
 
     return true;
 }
 
-const char *get_banner(void)
+static bool usb_parse_cmd(repeating_timer_t *timer)
 {
-    static char banner[32];
-    pico_unique_board_id_t board_id;
-    size_t l = sizeof(banner);
-    char *s = banner;
-    unsigned int i;
-    int ret;
+    static unsigned int l = 0;
+    static char cmd[32];
+    int c;
 
-    pico_get_unique_board_id(&board_id);
+    (void)(timer);
 
-    ret = snprintf(s, l - 1, "Rabbit MCU on ");
-    s += ret;
-    l -= ret;
-    for (i = 0; i < PICO_UNIQUE_BOARD_ID_SIZE_BYTES; i++) {
-        uint8_t dh, dl;
-
-        dh = (board_id.id[i] >> 4);
-        dl = (board_id.id[i] & 0xf);
-        if (dh < 10) {
-            *s = '0' + dh;
-        } else {
-            *s = 'a' + (dh - 10);
+    while (true) {
+        c = getchar_timeout_us(0);
+        if (c < 0) {
+            break;
         }
-        s++;
-        l--;
-        if (dl < 10) {
-            *s = '0' + dl;
+
+        if ((char) c == '\r') {
+            cmd[l] = '\0';
+            if (strcmp(cmd, "id") == 0) {
+                usb_printf(get_banner());
+            } else if (strcmp(cmd, "stream") == 0) {
+                usb_push_enabled = true;
+            } else if (strcmp(cmd, "stop") == 0) {
+                usb_push_enabled = false;
+            }
+
+            l = 0;
+            cmd[0] = '\0';
         } else {
-            *s = 'a' + (dl - 10);
+            cmd[l] = (char) c;
+            l++;
+            l %= sizeof(cmd);
         }
-        s++;
-        l--;
     }
 
-    *s = '\n';
-    s++;
-    l--;
-
-    *s = '\0';
-    s++;
-    l--;
-
-    return banner;
+    return true;
 }
 
 int main(void)
 {
-    repeating_timer_t timer1, timer2, timer3;
+    repeating_timer_t timer1, timer2, timer3, timer4;
     unsigned int i;
     unsigned int loop = 0;
     bool led_on = false;
@@ -167,25 +202,29 @@ int main(void)
     if (add_repeating_timer_us(-IR_SAMPLING_INTERVAL_US,
                                sample_ir, NULL, &timer1) ==
         false) {
-        rabbit_panic("add_repeating_timer for infrared");
+        panic("add_repeating_timer for infrared");
     }
 
     if (add_repeating_timer_us(-US_SAMPLING_INTERVAL_US,
                                sample_us, NULL, &timer2) ==
         false) {
-        rabbit_panic("add_repeating_timer for ultrasound");
+        panic("add_repeating_timer for ultrasound");
     }
 
-    if (add_repeating_timer_us(-PUSH_DATA_INTERVAL_US,
-                               push_data, NULL, &timer3) ==
+    if (add_repeating_timer_us(-USB_PUSH_DATA_INTERVAL_US,
+                               usb_push_data, NULL, &timer3) ==
         false) {
-        rabbit_panic("add_repeating_timer for push");
+        panic("add_repeating_timer for push");
     }
 
+    if (add_repeating_timer_us(-USB_PARSE_CMD_INTERVAL_US,
+                               usb_parse_cmd, NULL, &timer4) ==
+        false) {
+        panic("add_repeating_timer for parse");
+    }
 
     for (loop = 0; true; loop++) {
         if (last_rs232_rx_lines != rs232_rx_lines) {
-            printf("here %u, %u\n", last_rs232_rx_lines, rs232_rx_lines);
             debug_on = rs232_rx_lines % 2 == 1 ? 1 : 0;
             last_rs232_rx_lines = rs232_rx_lines;
             if (debug_on == false) {
