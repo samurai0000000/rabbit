@@ -11,6 +11,7 @@
 #include "servos.hxx"
 #include "adc.hxx"
 #include "camera.hxx"
+#include "proximity.hxx"
 #include "wheels.hxx"
 #include "arms.hxx"
 #include "power.hxx"
@@ -28,6 +29,7 @@
 extern Servos *servos;
 extern ADC *adc;
 extern Camera *camera;
+extern Proximity *proximity;
 extern Wheels *wheels;
 extern Arm *rightArm;
 extern Arm *leftArm;

@@ -5,7 +5,7 @@
  */
 
 #ifndef MOUTH_HXX
-#define LOUTH_HXX
+#define MOUTH_HXX
 
 #include <string>
 

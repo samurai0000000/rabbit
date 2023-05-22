@@ -21,6 +21,7 @@ static struct termios t_old;
 Servos *servos = NULL;
 ADC *adc = NULL;
 Camera *camera = NULL;
+Proximity *proximity = NULL;
 Wheels *wheels = NULL;
 Arm *rightArm = NULL;
 Arm *leftArm = NULL;
@@ -56,6 +57,11 @@ static void cleanup(void)
     if (wheels) {
         delete wheels;
         wheels = NULL;
+    }
+
+    if (proximity) {
+        delete proximity;
+        proximity = NULL;
     }
 
     if (rightArm) {
@@ -195,6 +201,7 @@ int main(int argc, char **argv)
     servos = new Servos();
     adc = new ADC();
     camera = new Camera();
+    proximity = new Proximity();
     wheels = new Wheels();
     rightArm = new Arm(RIGHT_ARM);
     leftArm = new Arm(LEFT_ARM);
