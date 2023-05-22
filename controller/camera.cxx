@@ -413,8 +413,14 @@ void Camera::updateOsd1(Mat &osd1, const struct timeval *since,
     putText(osd1, text, pos,
             fontFace, fontScale, fontColor, thickness, LINE_8, false);
 
-    text = String("LiDAR Speed: ") +
-        (lidar->isEnabled() ? to_string(lidar->speed()) : "off");
+    text = String("LiDAR RPM: ") +
+        (lidar->isEnabled() ? to_string(lidar->rpm()) : "off");
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String("LiDAR PPS: ") +
+        (lidar->isEnabled() ? to_string(lidar->pps()) : "off");
     pos.y += textSize.height;
     putText(osd1, text, pos,
             fontFace, fontScale, fontColor, thickness, LINE_8, false);
