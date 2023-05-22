@@ -57,7 +57,8 @@ static void ultrasound_gpio_interrupt(uint gpio, uint32_t mask)
                 tdiff =
                     ultrasound_state[i].t_fall -
                     ultrasound_state[i].t_rise;
-                ultrasound_d_mm[i] = (tdiff * 331 / 1000) / 2;
+                ultrasound_d_mm[i] =
+                    (tdiff * (331 + 0.6 * temperature_c) / 1000) / 2;
             }
             ultrasound_state[i].active = false;
         }

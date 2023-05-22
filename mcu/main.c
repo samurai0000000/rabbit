@@ -14,7 +14,7 @@
 #define US_SAMPLING_INTERVAL_US    5000
 #define USB_PUSH_DATA_INTERVAL_US  5000
 #define USB_PARSE_CMD_INTERVAL_US  1000
-#define MAIN_LOOP_DELAY_MS          500
+#define MAIN_LOOP_DELAY_MS          100
 
 const char *get_banner(void)
 {
@@ -119,6 +119,10 @@ static const char *encode_result(void)
             l--;
         }
     }
+
+    ret = snprintf(s, l - 1, ";%.1f", temperature_c);
+    s += ret;
+    l -= ret;
 
     *s = '\n';
     s++;
@@ -235,18 +239,29 @@ int main(void)
         /* Debug over RS-232 */
         if (debug_on) {
             rs232_printf("\e[1;1H\e[2J");
-            rs232_printf("loop %u\n", loop);
+            rs232_printf("Loop %u\n", loop);
+            rs232_printf("-----------------------------\n");
             for (i = 0; i < IR_DEVICES; i++) {
                 rs232_printf("IR%u: %s\n", i, ir_state[i] ? "on" : "off");
             }
             for (i = 0; i < ULTRASOUND_DEVICES; i++) {
                 rs232_printf("US%u: %u mm\n", i, ultrasound_d_mm[i]);
             }
+            rs232_printf("Temperature: %.1f\n", temperature_c);
         }
 
-        /* Toggle LED */
-        led_set(led_on);
-        led_on = !led_on;
+        /* Toggle LED - blink faster if streaming data */
+        if (usb_push_enabled) {
+            if ((loop % 2) == 0) {
+                led_set(led_on);
+                led_on = !led_on;
+            }
+        } else {
+            if ((loop % 10) == 1) {
+                led_set(led_on);
+                led_on = !led_on;
+            }
+        }
 
         /* Sleep */
         sleep_ms(MAIN_LOOP_DELAY_MS);
