@@ -154,7 +154,7 @@ void Ambience::probeOpenDevice(void)
     /* Get the current sensor settings */
     rslt = bme280_get_sensor_settings(&_settings, &_dev);
     if (rslt != BME280_OK) {
-        fprintf(stderr, "bme280_get_sensor_settings failed (%+d).", rslt);
+        fprintf(stderr, "bme280_get_sensor_settings failed (%+d)\n", rslt);
         goto bme280_done;
     }
 
@@ -168,7 +168,7 @@ void Ambience::probeOpenDevice(void)
     rslt = bme280_set_sensor_settings(BME280_SEL_ALL_SETTINGS,
                                       &_settings, &_dev);
     if (rslt != BME280_OK) {
-        fprintf(stderr, "bme280_set_sensor_settings (%+d).", rslt);
+        fprintf(stderr, "bme280_set_sensor_settings (%+d)\n", rslt);
         goto bme280_done;
     }
 
@@ -240,7 +240,7 @@ void Ambience::run(void)
         /* Set the BME sensor to forced mode */
         rslt = bme280_set_sensor_mode(BME280_POWERMODE_FORCED, &_dev);
         if (rslt != BME280_OK) {
-            fprintf(stderr, "bme280_set_sensor_mode (%+d).", rslt);
+            fprintf(stderr, "bme280_set_sensor_mode (%+d)\n", rslt);
             continue;
         }
 
@@ -257,7 +257,7 @@ void Ambience::run(void)
         /* Get BME sensor data */
         rslt = bme280_get_sensor_data(BME280_ALL, &data, &_dev);
         if (rslt != BME280_OK) {
-            fprintf(stderr, "bme280_get_sensor_data (%+d).", rslt);
+            fprintf(stderr, "bme280_get_sensor_data (%+d)\n", rslt);
             continue;
         }
 
