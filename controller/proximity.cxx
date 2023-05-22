@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <pigpio.h>
 #include <string>
-#include "proximity.hxx"
+#include "rabbit.hxx"
 
 using namespace std;
 
@@ -135,6 +135,7 @@ void Proximity::probeOpenDevice(unsigned int id)
     char devid[64];
     struct termios tty;
     int speed = B115200;
+    char buf[128];
 
     if (id >= RABBIT_MCUS) {
         return;
@@ -212,7 +213,8 @@ void Proximity::probeOpenDevice(unsigned int id)
         _node[id] = string(devid + 14);
     }
 
-    printf("MCU %s is online\n", _node[id].c_str());
+    snprintf(buf, sizeof(buf) - 1, "MCU %s is online\n", _node[id].c_str());
+    LOG(buf);
 
     /* Start streaming */
     if (_enabled) {
@@ -226,6 +228,8 @@ void Proximity::probeOpenDevice(unsigned int id)
 
 void Proximity::errCloseDevice(unsigned int id)
 {
+    char buf[128];
+
     if (id >= RABBIT_MCUS) {
         return;
     }
@@ -234,7 +238,8 @@ void Proximity::errCloseDevice(unsigned int id)
         return;
     }
 
-    printf("Put MCU %s offline\n", _node[id].c_str());
+    snprintf(buf, sizeof(buf) - 1, "Put MCU %s offline\n", _node[id].c_str());
+    LOG(buf);
 
     close(_handle[id]);
     _handle[id] = -1;
@@ -277,7 +282,7 @@ void Proximity::run(void)
             /* Process streaming data from MCU */
             pthread_mutex_lock(&_mutex);
 
-            ret = serial_scan_line(_handle[id], line, sizeof(line), 10000);
+            ret = serial_scan_line(_handle[id], line, sizeof(line), 50000);
             if (ret == 0) {
                 errCloseDevice(id);
             }
