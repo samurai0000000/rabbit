@@ -257,7 +257,7 @@ int main(void)
                 led_on = !led_on;
             }
         } else {
-            if ((loop % 10) == 1) {
+            if ((loop % 20) == 0) {
                 led_set(led_on);
                 led_on = !led_on;
             }
