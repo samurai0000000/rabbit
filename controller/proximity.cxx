@@ -134,7 +134,6 @@ void Proximity::probeOpenDevice(unsigned int id)
     char devname[32];
     char devid[64];
     struct termios tty;
-    int speed = B115200;
     char buf[128];
 
     if (id >= RABBIT_MCUS) {
@@ -144,7 +143,7 @@ void Proximity::probeOpenDevice(unsigned int id)
     }
 
     snprintf(devname, sizeof(devname) - 1, "/dev/ttyACM%u", id);
-    _handle[id] = open(devname, O_RDWR);
+    _handle[id] = open(devname, O_RDWR | O_NOCTTY);
     if (_handle[id] == -1) {
         return;
     }
@@ -154,19 +153,18 @@ void Proximity::probeOpenDevice(unsigned int id)
         fprintf(stderr, "tcgetattr('%s'): %s\n", devname, strerror(errno));
         return;
     }
-    cfsetospeed(&tty, speed);
-    cfsetispeed(&tty, speed);
-    tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
-    tty.c_iflag &= ~IGNBRK;
-    tty.c_lflag = 0;
-    tty.c_oflag = 0;
+
+    cfsetospeed(&tty, B115200);
+    cfsetispeed(&tty, B115200);
+
+    cfmakeraw(&tty);
+
     tty.c_cc[VMIN]  = 0;
     tty.c_cc[VTIME] = 0;
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-    tty.c_cflag |= (CLOCAL | CREAD);
-    tty.c_cflag &= ~(PARENB | PARODD);
     tty.c_cflag &= ~CSTOPB;
     tty.c_cflag &= ~CRTSCTS;
+    tty.c_cflag |= (CLOCAL | CREAD);
+
     if (tcsetattr(_handle[id], TCSANOW, &tty) != 0) {
         fprintf(stderr, "tcsetattr('%s'): %s\n", devname, strerror(errno));
         return;
@@ -182,7 +180,7 @@ void Proximity::probeOpenDevice(unsigned int id)
 
     /* Flush input */
     for (;;) {
-        ret = serial_scan_line(_handle[id], devid, sizeof(devid), 10000);
+        ret = serial_scan_line(_handle[id], buf, sizeof(buf), 50000);
         if (ret == 0) {
             break;
         }
@@ -197,7 +195,7 @@ void Proximity::probeOpenDevice(unsigned int id)
     }
 
     /* Get the device ID */
-    ret = serial_scan_line(_handle[id], devid, sizeof(devid), 10000);
+    ret = serial_scan_line(_handle[id], devid, sizeof(devid), 50000);
     if (ret == 0) {
         close(_handle[id]);
         _handle[id] = -1;
@@ -423,7 +421,7 @@ void Proximity::stop(void)
                 errCloseDevice(id);
             }
 
-            ret = serial_scan_line(_handle[id], line, sizeof(line), 10000);
+            ret = serial_scan_line(_handle[id], line, sizeof(line), 50000);
             if (ret > 0) {
                 count = 3;
             } else {
