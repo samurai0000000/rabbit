@@ -22,6 +22,8 @@
                                     HEAD_TILT_LO_PULSE)  \
                                    / 180)
 
+using namespace std;
+
 Head::Head()
     : _rotation(0.0),
       _tilt(0.0),

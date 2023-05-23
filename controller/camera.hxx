@@ -11,10 +11,6 @@
 #include <opencv2/opencv.hpp>
 #include <nadjieb/mjpeg_streamer.hpp>
 
-using namespace std;
-using namespace cv;
-using namespace nadjieb;
-
 class Camera {
 
 public:
@@ -39,13 +35,13 @@ private:
 
     static void *thread_func(void *args);
     void run(void);
-    void detectFaces(Mat &frame, vector<Point> &ptFaces);
-    void updateOsd1(Mat &osd1, const struct timeval *since,
+    void detectFaces(cv::Mat &frame, std::vector<cv::Point> &ptFaces);
+    void updateOsd1(cv::Mat &osd1, const struct timeval *since,
                     int fontFace, double fontScale, int thickness,
-                    const Scalar &fontColor, const Size &textSize);
+                    const cv::Scalar &fontColor, const cv::Size &textSize);
 
-    VideoCapture *_vc;
-    MJPEGStreamer _streamer;
+    cv::VideoCapture *_vc;
+    nadjieb::MJPEGStreamer _streamer;
     pthread_t _thread;
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;
@@ -53,7 +49,7 @@ private:
     bool _vision;
     float _fr;
     bool _sentry;
-    CascadeClassifier _cascade;
+    cv::CascadeClassifier _cascade;
 
 };
 

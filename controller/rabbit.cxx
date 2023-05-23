@@ -15,6 +15,8 @@
 #include <iostream>
 #include "rabbit.hxx"
 
+using namespace std;
+
 static int daemonize = 0;
 static struct termios t_old;
 
@@ -306,9 +308,14 @@ static void announce_clock(void)
     }
 
     if (tm->tm_min == 0) {
+        unsigned int hour;
+        hour = tm->tm_hour % 12;
+        if (hour == 0) {
+            hour = 12;
+        }
         snprintf(announcement, sizeof(announcement) - 1,
                  "Now is %d o'clock %s\n",
-                 tm->tm_hour % 12, timeofday);
+                 hour, timeofday);
     } else {
         snprintf(announcement, sizeof(announcement) - 1,
                  "Now is %d o'clock and %d %s %s\n",

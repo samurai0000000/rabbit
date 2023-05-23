@@ -35,6 +35,9 @@
 #define LOAD_INT(x)        (unsigned int)((x) >> FSHIFT)
 #define LOAD_FRAC(x)       LOAD_INT(((x) & (FIXED_1 - 1)) * 100)
 
+using namespace std;
+using namespace cv;
+
 Camera::Camera()
     : _vc(NULL),
       _running(false),

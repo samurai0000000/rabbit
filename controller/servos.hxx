@@ -13,8 +13,6 @@
 #define SERVO_CHANNELS              (16 * SERVO_CONTROLLERS)
 #define SERVO_SCHEDULE_INTERVAL_MS  50
 
-using namespace std;
-
 struct servo_motion {
     unsigned int pulse;
     unsigned int ms;
@@ -53,7 +51,7 @@ public:
     void setPct(unsigned int chan, unsigned int pct);
     void center(unsigned int chan);
     void scheduleMotions(unsigned int chan,
-                         const vector<struct servo_motion> &motions,
+                         const std::vector<struct servo_motion> &motions,
                          bool append = false);
     void clearMotionSchedule(unsigned int chan);
     bool hasMotionSchedule(unsigned int chan) const;
@@ -81,8 +79,9 @@ private:
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;
 
-    vector<struct servo_motion_exec> _motions[SERVO_CHANNELS * SERVO_CONTROLLERS];
-    vector<struct servo_motion_sync *> _syncs;
+    std::vector<struct servo_motion_exec>
+    _motions[SERVO_CHANNELS * SERVO_CONTROLLERS];
+    std::vector<struct servo_motion_sync *> _syncs;
 };
 
 inline bool Servos::isDeviceOnline(void) const

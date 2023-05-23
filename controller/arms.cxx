@@ -6,6 +6,8 @@
 
 #include "rabbit.hxx"
 
+using namespace std;
+
 Arm::Arm(unsigned int side)
 {
     if (side != RIGHT_ARM && side != LEFT_ARM) {

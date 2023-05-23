@@ -19,6 +19,9 @@
  */
 #define PWM_I2C_BUS    1
 #define PWM_FREQ_KHZ   50
+
+using namespace std;
+
 static const unsigned int PWM_I2C_ADDR[SERVO_CONTROLLERS] = {
     0x40,
     0x41,

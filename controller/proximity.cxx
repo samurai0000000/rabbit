@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <pigpio.h>
 #include <string>
-#include "rabbit.hxx"
+#include "proximity.hxx"
 
 using namespace std;
 
@@ -130,7 +130,7 @@ static size_t serial_scan_line(int fd, char *line, size_t len,
 
 void Proximity::probeOpenDevice(unsigned int id)
 {
-    int ret;
+    int ret = 0;
     char devname[32];
     char devid[64];
     struct termios tty;
@@ -143,39 +143,51 @@ void Proximity::probeOpenDevice(unsigned int id)
     }
 
     snprintf(devname, sizeof(devname) - 1, "/dev/ttyACM%u", id);
-    _handle[id] = open(devname, O_RDWR | O_NOCTTY);
+
+    _handle[id] = open(devname, O_RDWR | O_NONBLOCK | O_NOCTTY);
     if (_handle[id] == -1) {
-        return;
+        ret = -1;
+        goto done;
     }
 
     /* Set up TTY  for serial device */
-    if (tcgetattr(_handle[id], &tty) != 0) {
+    ret = tcgetattr(_handle[id], &tty);
+    if (ret != 0) {
         fprintf(stderr, "tcgetattr('%s'): %s\n", devname, strerror(errno));
-        return;
+        goto done;
     }
 
     cfsetospeed(&tty, B115200);
     cfsetispeed(&tty, B115200);
-
-    cfmakeraw(&tty);
-
-    tty.c_cc[VMIN]  = 0;
-    tty.c_cc[VTIME] = 0;
+    tty.c_cflag &= ~PARENB;
     tty.c_cflag &= ~CSTOPB;
+    tty.c_cflag &= ~CSIZE;
+    tty.c_cflag |= CS8;
     tty.c_cflag &= ~CRTSCTS;
     tty.c_cflag |= (CLOCAL | CREAD);
+    tty.c_lflag &= ~ICANON;
+    tty.c_lflag &= ~ECHO;
+    tty.c_lflag &= ~ECHOE;
+    tty.c_lflag &= ~ECHONL;
+    tty.c_lflag &= ~ISIG;
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+    tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL);
+    tty.c_oflag &= ~OPOST;
+    tty.c_oflag &= ~ONLCR;
+    tty.c_cc[VMIN]  = 0;
+    tty.c_cc[VTIME] = 0;
 
-    if (tcsetattr(_handle[id], TCSANOW, &tty) != 0) {
+    ret = tcsetattr(_handle[id], TCSANOW, &tty);
+    if (ret != 0) {
         fprintf(stderr, "tcsetattr('%s'): %s\n", devname, strerror(errno));
-        return;
+        goto done;
     }
 
     /* Ensure streaming has stopped */
     ret = write(_handle[id], "stop\r", 5);
     if (ret != 5) {
-        close(_handle[id]);
-        _handle[id] = -1;
-        return;
+        ret = -1;
+        goto done;
     }
 
     /* Flush input */
@@ -189,44 +201,52 @@ void Proximity::probeOpenDevice(unsigned int id)
     /* Request the device ID */
     ret = write(_handle[id], "id\r", 3);
     if (ret != 3) {
-        close(_handle[id]);
-        _handle[id] = -1;
-        return;
+        ret = -1;
+        goto done;
     }
 
     /* Get the device ID */
     ret = serial_scan_line(_handle[id], devid, sizeof(devid), 50000);
     if (ret == 0) {
-        close(_handle[id]);
-        _handle[id] = -1;
-        return;
+        ret = -1;
+        goto done;
     }
 
     /* Ensure the ID shows the correct MCU */
     if (strstr(devid, "Rabbit MCU on ") != devid) {
-        close(_handle[id]);
-        _handle[id] = -1;
-        return;
+        ret = -1;
+        goto done;
     } else {
         _node[id] = string(devid + 14);
     }
 
-    snprintf(buf, sizeof(buf) - 1, "MCU %s is online\n", _node[id].c_str());
-    LOG(buf);
+    printf("MCU %s is online\n", _node[id].c_str());
 
     /* Start streaming */
     if (_enabled) {
         ret = write(_handle[id], "stream\r", 7);
         if (ret != 7) {
-            close(_handle[id]);
-            _handle[id] = -1;
+            ret = -1;
+            goto done;
         }
+    }
+
+    ret = 0;
+
+done:
+
+    if ((ret != 0) && (_handle[id] != -1)) {
+        ret = close(_handle[id]);
+        if (ret != 0) {
+            perror("close");
+        }
+        _handle[id] = -1;
     }
 }
 
 void Proximity::errCloseDevice(unsigned int id)
 {
-    char buf[128];
+    int ret;
 
     if (id >= RABBIT_MCUS) {
         return;
@@ -236,10 +256,12 @@ void Proximity::errCloseDevice(unsigned int id)
         return;
     }
 
-    snprintf(buf, sizeof(buf) - 1, "Put MCU %s offline\n", _node[id].c_str());
-    LOG(buf);
+    printf("Put MCU %s offline\n", _node[id].c_str());
 
-    close(_handle[id]);
+    ret = close(_handle[id]);
+    if (ret != 0) {
+        perror("close");
+    }
     _handle[id] = -1;
     _node[id] = "";
 }
@@ -253,6 +275,7 @@ void Proximity::run(void)
         char *part, *partctx;
         char *subpart, *subpartctx;
         unsigned int valid;
+        struct timeval now, last_probe = { 0, 0, };
 
         for (id = 0, valid = 0; id < RABBIT_MCUS; id++) {
             unsigned int k;
@@ -268,28 +291,32 @@ void Proximity::run(void)
             }
 
             /* Probe and open device */
-            if (_handle[id] == -1) {
-                probeOpenDevice(id);
+            gettimeofday(&now, NULL);
+            if (now.tv_sec > last_probe.tv_sec) {
+                last_probe.tv_sec = now.tv_sec;
+                last_probe.tv_usec = now.tv_usec;
+
                 if (_handle[id] == -1) {
-                    continue;
+                    probeOpenDevice(id);
                 }
+            }
+
+            if (_handle[id] == -1) {
+                continue;
             }
 
             valid++;
 
             /* Process streaming data from MCU */
-            pthread_mutex_lock(&_mutex);
-
             ret = serial_scan_line(_handle[id], line, sizeof(line), 50000);
             if (ret == 0) {
                 errCloseDevice(id);
             }
 
-            pthread_mutex_unlock(&_mutex);
-
             /*
              * Parse the output and update states
              */
+            //printf("id=%u line='%s'\n", id, line);
 
             /* Process the IR part */
             part = strtok_r(line, ";", &partctx);
@@ -377,8 +404,6 @@ void Proximity::stream(void)
         return;
     }
 
-    pthread_mutex_lock(&_mutex);
-
     _enabled = true;
     for (id = 0; id < RABBIT_MCUS; id++) {
         if (_handle[id] == -1) {
@@ -390,8 +415,6 @@ void Proximity::stream(void)
             errCloseDevice(id);
         }
     }
-
-    pthread_mutex_unlock(&_mutex);
 }
 
 void Proximity::stop(void)
@@ -404,8 +427,6 @@ void Proximity::stop(void)
     if (_enabled == false) {
         return;
     }
-
-    pthread_mutex_lock(&_mutex);
 
     _enabled = false;
     for (id = 0; id < RABBIT_MCUS; id++) {
@@ -429,8 +450,6 @@ void Proximity::stop(void)
             }
         }
     }
-
-    pthread_mutex_unlock(&_mutex);
 }
 
 /*
