@@ -9,8 +9,8 @@
 #include "rabbit.hxx"
 
 #define HEAD_ROTATION_SERVO         16
-#define HEAD_ROTATION_LO_PULSE     590
-#define HEAD_ROTATION_HI_PULSE    2270
+#define HEAD_ROTATION_LO_PULSE     630
+#define HEAD_ROTATION_HI_PULSE    2310
 #define HEAD_ROTATION_ANGLE_MULT  ((HEAD_ROTATION_HI_PULSE -    \
                                     HEAD_ROTATION_LO_PULSE)     \
                                    / 180)
@@ -193,12 +193,28 @@ void Head::tilt(float deg, bool relative)
 
 float Head::rotationAt(void) const
 {
-    return _rotation;
+    unsigned int pulse;
+    unsigned int center;
+
+    pulse = servos->pulse(HEAD_ROTATION_SERVO);
+    center = ((servos->hiRange(HEAD_ROTATION_SERVO) -
+               servos->loRange(HEAD_ROTATION_SERVO)) / 2) +
+        HEAD_ROTATION_LO_PULSE;
+
+    return ((float) pulse - (float) center) / HEAD_ROTATION_ANGLE_MULT;
 }
 
 float Head::tiltAt(void) const
 {
-    return _tilt;
+    unsigned int pulse;
+    unsigned int center;
+
+    pulse = servos->pulse(HEAD_TILT_SERVO);
+    center = ((servos->hiRange(HEAD_TILT_SERVO) -
+               servos->loRange(HEAD_TILT_SERVO)) / 2) +
+        HEAD_TILT_LO_PULSE;
+
+    return ((float) pulse - (float) center) / HEAD_TILT_ANGLE_MULT * -1.0;
 }
 
 /*
