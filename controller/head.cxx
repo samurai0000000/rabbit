@@ -9,15 +9,15 @@
 #include "rabbit.hxx"
 
 #define HEAD_ROTATION_SERVO         16
-#define HEAD_ROTATION_LO_PULSE     610
-#define HEAD_ROTATION_HI_PULSE    2260
+#define HEAD_ROTATION_LO_PULSE     590
+#define HEAD_ROTATION_HI_PULSE    2270
 #define HEAD_ROTATION_ANGLE_MULT  ((HEAD_ROTATION_HI_PULSE -    \
                                     HEAD_ROTATION_LO_PULSE)     \
                                    / 180)
 
 #define HEAD_TILT_SERVO             17
-#define HEAD_TILT_LO_PULSE         600
-#define HEAD_TILT_HI_PULSE        2300
+#define HEAD_TILT_LO_PULSE         560
+#define HEAD_TILT_HI_PULSE        2310
 #define HEAD_TILT_ANGLE_MULT      ((HEAD_TILT_HI_PULSE - \
                                     HEAD_TILT_LO_PULSE)  \
                                    / 180)
@@ -29,9 +29,13 @@ Head::Head()
       _tilt(0.0),
       _sentry(false)
 {
-    servos->setRange(HEAD_ROTATION_SERVO, HEAD_ROTATION_LO_PULSE, HEAD_ROTATION_HI_PULSE);
+    servos->setRange(HEAD_ROTATION_SERVO,
+                     HEAD_ROTATION_LO_PULSE,
+                     HEAD_ROTATION_HI_PULSE);
     servos->center(HEAD_ROTATION_SERVO);
-    servos->setRange(HEAD_TILT_SERVO, HEAD_TILT_LO_PULSE, HEAD_TILT_HI_PULSE);
+    servos->setRange(HEAD_TILT_SERVO,
+                     HEAD_TILT_LO_PULSE,
+                     HEAD_TILT_HI_PULSE);
     servos->center(HEAD_TILT_SERVO);
 
     rotate(0.0);
@@ -151,7 +155,8 @@ void Head::rotate(float deg, bool relative)
             ((servos->hiRange(HEAD_ROTATION_SERVO) -
               servos->loRange(HEAD_ROTATION_SERVO)) / 2) +
             HEAD_ROTATION_LO_PULSE;
-        pulse = (unsigned int) ((float) center - deg * HEAD_ROTATION_ANGLE_MULT);
+        pulse = (unsigned int)
+            ((float) center - deg * HEAD_ROTATION_ANGLE_MULT);
         servos->setPulse(HEAD_ROTATION_SERVO, pulse);
         _rotation = deg;
     }
