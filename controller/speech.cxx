@@ -88,7 +88,9 @@ void Speech::run(void)
             unsigned int mode;
 
             snprintf(cmd, sizeof(cmd) - 1,
-                     "/usr/bin/espeak -s %d 2>/dev/null", 120);
+                     "/usr/bin/espeak -s %u -a %u --stdout 2>/dev/null | "
+                     "aplay -D %s >/dev/null 2>&1",
+                     120, 7, "plughw:1,0");
 
             ret = pipe(espeak_stdin);
             if (ret != 0) {
