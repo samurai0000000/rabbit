@@ -144,7 +144,8 @@ build/pico/rabbit_mcu.uf2: build/pico/Makefile
 
 build/pico/Makefile: mcu/CMakeLists.txt
 	@mkdir -p build/pico
-	@cd build/pico && PICO_SDK=$(PICO_SDK) cmake ../../mcu
+	@cd build/pico && PICO_SDK=$(PICO_SDK) PICO_SDK_PATH=$(PICO_SDK) \
+		cmake ../../mcu
 
 .PHONY: flash-mcu
 

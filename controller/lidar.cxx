@@ -97,12 +97,12 @@ bool LiDAR::processData(const uint8_t *buf, size_t size)
     double angle;
 
     if (size < sizeof(struct cldr_message)) {
-        fprintf(stderr, "LiDAR short packet %u\n", size);
+        fprintf(stderr, "LiDAR short packet %zu\n", size);
         return false;  /* Reject */
     }
 
     if (size % 2 != 0) {
-        fprintf(stderr, "LiDAR odd packet size %u\n", size);
+        fprintf(stderr, "LiDAR odd packet size %zu\n", size);
         return false;  /* Reject */
     }
 
