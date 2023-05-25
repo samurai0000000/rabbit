@@ -606,6 +606,26 @@ void Arm::setGripperPosition(float pos, unsigned int ms, bool relative)
     LOG(buf);
 }
 
+bool Arm::isAtPosition(float shoulderRotateDeg, float shoulderExtensionDeg,
+                       float elbowExtensionDeg,
+                       float wristExtensionDeg, float wristRotationDeg,
+                       float gripperPositionPos)
+{
+    return
+        (isnan(shoulderRotateDeg) ? true :
+         isShoulderRotation(shoulderRotateDeg)) &&
+        (isnan(shoulderExtensionDeg) ? true :
+         isShoulderExtension(shoulderExtensionDeg)) &&
+        (isnan(elbowExtensionDeg) ? true :
+         isElbowExtension(elbowExtensionDeg)) &&
+        (isnan(wristExtensionDeg) ? true :
+         isWristExtension(wristExtensionDeg)) &&
+        (isnan(wristRotationDeg) ? true :
+         isWristRotation(wristRotationDeg)) &&
+        (isnan(gripperPositionPos) ? true :
+         isGripperPosition(gripperPositionPos));
+}
+
 void Arm::planMotions(float shoulderRotateDeg, float shoulderExtensionDeg,
                       float elbowExtensionDeg,
                       float wristExtensionDeg, float wristRotationDeg,
@@ -635,12 +655,10 @@ void Arm::planMotions(float shoulderRotateDeg, float shoulderExtensionDeg,
 
     /* Skip the proposed plan if we're already at current position */
     if (skipIfAtPoint) {
-        if (isShoulderRotation(shoulderRotateDeg) &&
-            isShoulderExtension(shoulderExtensionDeg) &&
-            isElbowExtension(elbowExtensionDeg) &&
-            isWristExtension(wristExtensionDeg) &&
-            isWristRotation(wristRotationDeg) &&
-            isGripperPosition(gripperPositionPos)) {
+        if (isAtPosition(shoulderRotateDeg, shoulderExtensionDeg,
+                         elbowExtensionDeg,
+                         wristExtensionDeg, wristRotationDeg,
+                         (gripperPositionPos))) {
             return;
         }
     }
@@ -663,20 +681,37 @@ void Arm::planMotions(float shoulderRotateDeg, float shoulderExtensionDeg,
 
 void Arm::rest(void)
 {
-    if (_side == RIGHT_ARM) {
-        LOG("Move right arm to rest\n");
-        speech->speak("Resting both arms");
-    } else {
-        LOG("Move left arm to rest\n");
-    }
-
     clearMotions();
-    planMotions(0.0, -85.0,
-                -90.0,
-                -40.0, -90.0,
-                NAN,
-                1500,
-                true);
+    if (isAtPosition(0.0, -85.0,
+                     -90.0,
+                     -40.0, -90.0,
+                     NAN)) {
+        if (_side == RIGHT_ARM) {
+            LOG("Move right arm to at-ease\n");
+        } else {
+            LOG("Move left arm to at-ease\n");
+        }
+
+        planMotions(-90.0, -85.0,
+                    -90.0,
+                    -40.0, -90.0,
+                    NAN,
+                    1500,
+                    true);
+    } else {
+        if (_side == RIGHT_ARM) {
+            LOG("Move right arm to rest\n");
+        } else {
+            LOG("Move left arm to rest\n");
+        }
+
+        planMotions(0.0, -85.0,
+                    -90.0,
+                    -40.0, -90.0,
+                    NAN,
+                    1500,
+                    true);
+    }
 }
 
 void Arm::freeze(void)
@@ -716,23 +751,48 @@ void Arm::surrender(void)
 
 void Arm::hug(void)
 {
-    if (_side == RIGHT_ARM) {
-        speech->speak("I need a big hug");
-        LOG("Move right arm forward\n");
-    } else {
-        LOG("Move left arm forward\n");
-    }
-
     clearMotions();
-    planMotions(10.0, 85.0,
-                45.0,
-                0.0, 0.0,
-                NAN,
-                1500);
+    if (isAtPosition(10.0, 85.0,
+                     45.0,
+                     0.0, 0.0,
+                     NAN)) {
+        if (_side == RIGHT_ARM) {
+            speech->speak("Sweet! Hagooshka Hagooshka!");
+            LOG("Bend right arm inward\n");
+        } else {
+            LOG("Bend left arm inward\n");
+        }
+
+        planMotions(10.0, 85.0,
+                    20.0,
+                    0.0, 0.0,
+                    NAN,
+                    1500);
+    } else {
+        if (_side == RIGHT_ARM) {
+            speech->speak("I need a big hug");
+            LOG("Move right arm forward\n");
+        } else {
+            LOG("Move left arm forward\n");
+        }
+
+        planMotions(10.0, 85.0,
+                    45.0,
+                    0.0, 0.0,
+                    NAN,
+                    1500);
+    }
 }
 
 void Arm::extend(void)
 {
+    if (isAtPosition(0.0, 0.0,
+                     45.0,
+                     0.0, 0.0,
+                     NAN)) {
+        return;
+    }
+
     if (_side == RIGHT_ARM) {
         speech->speak("Stretching my right arm");
         LOG("Extend right arm\n");
@@ -742,7 +802,7 @@ void Arm::extend(void)
     }
 
     clearMotions();
-    planMotions(10.0, 0.0,
+    planMotions(0.0, 0.0,
                 45.0,
                 0.0, 0.0,
                 NAN,
@@ -840,19 +900,17 @@ void Arm::xferRL(void)
     clearMotions();
 
     if (_side == RIGHT_ARM) {
-        if (isShoulderRotation(xfer_R_SR_Deg) &&
-            isShoulderExtension(xfer_R_SE_Deg) &&
-            isElbowExtension(xfer_R_EE_Deg) &&
-            isWristExtension(xfer_R_WE_Deg) &&
-            isWristRotation(xfer_R_WR_Deg)) {
+        if (isAtPosition(xfer_R_SR_Deg, xfer_R_SE_Deg,
+                         xfer_R_EE_Deg,
+                         xfer_R_WE_Deg, xfer_R_WR_Deg,
+                         NAN)) {
             inPosition = true;
         }
     } else {
-        if (isShoulderRotation(xfer_L_SR_Deg) &&
-            isShoulderExtension(xfer_L_SE_Deg) &&
-            isElbowExtension(xfer_L_EE_Deg) &&
-            isWristExtension(xfer_L_WE_Deg) &&
-            isWristRotation(xfer_L_WR_Deg)) {
+        if (isAtPosition(xfer_L_SR_Deg, xfer_L_SE_Deg,
+                         xfer_L_EE_Deg,
+                         xfer_L_WE_Deg, xfer_L_WR_Deg,
+                         NAN)) {
             inPosition = true;
         }
     }
@@ -948,19 +1006,17 @@ void Arm::xferLR(void)
     clearMotions();
 
     if (_side == RIGHT_ARM) {
-        if (isShoulderRotation(xfer_R_SR_Deg) &&
-            isShoulderExtension(xfer_R_SE_Deg) &&
-            isElbowExtension(xfer_R_EE_Deg) &&
-            isWristExtension(xfer_R_WE_Deg) &&
-            isWristRotation(xfer_R_WR_Deg)) {
+        if (isAtPosition(xfer_R_SR_Deg, xfer_R_SE_Deg,
+                         xfer_R_EE_Deg,
+                         xfer_R_WE_Deg, xfer_R_WR_Deg,
+                         NAN)) {
             inPosition = true;
         }
     } else {
-        if (isShoulderRotation(xfer_L_SR_Deg) &&
-            isShoulderExtension(xfer_L_SE_Deg) &&
-            isElbowExtension(xfer_L_EE_Deg) &&
-            isWristExtension(xfer_L_WE_Deg) &&
-            isWristRotation(xfer_L_WR_Deg)) {
+        if (isAtPosition(xfer_L_SR_Deg, xfer_L_SE_Deg,
+                         xfer_L_EE_Deg,
+                         xfer_L_WE_Deg, xfer_L_WR_Deg,
+                         NAN)) {
             inPosition = true;
         }
     }

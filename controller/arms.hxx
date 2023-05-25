@@ -56,6 +56,12 @@ public:
     void setGripperPosition(float pos,
                             unsigned int ms = SERVO_SCHEDULE_INTERVAL_MS,
                             bool relative = false);
+
+    bool isAtPosition(float shoulderRotateDeg, float shoulderExtensionDeg,
+                      float elbowExtensionDeg,
+                      float wristExtensionDeg, float wristRotationDeg,
+                      float gripperPositionPos);
+
     void planMotions(float shoulderRotateDeg, float shoulderExtensionDeg,
                      float elbowExtensionDeg,
                      float wristExtensionDeg, float wristRotationDeg,
