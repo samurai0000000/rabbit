@@ -21,14 +21,14 @@ Arm::Arm(unsigned int side)
         servos->setRange( 2, 450, 2500);
         servos->setRange( 3, 510, 2560);
         servos->setRange( 4, 530, 2580);
-        servos->setRange( 5, 450, 2500);
+        servos->setRange( 5, 480, 1500);
     } else {
         servos->setRange( 6, 430, 2490);
         servos->setRange( 7, 450, 2500);
         servos->setRange( 8, 450, 2500);
         servos->setRange( 9, 450, 2500);
         servos->setRange(10, 430, 2480);
-        servos->setRange(11, 450, 2500);
+        servos->setRange(11, 480, 1500);
     }
 
     updateTrims();
@@ -38,7 +38,7 @@ Arm::Arm(unsigned int side)
     extendElbow(-90.0);
     extendWrist(-40.0);
     rotateWrist(-90.0);
-    setGripperPosition(20.0);
+    setGripperPosition(50.0);
 }
 
 Arm::~Arm()
@@ -47,7 +47,7 @@ Arm::~Arm()
     planMotions(0.0, -85.0,
                 -90.0,
                 -40.0, -90.0,
-                20.0,
+                50.0,
                 1500,
                 true);
 }
@@ -71,7 +71,7 @@ void Arm::updateTrims(void)
         if (i != 5) {
             _ppd[i] = _range[i] / 180.0;
         } else {
-            _ppd[i] = _range[i] / 50.0;
+            _ppd[i] = _range[i] / 100.0;
         }
     }
 }
@@ -597,7 +597,7 @@ void Arm::setGripperPosition(float pos, unsigned int ms, bool relative)
         }
     }
 
-    newPulse = (((unsigned int) pos) * _ppd[index]) + _loRange[index] ;
+    newPulse = ((unsigned int) (pos * _ppd[index])) + _loRange[index] ;
 
     setPulse(index, newPulse, ms);
     snprintf(buf, sizeof(buf) - 1,
@@ -763,7 +763,7 @@ void Arm::hi(void)
     planMotions(50.0, 65.0,
                 25.0,
                 0.0, 0.0,
-                20.0,
+                50.0,
                 1500);
     planMotions(90.0, 65.0,
                 25.0,
@@ -809,7 +809,7 @@ void Arm::pickup(void)
     planMotions(NAN, NAN,
                 NAN,
                 NAN, NAN,
-                30.0,
+                98.0,
                 1500);
     planMotions(0.0, -85.0,
                 -90.0,
@@ -915,7 +915,7 @@ void Arm::xferRL(void)
             planMotions(NAN, NAN,
                         NAN,
                         NAN, NAN,
-                        30.0,
+                        98.0,
                         1000);
             planMotions(NAN, NAN,
                         NAN,
@@ -1012,7 +1012,7 @@ void Arm::xferLR(void)
             planMotions(NAN, NAN,
                         NAN,
                         NAN, NAN,
-                        30.0,
+                        98.0,
                         1000);
             planMotions(NAN, NAN,
                         NAN,
