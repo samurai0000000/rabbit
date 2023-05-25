@@ -395,6 +395,9 @@ void Mouth::run(void)
             writeMax7219(SCAN_LIMIT_REG, 7);
             writeMax7219(SHUTDOWN_REG, 1);
             writeMax7219(DISPLAY_TEST_REG, 0);
+            for (i = 0; i < 8; i++) {
+                l_fb[i] = ~_fb[i];  // Flip bits to force refresh
+            }
         }
 
         /* Update intensity */
