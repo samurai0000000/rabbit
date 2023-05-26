@@ -8,6 +8,7 @@
 #define RABBIT_HXX
 
 #include <pigpio.h>
+#include "mosquitto.hxx"
 #include "servos.hxx"
 #include "adc.hxx"
 #include "camera.hxx"
@@ -27,6 +28,7 @@
 #include "logging.hxx"
 #include "crond.hxx"
 
+extern Mosquitto *mosquitto;
 extern Servos *servos;
 extern ADC *adc;
 extern Camera *camera;

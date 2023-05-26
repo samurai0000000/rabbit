@@ -20,6 +20,7 @@ using namespace std;
 static int daemonize = 0;
 static struct termios t_old;
 
+Mosquitto *mosquitto = NULL;
 Servos *servos = NULL;
 ADC *adc = NULL;
 Camera *camera = NULL;
@@ -49,8 +50,6 @@ static void cleanup(void)
         delete crond;
         crond = NULL;
     }
-
-    websock_cleanup();
 
     if (camera) {
         delete camera;
@@ -104,6 +103,7 @@ static void cleanup(void)
 
     if (lidar) {
         delete lidar;
+        lidar = NULL;
     }
 
     if (mouth) {
@@ -126,12 +126,20 @@ static void cleanup(void)
         servos = NULL;
     }
 
+    if (mosquitto) {
+        delete mosquitto;
+        mosquitto = NULL;
+    }
+
+
+    websock_cleanup();
     gpioTerminate();
 }
 
 static void sig_handler(int signal)
 {
     (void)(signal);
+    cleanup();
     exit(EXIT_SUCCESS);
 }
 
@@ -151,6 +159,7 @@ static const struct option long_options[] = {
 
 int main(int argc, char **argv)
 {
+    int ret;
     struct termios t_new;
 
     for (;;) {
@@ -175,15 +184,6 @@ int main(int argc, char **argv)
         }
     }
 
-
-    if (gpioInitialise() < 0) {
-        cerr << "gpioInitialise failed!" << endl;
-        return -1;
-    }
-
-    atexit(cleanup);
-    signal(SIGTERM, sig_handler);
-
     if (daemonize) {
         pid_t pid = fork();
         if (pid == -1) {
@@ -206,6 +206,23 @@ int main(int argc, char **argv)
         tcsetattr(fileno(stdin), TCSANOW, &t_new);
     }
 
+    ret = gpioCfgSetInternals(gpioCfgGetInternals() | PI_CFG_NOSIGHANDLER);
+    if (ret != 0) {
+        fprintf(stderr, "gpioCfgSetInternals failed (%d)!\n", ret);
+    }
+
+    ret = gpioInitialise();
+    if (ret == PI_INIT_FAILED) {
+        fprintf(stderr, "gpioInitialize failed (%d)!\n", ret);
+        exit(EXIT_FAILURE);
+    }
+
+    websock_init();
+
+    atexit(cleanup);
+    signal(SIGTERM, sig_handler);
+
+    mosquitto = new Mosquitto();
     servos = new Servos();
     adc = new ADC();
     camera = new Camera();
@@ -224,8 +241,6 @@ int main(int argc, char **argv)
     crond->activate(announce_clock, "*/2 * * * *");
 
     cout << "Rabbit'bot is alive!" << endl;
-
-    websock_init();
 
     if (daemonize) {
         for (;;) {
