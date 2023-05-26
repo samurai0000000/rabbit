@@ -156,7 +156,7 @@ void Voice::run(void)
     while (_running) {
         /* Probe and open audio input device */
         probeOpenDevice();
-        if ((_handle == NULL) || (_enable == false)) {
+        if (_handle == NULL) {
             clock_gettime(CLOCK_REALTIME, &ts);
             ts.tv_sec += 1;
             pthread_mutex_lock(&_mutex);
@@ -173,6 +173,12 @@ void Voice::run(void)
             _handle = NULL;
             memset(_volHist, 0x0, sizeof(_volHist));
             _volHistCur = 0;
+            continue;
+        }
+
+        /* Discard frames if disabled. Note that we still fetch
+         * data from the device to prevent a broken pipe... */
+        if (_enable == false) {
             continue;
         }
 
