@@ -457,6 +457,12 @@ void rabbit_keycontrol(uint8_t key)
         rightArm->xferLR();
         leftArm->xferLR();
         break;
+    case 't':
+    case 'T':
+        mouth->cylon();
+        rightArm->muscles();
+        leftArm->muscles();
+        break;
     case 'p':
     case 'P':
         chan -= 1;

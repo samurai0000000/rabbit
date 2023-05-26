@@ -1090,6 +1090,49 @@ void Arm::xferLR(void)
     }
 }
 
+void Arm::muscles()
+{
+    if (_side == RIGHT_ARM) {
+        speech->speak("I am the Rabbit Bot.\n"
+                      "I am strong!\n"
+                      "I am courageous!\n"
+                      "I have muscles hard like a rock!");
+        LOG("Flex muscles\n");
+    }
+
+    clearMotions();
+    planMotions(90.0, 0.0,
+                45.0,
+                0.0, 0.0,
+                50.0,
+                1500);
+    planMotions(90.0, 0.0,
+                -45.0,
+                0.0, 0.0,
+                50.0,
+                1500);
+    planMotions(90.0, 0.0,
+                45.0,
+                0.0, 0.0,
+                50.0,
+                1500);
+    planMotions(90.0, 0.0,
+                -45.0,
+                0.0, 0.0,
+                50.0,
+                1500);
+    planMotions(90.0, 0.0,
+                45.0,
+                0.0, 0.0,
+                50.0,
+                1500);
+    planMotions(90.0, 0.0,
+                -45.0,
+                0.0, 0.0,
+                50.0,
+                1500);
+}
+
 /*
  * Local variables:
  * mode: C++

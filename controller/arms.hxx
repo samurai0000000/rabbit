@@ -78,6 +78,7 @@ public:
     void pickup(void);
     void xferRL(void);
     void xferLR(void);
+    void muscles(void);
 
 private:
 

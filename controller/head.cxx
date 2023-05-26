@@ -9,8 +9,8 @@
 #include "rabbit.hxx"
 
 #define HEAD_ROTATION_SERVO         16
-#define HEAD_ROTATION_LO_PULSE     630
-#define HEAD_ROTATION_HI_PULSE    2310
+#define HEAD_ROTATION_LO_PULSE     580
+#define HEAD_ROTATION_HI_PULSE    2360
 #define HEAD_ROTATION_ANGLE_MULT  ((HEAD_ROTATION_HI_PULSE -    \
                                     HEAD_ROTATION_LO_PULSE)     \
                                    / 180)
