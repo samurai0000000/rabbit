@@ -22,6 +22,7 @@
 #include "mouth.hxx"
 #include "wifi.hxx"
 #include "speech.hxx"
+#include "voice.hxx"
 #include "websock.hxx"
 #include "logging.hxx"
 #include "crond.hxx"
@@ -41,6 +42,7 @@ extern LiDAR *lidar;
 extern Mouth *mouth;
 extern WIFI *wifi;
 extern Speech *speech;
+extern Voice *voice;
 extern Crond *crond;
 
 extern "C" void rabbit_keycontrol(uint8_t key);

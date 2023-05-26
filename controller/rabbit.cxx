@@ -34,6 +34,7 @@ Head *head = NULL;
 LiDAR *lidar = NULL;
 Mouth *mouth = NULL;
 Speech *speech = NULL;
+Voice *voice = NULL;
 Crond *crond = NULL;
 
 static void announce_clock(void);
@@ -79,6 +80,11 @@ static void cleanup(void)
     if (speech) {
         delete speech;
         speech = NULL;
+    }
+
+    if (voice) {
+        delete voice;
+        voice = NULL;
     }
 
     if (power) {
@@ -213,6 +219,7 @@ int main(int argc, char **argv)
     lidar = new LiDAR();
     mouth = new Mouth();
     speech = new Speech();
+    voice = new Voice();
     crond = new Crond();
     crond->activate(announce_clock, "*/2 * * * *");
 
