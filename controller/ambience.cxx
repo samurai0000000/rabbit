@@ -268,6 +268,15 @@ void Ambience::run(void)
         _histHumidity.addSample(data.humidity);
         _humidity = _histHumidity.median();
 
+        mosquitto->publish("rabbit/ambience/socTemp",
+                           sizeof(float), &_temp, 2, 0);
+        mosquitto->publish("rabbit/ambience/temp",
+                           sizeof(float), &_temp, 2, 0);
+        mosquitto->publish("rabbit/ambience/pressure",
+                           sizeof(float), &_pressure, 2, 0);
+        mosquitto->publish("rabbit/ambience/humidity",
+                           sizeof(float), &_humidity, 2, 0);
+
         clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tloop, &ts);
         pthread_mutex_lock(&_mutex);
