@@ -38,6 +38,8 @@
 using namespace std;
 using namespace cv;
 
+static unsigned int instance = 0;
+
 Camera::Camera()
     : _vc(NULL),
       _running(false),
@@ -45,13 +47,19 @@ Camera::Camera()
       _fr(0.0),
       _sentry(false)
 {
+    if (instance != 0) {
+        fprintf(stderr, "Camera can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     try {
         _vc = new VideoCapture(V4L_CAPTURE_DEVICE, CAP_V4L);
         _vc->set(CAP_PROP_FRAME_WIDTH, CAMERA_RES_WIDTH);
         _vc->set(CAP_PROP_FRAME_HEIGHT, CAMERA_RES_HEIGHT);
    } catch(cv::Exception &e) {
         cerr << e.msg << endl;
-        return;
     }
 
     servos->setRange(PAN_SERVO, PAN_LO_PULSE, PAN_HI_PULSE);
@@ -67,6 +75,8 @@ Camera::Camera()
     pthread_create(&_thread, NULL, Camera::thread_func, this);
 
     _streamer.start(8000);
+
+    printf("Camera is online\n");
 }
 
 Camera::~Camera()
@@ -86,6 +96,9 @@ Camera::~Camera()
         delete _vc;
         _vc = NULL;
     }
+
+    instance--;
+    printf("Camera is offline\n");
 }
 
 void *Camera::thread_func(void *args)

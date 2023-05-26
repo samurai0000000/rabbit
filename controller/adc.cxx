@@ -17,12 +17,20 @@
 #define ADC_I2C_BUS    1
 #define ADC_I2C_ADDR   0x48
 
+static unsigned int instance = 0;
 ADC::ADC()
     : _handle(-1),
       _config(0),
       _running(false)
 {
     unsigned int i;
+
+    if (instance != 0) {
+        fprintf(stderr, "ADC can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
 
     _config =
         MUX_AIN0_GND |
@@ -42,6 +50,8 @@ ADC::ADC()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, ADC::thread_func, this);
+
+    printf("ADC is online\n");
 }
 
 ADC::~ADC()
@@ -63,6 +73,9 @@ ADC::~ADC()
         delete _hist[i];
         _hist[i] = NULL;
     }
+
+    instance--;
+    printf("ADC is offline\n");
 }
 
 void ADC::probeOpenDevice(void)

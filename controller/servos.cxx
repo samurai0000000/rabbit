@@ -27,11 +27,20 @@ static const unsigned int PWM_I2C_ADDR[SERVO_CONTROLLERS] = {
     0x41,
 };
 
+static unsigned int instance = 0;
+
 Servos::Servos()
     : _handle(),
       _freq(PWM_FREQ_KHZ)
 {
     unsigned int i;
+
+    if (instance != 0) {
+        fprintf(stderr, "Servos can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
 
     for (i = 0; i < SERVO_CONTROLLERS; i++) {
         _handle[i] = -1;
@@ -46,6 +55,8 @@ Servos::Servos()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Servos::thread_func, this);
+
+    printf("Servos is online\n");
 }
 
 Servos::~Servos()
@@ -65,6 +76,9 @@ Servos::~Servos()
             _handle[i] = -1;
         }
     }
+
+    instance--;
+    printf("Servos is offline\n");
 }
 
 void Servos::probeOpenDevice(void)

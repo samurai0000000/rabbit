@@ -8,10 +8,29 @@
 
 using namespace std;
 
+static unsigned int ra_instance = 0;
+static unsigned int la_instance = 0;
+
 Arm::Arm(unsigned int side)
 {
     if (side != RIGHT_ARM && side != LEFT_ARM) {
         assert(0);
+    }
+
+    if (side == RIGHT_ARM) {
+        if (ra_instance != 0) {
+            fprintf(stderr, "Right Arm can be instantiated only once!\n");
+            exit(EXIT_FAILURE);
+        } else {
+            ra_instance++;
+        }
+    } else {
+        if (la_instance != 0) {
+            fprintf(stderr, "Left Arm can be instantiated only once!\n");
+            exit(EXIT_FAILURE);
+        } else {
+            la_instance++;
+        }
     }
 
     _side = side;
@@ -39,6 +58,12 @@ Arm::Arm(unsigned int side)
     extendWrist(-40.0);
     rotateWrist(-90.0);
     setGripperPosition(50.0);
+
+    if (side == RIGHT_ARM) {
+        printf("Right Arm is online\n");
+    } else {
+        printf("Left Arm is online\n");
+    }
 }
 
 Arm::~Arm()
@@ -50,6 +75,14 @@ Arm::~Arm()
                 50.0,
                 1500,
                 true);
+
+    if (_side == RIGHT_ARM) {
+        ra_instance--;
+        printf("Right Arm is offline\n");
+    } else {
+        la_instance--;
+        printf("Left Arm is offline\n");
+    }
 }
 
 void Arm::updateTrims(void)

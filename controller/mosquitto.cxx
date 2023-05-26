@@ -35,6 +35,8 @@ static mosq_sub_action mosq_sub_actions[] = {
     { "rabbit/speech/speak", do_speak, 2, },
 };
 
+static unsigned int instance = 0;
+
 Mosquitto::Mosquitto()
     : _published(0),
       _publishConfirmed(0),
@@ -42,6 +44,13 @@ Mosquitto::Mosquitto()
 {
     int ret;
     string onMessage("Rabbit Controller is Online");
+
+    if (instance != 0) {
+        fprintf(stderr, "Mosquitto can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
 
     if (mosq != NULL) {
         fprintf(stderr, "Mosquitto constructor called more than once!\n");
@@ -82,6 +91,8 @@ Mosquitto::Mosquitto()
     publish("rabbit/controller",
             onMessage.length(), onMessage.c_str(),
             0, false);
+
+    printf("Mosquitto is online\n");
 }
 
 Mosquitto::~Mosquitto()
@@ -111,6 +122,7 @@ Mosquitto::~Mosquitto()
     }
 
     mosquitto_lib_cleanup();
+    printf("Mosquitto is offline\n");
 }
 
 void Mosquitto::onConnect(struct mosquitto *mosq, void *obj, int reason_code)

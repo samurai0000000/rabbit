@@ -51,8 +51,17 @@ static const char *state_string[10] = {
     "unknown",
 };
 
+static unsigned int instance = 0;
+
 Wheels::Wheels()
 {
+    if (instance != 0) {
+        fprintf(stderr, "Wheels can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     gpioSetMode(L298N_IN1, PI_OUTPUT);
     gpioSetMode(L298N_IN2, PI_OUTPUT);
     gpioSetMode(L298N_IN3, PI_OUTPUT);
@@ -87,6 +96,8 @@ Wheels::Wheels()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Wheels::thread_func, this);
+
+    printf("Wheels is online\n");
 }
 
 Wheels::~Wheels()
@@ -100,6 +111,9 @@ Wheels::~Wheels()
     pthread_join(_thread, NULL);
     pthread_mutex_destroy(&_mutex);
     pthread_cond_destroy(&_cond);
+
+    instance--;
+    printf("Wheels is offline\n");
 }
 
 void *Wheels::thread_func(void *args)

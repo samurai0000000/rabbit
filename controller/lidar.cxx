@@ -43,12 +43,21 @@ struct cldr_message {
     uint16_t cs;
 } __attribute__ ((packed));
 
+static unsigned int instance = 0;
+
 LiDAR::LiDAR()
     : _handle(-1),
       _operational(false),
       _speed(25),
       _rpm(0)
 {
+    if (instance != 0) {
+        fprintf(stderr, "LiDAR can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     servos->setRange(LIDAR_ON_SERVO, LIDAR_ON_LO_PULSE, LIDAR_ON_HI_PULSE);
     if (_operational) {
         servos->setPulse(LIDAR_ON_SERVO, LIDAR_ON_HI_PULSE);
@@ -63,6 +72,8 @@ LiDAR::LiDAR()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, LiDAR::thread_func, this);
+
+    printf("LiDAR is online\n");
 }
 
 LiDAR::~LiDAR()
@@ -72,6 +83,9 @@ LiDAR::~LiDAR()
     pthread_join(_thread, NULL);
     pthread_mutex_destroy(&_mutex);
     pthread_cond_destroy(&_cond);
+
+    instance--;
+    printf("LiDAR is offline\n");
 }
 
 void *LiDAR::thread_func(void *args)

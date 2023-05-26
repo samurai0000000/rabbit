@@ -25,9 +25,18 @@
 #define MIN_Z_VAL -760
 #define MAX_Z_VAL 922
 
+static unsigned int instance = 0;
+
 Compass::Compass()
     : _handle(-1)
 {
+    if (instance != 0) {
+        fprintf(stderr, "Compass can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     _minX = MIN_X_VAL;
     _maxX = MAX_X_VAL;
     _minY = MIN_Y_VAL;
@@ -53,6 +62,8 @@ Compass::Compass()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Compass::thread_func, this);
+
+    printf("Compass is online\n");
 }
 
 Compass::~Compass()
@@ -68,6 +79,9 @@ Compass::~Compass()
         i2cClose(_handle);
         _handle = -1;
     }
+
+    instance--;
+    printf("Compass is offline\n");
 }
 
 void Compass::probeOpenDevice(void)

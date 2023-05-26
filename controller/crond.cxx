@@ -15,12 +15,23 @@
 
 using namespace std;
 
+static unsigned int instance = 0;
+
 Crond::Crond()
 {
+    if (instance != 0) {
+        fprintf(stderr, "Crond can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Crond::thread_func, this);
+
+    printf("Crond is online\n");
 }
 
 Crond::~Crond()
@@ -30,6 +41,9 @@ Crond::~Crond()
     pthread_join(_thread, NULL);
     pthread_mutex_destroy(&_mutex);
     pthread_cond_destroy(&_cond);
+
+    instance--;
+    printf("Crond is offline\n");
 }
 
 void *Crond::thread_func(void *args)

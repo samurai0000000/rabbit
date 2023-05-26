@@ -24,11 +24,20 @@
 
 using namespace std;
 
+static unsigned int instance = 0;
+
 Head::Head()
     : _rotation(0.0),
       _tilt(0.0),
       _sentry(false)
 {
+    if (instance != 0) {
+        fprintf(stderr, "Head can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     servos->setRange(HEAD_ROTATION_SERVO,
                      HEAD_ROTATION_LO_PULSE,
                      HEAD_ROTATION_HI_PULSE);
@@ -45,6 +54,8 @@ Head::Head()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Head::thread_func, this);
+
+    printf("Head is online\n");
 }
 
 Head::~Head()
@@ -57,6 +68,9 @@ Head::~Head()
 
     rotate(0.0);
     tilt(0.0);
+
+    instance--;
+    printf("Head is offline\n");
 }
 
 void *Head::thread_func(void *args)

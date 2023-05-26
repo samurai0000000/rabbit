@@ -15,6 +15,8 @@
 #define AUDIO_PCM_INPUT_RATE     22050
 #define AUDIO_PCM_INPUT_CHANS    1
 
+static unsigned int instance = 0;
+
 Voice::Voice()
     : _handle(NULL),
       _rate(AUDIO_PCM_INPUT_RATE),
@@ -22,10 +24,19 @@ Voice::Voice()
       _volHist(),
       _volHistCur(0)
 {
+    if (instance != 0) {
+        fprintf(stderr, "Voice can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Voice::thread_func, this);
+
+    printf("Voice is online\n");
 }
 
 Voice::~Voice()
@@ -40,6 +51,9 @@ Voice::~Voice()
         snd_pcm_close((snd_pcm_t *) _handle);
         _handle = NULL;
     }
+
+    instance--;
+    printf("Voice is offline\n");
 }
 
 void Voice::probeOpenDevice(void)
@@ -181,6 +195,10 @@ void Voice::run(void)
         if (_enable == false) {
             continue;
         }
+
+        /* Publish sampled data to MQTT */
+        mosquitto->publish("rabbit/voice/pcm",
+                           bufsize, buf, 2, 0);
 
         /* Compute the maximum */
         for (i = 0, pcm_sample = (const int16_t *) buf,

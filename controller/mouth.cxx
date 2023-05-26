@@ -44,12 +44,21 @@ enum mouth_mode {
     MOUTH_TEXT,
 };
 
+static unsigned int instance = 0;
+
 Mouth::Mouth()
   : _handle(-1),
     _intensity(3),
     _fb(),
     _mode(MOUTH_BEH)
 {
+    if (instance != 0) {
+        fprintf(stderr, "Mouth can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     _handle = spiOpen(MAX7219_SPI_CHAN, MAX7219_SPI_SPEED, MAX7219_SPI_MODE);
     if (_handle < 0) {
         fprintf(stderr, "Open Max7219 SPI channel failed %d!\n", _handle);
@@ -76,6 +85,8 @@ Mouth::Mouth()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Mouth::thread_func, this);
+
+    printf("Mouth is online\n");
 }
 
 Mouth::~Mouth()
@@ -91,6 +102,9 @@ Mouth::~Mouth()
         spiClose(_handle);
         _handle = -1;
     }
+
+    instance--;
+    printf("Mouth is offline\n");
 }
 
 void *Mouth::thread_func(void *args)

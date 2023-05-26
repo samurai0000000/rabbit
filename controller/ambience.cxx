@@ -23,6 +23,8 @@
 #define BME280_I2C_BUS  1
 #define BME280_I2C_ADDR 0x76
 
+static unsigned int instance = 0;
+
 static int8_t user_i2c_read(uint8_t reg_addr, uint8_t *data,
                             uint32_t len, void *intf_ptr)
 {
@@ -90,10 +92,19 @@ Ambience::Ambience()
       _bme280(-1),
       _running(false)
 {
+    if (instance != 0) {
+        fprintf(stderr, "Ambience can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
+
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Ambience::thread_func, this);
+
+    printf("Ambience is online\n");
 }
 
 Ambience::~Ambience()
@@ -108,6 +119,9 @@ Ambience::~Ambience()
         i2cClose(_bme280);
         _bme280 = -1;
     }
+
+    instance--;
+    printf("Ambience is offline\n");
 }
 
 void *Ambience::thread_func(void *args)

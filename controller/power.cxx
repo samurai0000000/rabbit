@@ -17,14 +17,24 @@
  */
 #define CURRENT_ADC_CHAN 1
 
+static unsigned int instance = 0;
+
 Power::Power()
 {
+    if (instance != 0) {
+        fprintf(stderr, "Power can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
 
+    printf("Power is online\n");
 }
 
 Power::~Power()
 {
-
+    instance--;
+    printf("Power is offline\n");
 }
 
 float Power::voltage(void) const

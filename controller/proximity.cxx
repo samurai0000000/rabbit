@@ -22,10 +22,19 @@
 
 using namespace std;
 
+static unsigned int instance = 0;
+
 Proximity::Proximity()
     : _enabled(true)
 {
     unsigned int i;
+
+    if (instance != 0) {
+        fprintf(stderr, "Proximity can be instantiated only once!\n");
+        exit(EXIT_FAILURE);
+    } else {
+        instance++;
+    }
 
     for (i = 0; i < RABBIT_MCUS; i++) {
         _handle[i] = -1;
@@ -40,6 +49,8 @@ Proximity::Proximity()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Proximity::thread_func, this);
+
+    printf("Proximity is online\n");
 }
 
 Proximity::~Proximity()
@@ -59,6 +70,9 @@ Proximity::~Proximity()
             errCloseDevice(i);
         }
     }
+
+    instance--;
+    printf("Proximity is offline\n");
 }
 
 void *Proximity::thread_func(void *args)
