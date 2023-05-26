@@ -8,15 +8,19 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <alsa/asoundlib.h>
-#include "voice.hxx"
+#include "rabbit.hxx"
 
-#define AUDIO_PCM_INPUT_DEVICE   "plughw:1,0"
+#define AUDIO_PCM_INPUT_DEVICE   "plughw:1"
 #define AUDIO_PCM_INPUT_FORMAT   SND_PCM_FORMAT_S16_LE
-#define AUDIO_PCM_INPUT_RATE     44100
-#define AUDIO_PCM_INPUT_CHANS    2
+#define AUDIO_PCM_INPUT_RATE     22050
+#define AUDIO_PCM_INPUT_CHANS    1
 
 Voice::Voice()
-    : _handle(NULL)
+    : _handle(NULL),
+      _rate(AUDIO_PCM_INPUT_RATE),
+      _enable(true),
+      _volHist(),
+      _volHistCur(0)
 {
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -83,7 +87,6 @@ void Voice::probeOpenDevice(void)
         goto done;
     }
 
-    _rate  = AUDIO_PCM_INPUT_RATE;
     ret = snd_pcm_hw_params_set_rate_near((snd_pcm_t *) _handle,
                                           hw_params,
                                           &_rate,
@@ -138,15 +141,21 @@ void Voice::run(void)
 {
     int ret;
     struct timespec ts;
-    int frames = 128;
+    unsigned int frames;
     uint8_t *buf = NULL;
+    size_t bufsize;
+    unsigned int i;
+    const int16_t *pcm_sample;
+    int16_t max, min;
 
-    buf = (uint8_t *)
-        malloc(frames * snd_pcm_format_width(AUDIO_PCM_INPUT_FORMAT) / 8 * 2);
+    frames = AUDIO_PCM_INPUT_RATE / VOL_HIST_SIZE;
+    bufsize = frames * (snd_pcm_format_width(AUDIO_PCM_INPUT_FORMAT) / 8) *
+        AUDIO_PCM_INPUT_CHANS;
+    buf = (uint8_t *) malloc(bufsize);
 
     while (_running) {
+        /* Probe and open audio input device */
         probeOpenDevice();
-
         if ((_handle == NULL) || (_enable == false)) {
             clock_gettime(CLOCK_REALTIME, &ts);
             ts.tv_sec += 1;
@@ -156,12 +165,35 @@ void Voice::run(void)
             continue;
         }
 
+        /* Capture PCM data */
         ret = snd_pcm_readi((snd_pcm_t *) _handle, buf, frames);
-        if (ret != frames) {
+        if (ret != (int) frames) {
             fprintf(stderr, "Voice::run %s\n", snd_strerror(ret));
             snd_pcm_close((snd_pcm_t *) _handle);
             _handle = NULL;
+            memset(_volHist, 0x0, sizeof(_volHist));
+            _volHistCur = 0;
+            continue;
         }
+
+        /* Compute the maximum */
+        for (i = 0, pcm_sample = (const int16_t *) buf,
+                 max = SHRT_MIN, min = SHRT_MAX;
+             i < frames;
+             i++, pcm_sample++) {
+            if (*pcm_sample > max) {
+                max = *pcm_sample;
+            }
+            if (*pcm_sample < min) {
+                min = *pcm_sample;
+            }
+        }
+
+        /* Update histogram */
+        _volHist[_volHistCur].min = min;
+        _volHist[_volHistCur].max = max;
+        _volHistCur++;
+        _volHistCur %= volHistSize();
     }
 
     if (buf) {
@@ -177,6 +209,26 @@ void Voice::enable(bool en)
     if (en) {
         pthread_cond_broadcast(&_cond);
     }
+}
+
+unsigned int Voice::getVolHist(struct vol_hist_point *hist,
+                               unsigned int points) const
+{
+    unsigned int i;
+    unsigned int cur;
+
+    if (hist == NULL) {
+        return 0;
+    }
+
+    for (i = 0, cur = _volHistCur;
+         (i < volHistSize()) && (i < points);
+         i++, cur = ((cur + 1) % volHistSize())) {
+        hist[i].min = _volHist[cur].min;
+        hist[i].max = _volHist[cur].max;
+    }
+
+    return i;
 }
 
 /*

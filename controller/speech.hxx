@@ -18,6 +18,7 @@ public:
     ~Speech();
 
     void speak(const char *message, bool immediate = false);
+    bool isSpeaking(void) const;
 
     unsigned int volume(void) const;
     void setVolume(unsigned int vol);

@@ -7,6 +7,13 @@
 #ifndef VOICE_HXX
 #define VOICE_HXX
 
+#define VOL_HIST_SIZE 100
+
+struct vol_hist_point {
+    int16_t min;
+    int16_t max;
+};
+
 class Voice {
 
 public:
@@ -18,6 +25,10 @@ public:
     bool isEnabled(void) const;
     bool isOnline(void) const;
 
+    size_t volHistSize(void) const;
+    unsigned int getVolHist(struct vol_hist_point *hist,
+                            unsigned int points) const;
+
 private:
 
     void probeOpenDevice(void);
@@ -27,6 +38,9 @@ private:
     void *_handle;
     unsigned int _rate;
     bool _enable;
+
+    struct vol_hist_point _volHist[VOL_HIST_SIZE];
+    unsigned int _volHistCur;
 
     bool _running;
     pthread_t _thread;
@@ -43,6 +57,11 @@ inline bool Voice::isEnabled(void) const
 inline bool Voice::isOnline(void) const
 {
     return _handle != NULL;
+}
+
+inline size_t Voice::volHistSize(void) const
+{
+    return VOL_HIST_SIZE;
 }
 
 #endif

@@ -218,8 +218,8 @@ int main(int argc, char **argv)
     head = new Head();
     lidar = new LiDAR();
     mouth = new Mouth();
-    speech = new Speech();
     voice = new Voice();
+    speech = new Speech();
     crond = new Crond();
     crond->activate(announce_clock, "*/2 * * * *");
 

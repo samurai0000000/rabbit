@@ -90,7 +90,7 @@ void Speech::run(void)
             snprintf(cmd, sizeof(cmd) - 1,
                      "/usr/bin/espeak -s %u -a %u --stdout 2>/dev/null | "
                      "aplay -D %s >/dev/null 2>&1",
-                     120, 7, "plughw:1,0");
+                     120, 7, "plughw:1");
 
             ret = pipe(espeak_stdin);
             if (ret != 0) {
@@ -122,7 +122,9 @@ void Speech::run(void)
                     espeak_stdin[0] = -1;
 
                     message = _messages.at(0);
-                    ret = write(espeak_stdin[1], message.c_str(), message.length());
+                    ret = write(espeak_stdin[1],
+                                message.c_str(),
+                                message.length());
                     (void)(ret);
                     ret = write(espeak_stdin[1], "\n", 1);
                     (void)(ret);
@@ -134,10 +136,20 @@ void Speech::run(void)
                 pthread_mutex_unlock(&_mutex);
 
                 if (_pid != -1) {
-                    mouth->speak();
+                    if (mouth) {
+                        mouth->speak();        // Animate the mouth with speech
+                    }
+                    if (voice) {
+                        voice->enable(false);  // Stop listening
+                    }
                     waitpid(_pid, &wstatus, 0);
                     _pid = -1;
-                    mouth->setMode(mode);
+                    if (voice) {
+                        voice->enable(true);   // Start listening again
+                    }
+                    if (mouth) {
+                        mouth->setMode(mode);  // Restore mouth mode
+                    }
                 }
             }
         }
@@ -163,6 +175,11 @@ void Speech::speak(const char *message, bool immediate)
     pthread_cond_broadcast(&_cond);
 }
 
+bool Speech::isSpeaking(void) const
+{
+    return (_pid != -1) || !_messages.empty();
+}
+
 unsigned int Speech::volume(void) const
 {
     return _vol;
@@ -184,8 +201,6 @@ void Speech::setVolume(unsigned int vol)
     long min, max, val;
     snd_mixer_t *handle = NULL;
     snd_mixer_selem_id_t *sid = NULL;
-    const char *card = "default";
-    const char *selem_name = "PCM";
     snd_mixer_elem_t *elem = NULL;
 
     pthread_mutex_lock(&_mutex);
@@ -200,7 +215,7 @@ void Speech::setVolume(unsigned int vol)
         goto done;
     }
 
-    ret = snd_mixer_attach(handle, card);
+    ret = snd_mixer_attach(handle, "default");
     if (ret != 0) {
         fprintf(stderr, "snd_mixer_attach %d\n", ret);
         goto done;
@@ -220,7 +235,7 @@ void Speech::setVolume(unsigned int vol)
 
     snd_mixer_selem_id_alloca(&sid);
     snd_mixer_selem_id_set_index(sid, 0);
-    snd_mixer_selem_id_set_name(sid, selem_name);
+    snd_mixer_selem_id_set_name(sid, "PCM");
 
     elem = snd_mixer_find_selem(handle, sid);
     if (elem == NULL) {
