@@ -146,6 +146,7 @@ void Compass::run(void)
     int16_t x, y, z;
     struct timespec ts, tloop;
     bool dirtyX, dirtyY, dirtyZ;
+    float heading_now;
 
     clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
@@ -290,6 +291,10 @@ void Compass::run(void)
         _histX.addSample(((float) x - _offsetX) * _scaleX);
         _histY.addSample(((float) y - _offsetY) * _scaleY);
         _histZ.addSample(((float) z - _offsetZ) * _scaleZ);
+
+        heading_now = heading();
+        mosquitto->publish("rabbit/compass/heading",
+                           sizeof(float), &heading_now, 2, 0);
 
         ret = 0;
 

@@ -85,7 +85,7 @@ void Speech::run(void)
             int espeak_stdin[2] = { -1, -1, };
             int wstatus;
             string message;
-            unsigned int mode;
+            unsigned int mode = 0;
 
             snprintf(cmd, sizeof(cmd) - 1,
                      "/usr/bin/espeak -s %u -a %u --stdout 2>/dev/null | "
@@ -98,7 +98,9 @@ void Speech::run(void)
             } else {
 
                 pthread_mutex_lock(&_mutex);
-                mode = mouth->mode();
+                if (mouth) {
+                    mode = mouth->mode();
+                }
 
                 _pid = fork();
                 if (_pid == -1) {

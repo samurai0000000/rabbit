@@ -76,11 +76,6 @@ static void cleanup(void)
         leftArm = NULL;
     }
 
-    if (speech) {
-        delete speech;
-        speech = NULL;
-    }
-
     if (voice) {
         delete voice;
         voice = NULL;
@@ -126,6 +121,11 @@ static void cleanup(void)
         servos = NULL;
     }
 
+    if (speech) {
+        delete speech;
+        speech = NULL;
+    }
+
     if (mosquitto) {
         delete mosquitto;
         mosquitto = NULL;
@@ -138,9 +138,23 @@ static void cleanup(void)
 
 static void sig_handler(int signal)
 {
-    (void)(signal);
-    cleanup();
-    exit(EXIT_SUCCESS);
+    switch (signal) {
+    case SIGINT:
+    case SIGTERM:
+    case SIGKILL:
+        exit(EXIT_SUCCESS);
+        break;
+    case SIGSEGV:
+        fprintf(stderr, "Caught SIGSEGV!\n");
+        gpioTerminate();     // Free up hardware resources as fail-safe
+        exit(EXIT_FAILURE);
+        break;
+    default:
+        fprintf(stderr, "Caught unexpected signal %d\n", signal);
+        gpioTerminate();     // Free up hardware resources as fail-safe
+        exit(EXIT_FAILURE);
+        break;
+    }
 }
 
 static void print_help(int argc, char **argv)
@@ -199,7 +213,6 @@ int main(int argc, char **argv)
             exit(EXIT_SUCCESS);
         }
     } else {
-        signal(SIGINT, sig_handler);
         tcgetattr(fileno(stdin), &t_old);
         t_new = t_old;
         t_new.c_lflag &= (tcflag_t) ~(ICANON | ECHO);
@@ -220,9 +233,13 @@ int main(int argc, char **argv)
     websock_init();
 
     atexit(cleanup);
+    signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
+    signal(SIGSEGV, sig_handler);
+    signal(SIGKILL, sig_handler);
 
     mosquitto = new Mosquitto();
+    speech = new Speech();
     servos = new Servos();
     adc = new ADC();
     camera = new Camera();
@@ -236,7 +253,6 @@ int main(int argc, char **argv)
     lidar = new LiDAR();
     mouth = new Mouth();
     voice = new Voice();
-    speech = new Speech();
     crond = new Crond();
     crond->activate(announce_clock, "*/2 * * * *");
 

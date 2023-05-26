@@ -535,6 +535,18 @@ void Camera::updateOsd1(Mat &osd1, const struct timeval *since,
     pos.y += textSize.height;
     putText(osd1, text, pos,
             fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String("MQTT pub: ") +
+        to_string(mosquitto->publishConfirmed());
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
+
+    text = String("MQTT msg: ") +
+        to_string(mosquitto->messaged());
+    pos.y += textSize.height;
+    putText(osd1, text, pos,
+            fontFace, fontScale, fontColor, thickness, LINE_8, false);
 }
 
 void Camera::enVision(bool enable)
