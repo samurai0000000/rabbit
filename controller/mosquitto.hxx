@@ -28,7 +28,7 @@ public:
 private:
 
     static void onConnect(struct mosquitto *mosq, void *obj, int reason_code);
-    static void onPublush(struct mosquitto *mosq, void *obj, int mid);
+    static void onPublish(struct mosquitto *mosq, void *obj, int mid);
     static void onSubscribe(struct mosquitto *mosq, void *obj,
                             int mid, int qos_count, const int *granted_qos);
     static void onMessage(struct mosquitto *mosq, void *obj,

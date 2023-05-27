@@ -70,7 +70,7 @@ Mosquitto::Mosquitto()
     }
 
     mosquitto_connect_callback_set(mosq, this->onConnect);
-    mosquitto_publish_callback_set(mosq, this->onPublush);
+    mosquitto_publish_callback_set(mosq, this->onPublish);
     mosquitto_subscribe_callback_set(mosq, this->onSubscribe);
     mosquitto_message_callback_set(mosq, this->onMessage);
 
@@ -104,19 +104,19 @@ Mosquitto::~Mosquitto()
             offMessage.length(), offMessage.c_str(),
             0, false);
 
-    ret = mosquitto_disconnect(mosq);
-    if (ret != MOSQ_ERR_SUCCESS) {
-        fprintf(stderr, "mosquitto_disconnect failed: %s\n",
-                mosquitto_strerror(ret));
-    }
-
-    ret = mosquitto_loop_stop(mosq, false);
-    if (ret != MOSQ_ERR_SUCCESS) {
-        fprintf(stderr, "mosquitto_loop_stop failed: %s\n",
-                mosquitto_strerror(ret));
-    }
-
     if (mosq) {
+        ret = mosquitto_disconnect(mosq);
+        if (ret != MOSQ_ERR_SUCCESS) {
+            fprintf(stderr, "mosquitto_disconnect failed: %s\n",
+                    mosquitto_strerror(ret));
+        }
+
+        ret = mosquitto_loop_stop(mosq, false);
+        if (ret != MOSQ_ERR_SUCCESS) {
+            fprintf(stderr, "mosquitto_loop_stop failed: %s\n",
+                    mosquitto_strerror(ret));
+        }
+
         mosquitto_destroy(mosq);
         mosq = NULL;
     }
@@ -159,7 +159,7 @@ done:
     }
 }
 
-void Mosquitto::onPublush(struct mosquitto *mosq, void *obj, int mid)
+void Mosquitto::onPublish(struct mosquitto *mosq, void *obj, int mid)
 {
     Mosquitto *mosquitto = (Mosquitto *) obj;
 
@@ -167,7 +167,7 @@ void Mosquitto::onPublush(struct mosquitto *mosq, void *obj, int mid)
     (void)(obj);
     (void)(mid);
 
-    //printf("Mosquitto::onPublush: %d\n", mid);
+    //printf("Mosquitto::onPublish: %d\n", mid);
     if (mosquitto != NULL) {
         mosquitto->_publishConfirmed++;
     }
@@ -226,6 +226,10 @@ int Mosquitto::publish(const char *topic,
                        int payloadlen, const void *payload,
                        int qos, bool retain)
 {
+    if (mosq == NULL) {
+        return -1;
+    }
+
     int ret = mosquitto_publish(mosq, NULL,
                                 topic,
                                 payloadlen, payload,

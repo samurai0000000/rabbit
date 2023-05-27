@@ -161,6 +161,7 @@ void Voice::run(void)
     unsigned int i;
     const int16_t *pcm_sample;
     int16_t max, min;
+    bool on = !_enable;
 
     frames = AUDIO_PCM_INPUT_RATE / VOL_HIST_SIZE;
     bufsize = frames * (snd_pcm_format_width(AUDIO_PCM_INPUT_FORMAT) / 8) *
@@ -187,7 +188,21 @@ void Voice::run(void)
             _handle = NULL;
             memset(_volHist, 0x0, sizeof(_volHist));
             _volHistCur = 0;
+            on = false;
+            mosquitto->publish("rabbit/voice/state",
+                               3, "off", 1, 0);
             continue;
+        }
+
+        if (on != _enable) {
+            on = _enable;
+            if (on) {
+                mosquitto->publish("rabbit/voice/state",
+                                   2, "on", 1, 0);
+            } else {
+                mosquitto->publish("rabbit/voice/state",
+                                   3, "off", 1, 0);
+            }
         }
 
         /* Discard frames if disabled. Note that we still fetch
