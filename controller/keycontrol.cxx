@@ -459,7 +459,7 @@ void rabbit_keycontrol(uint8_t key)
         break;
     case 't':
     case 'T':
-        mouth->cylon();
+        mouth->beh();
         rightArm->muscles();
         leftArm->muscles();
         break;

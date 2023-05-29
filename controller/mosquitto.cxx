@@ -18,9 +18,92 @@ struct mosq_sub_action {
     int qos;
 };
 
-static void wheels_move(const struct mosquitto_message *msg)
+static bool attention = false;
+
+static int match_keywords(const char *text, const char *argv[])
 {
-    (void)(msg);  // TODO
+    unsigned int i;
+
+    if (argv == NULL) {
+        return 0;
+    }
+
+    for (i = 0; argv[i] != NULL; i++) {
+        if (strcasestr(text, argv[i]) == NULL) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static void do_hear(const struct mosquitto_message *msg)
+{
+    const char *text = (const char *) msg->payload;
+    static const char *hey_robot[] = { "hey", "robot", NULL, };
+    static const char *give_hug[] = { "give", "hug", NULL, };
+    static const char *raise_arms[] = { "raise", "arms", NULL, };
+    static const char *rest_arms[] = { "rest", "arms", NULL, };
+    static const char *stretch_right_arm[] = {
+        "stretch", "right", "arm", NULL, };
+    static const char *stretch_left_arm[] = {
+        "stretch", "left", "arm", NULL, };
+    static const char *hello[] = { "hello", NULL, };
+    static const char *nice_see_you[] = { "nice", "see", "you", NULL, };
+    static const char *xfer_right_arm[] = {
+        "transfer", "right", "arm", NULL, };
+    static const char *xfer_left_arm[] = {
+        "transfer", "left", "arm", NULL, };
+    static const char *pick_right_arm[] = { "pick", "right", "arm", NULL, };
+    static const char *pick_left_arm[] = { "pick", "left", "arm", NULL, };
+    static const char *whoareyou[] = { "who", "are", "you", NULL, };
+
+    if (strchr(text, ' ') == NULL) {
+        return;  // Less than two words
+    }
+
+    if (attention == false) {
+        if (match_keywords(text, hey_robot)) {
+            mouth->cylon();
+            speech->speak("yes");
+            attention = true;
+        }
+    } else {
+        if (match_keywords(text, hey_robot)) {
+            mouth->cylon();
+            speech->speak("yes");
+            attention = true;
+        } else if (match_keywords(text, give_hug)) {
+            rabbit_keycontrol('y');
+        } else if (match_keywords(text, raise_arms)) {
+            rabbit_keycontrol('z');
+        } else if (match_keywords(text, rest_arms)) {
+            speech->speak("ok");
+            rabbit_keycontrol('x');
+        } else if (match_keywords(text, stretch_right_arm)) {
+            rabbit_keycontrol('u');
+        } else if (match_keywords(text, stretch_left_arm)) {
+            rabbit_keycontrol('U');
+        } else if (match_keywords(text, hello)) {
+            rabbit_keycontrol('i');
+        } else if (match_keywords(text, nice_see_you)) {
+            rabbit_keycontrol('I');
+        } else if (match_keywords(text, xfer_right_arm)) {
+            rabbit_keycontrol('k');
+        } else if (match_keywords(text, xfer_left_arm)) {
+            rabbit_keycontrol('K');
+        } else if (match_keywords(text, pick_right_arm)) {
+            rabbit_keycontrol('a');
+        } else if (match_keywords(text, pick_left_arm)) {
+            rabbit_keycontrol('A');
+        } else if (match_keywords(text, whoareyou)) {
+            rabbit_keycontrol('t');
+        } else {
+            mouth->beh();
+            speech->speak("sorry!");
+            attention = false;
+        }
+    }
 }
 
 static void do_speak(const struct mosquitto_message *msg)
@@ -31,7 +114,7 @@ static void do_speak(const struct mosquitto_message *msg)
 }
 
 static mosq_sub_action mosq_sub_actions[] = {
-    { "rabbit/wheels/move", wheels_move, 0, },
+    { "rabbit/voice/transcribed", do_hear, 1, },
     { "rabbit/speech/speak", do_speak, 2, },
 };
 

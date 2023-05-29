@@ -135,11 +135,9 @@ void Head::enSentry(bool enable)
     if (_sentry != enable) {
         _sentry = enable;
         if (enable) {
-            mouth->cylon();
             speech->speak("Head sentry mode enabled");
             LOG("Head sentry mode enabled\n");
         } else {
-            mouth->beh();
             speech->speak("Head sentry mode disabled");
             LOG("Head sentry mode disabled\n");
         }

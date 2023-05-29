@@ -10,7 +10,7 @@
 #include <alsa/asoundlib.h>
 #include "rabbit.hxx"
 
-#define AUDIO_PCM_INPUT_DEVICE   "plughw:1"
+#define AUDIO_PCM_INPUT_DEVICE   "plughw:1,0"
 #define AUDIO_PCM_INPUT_FORMAT   SND_PCM_FORMAT_S16_LE
 #define AUDIO_PCM_INPUT_RATE     22050
 #define AUDIO_PCM_INPUT_CHANS    1
