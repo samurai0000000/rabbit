@@ -27,6 +27,8 @@
     PI_SPI_FLAGS_MODE(0)
 #define MAX7219_COUNT      4
 
+#define ALWAYS_REFRESH_ALL
+
 /*
  * MAX 7219:
  * https://www.sparkfun.com/datasheets/Components/General/COM-09622-MAX7219-MAX7221.pdf
@@ -409,9 +411,11 @@ void Mouth::run(void)
             writeMax7219(SCAN_LIMIT_REG, 7);
             writeMax7219(SHUTDOWN_REG, 1);
             writeMax7219(DISPLAY_TEST_REG, 0);
+#if !defined(ALWAYS_REFRESH_ALL)
             for (i = 0; i < 8; i++) {
                 l_fb[i] = ~_fb[i];  // Flip bits to force refresh
             }
+#endif
         }
 
         /* Update intensity */
@@ -419,6 +423,12 @@ void Mouth::run(void)
             l_intensity = _intensity;
             writeMax7219(INTENSITY_REG, l_intensity);
         }
+
+#if defined(ALWAYS_REFRESH_ALL)
+            for (i = 0; i < 8; i++) {
+                l_fb[i] = ~_fb[i];  // Flip bits to force refresh
+            }
+#endif
 
         /* Update frame buffer */
         for (i = 0; i < 8; i++) {
