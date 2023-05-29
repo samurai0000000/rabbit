@@ -10,3 +10,6 @@
 [submodule "pico-sdk"]
 	path = 3rdparty/pico-sdk
 	url = https://github.com/raspberrypi/pico-sdk
+[submodule "librealsense"]
+	path = 3rdparty/librealsense
+	url = https://github.com/IntelRealSense/librealsense.git
