@@ -10,7 +10,8 @@ TARGETS =	build/$(ARCH)/rabbit
 
 ifeq ($(ARCH),x86_64)
 PICO_SDK =	$(realpath 3rdparty/pico-sdk)
-TARGETS +=	build/pico/rabbit_mcu.uf2
+TARGETS +=	build/pico/rabbit_mcu.uf2 \
+		build/voicerec/voicerec
 ifeq ($(RPI_HOST),coyote)
 ARCH_ENVVARS =	CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++
 else
@@ -151,3 +152,18 @@ build/pico/Makefile: mcu/CMakeLists.txt
 
 flash-mcu: build/pico/rabbit_mcu.uf2
 	@scp $< magpie:/H:/
+
+#
+# Build voicerec
+#
+
+.PHONY: voicerec
+
+voicerec: build/voicerec/voicerec
+
+build/voicerec/voicerec: build/voicerec/Makefile
+	$(MAKE) -C build/voicerec
+
+build/voicerec/Makefile: voicerec/CMakeLists.txt
+	@mkdir -p build/voicerec
+	@cd build/voicerec && cmake ../../voicerec
