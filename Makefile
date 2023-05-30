@@ -167,3 +167,18 @@ build/voicerec/voicerec: build/voicerec/Makefile
 build/voicerec/Makefile: voicerec/CMakeLists.txt
 	@mkdir -p build/voicerec
 	@cd build/voicerec && cmake ../../voicerec
+
+#
+# Build Intel's librealsense
+#
+
+.PHONY: librealsense
+
+librealsense: build/$(ARCH)/librealsense/librealsense2.so
+
+build/$(ARCH)/librealsense/librealsense2.so: build/$(ARCH)/librealsense/Makefile
+	$(MAKE) -C build/$(ARCH)/librealsense
+
+build/$(ARCH)/librealsense/Makefile: 3rdparty/librealsense/CMakeLists.txt
+	@mkdir -p build/$(ARCH)/librealsense
+	@cd build/$(ARCH)/librealsense && $(ARCH_ENVVARS) cmake ../../../3rdparty/librealsense
