@@ -515,10 +515,18 @@ void Voice::run2(void)
             string s;
             s += "AECPathChange=";
             s += _prop.AECPathChange ? "1" : "0";
-            s += ",";
-            s += "RT60=";
+            s += ",RT60=";
             s += to_string(_prop.RT60);
-            s += ",";
+            s += ",AECSilenceMode=";
+            s += _prop.AECSilenceMode ? "1" : "0";
+            s += ",SpeechDetected=";
+            s += _prop.SpeechDetected ? "1" : "0";
+            s += ",FSBUpdated=";
+            s += _prop.FSBUpdated ? "1" : "0";
+            s += ",VoiceActivity=";
+            s += _prop.VoiceActivity ? "1" : "0";
+            s += ",DOAAngle=";
+            s += to_string(_prop.DOAAngle);
             mosquitto->publish("rabbit/voice/change",
                                s.length(), s.c_str(),
                                1, 0);
