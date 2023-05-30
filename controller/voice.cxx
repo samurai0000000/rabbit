@@ -11,6 +11,7 @@
 #include <bsd/sys/time.h>
 #include <alsa/asoundlib.h>
 #include <libusb-1.0/libusb.h>
+#include <string>
 #include "rabbit.hxx"
 
 /*
@@ -22,9 +23,12 @@
 #define AUDIO_PCM_INPUT_RATE     22050
 #define AUDIO_PCM_INPUT_CHANS    1
 
-#define USB_ENDPOINT_IN	    (LIBUSB_ENDPOINT_IN  | 0x01)
-#define USB_ENDPOINT_OUT    (LIBUSB_ENDPOINT_OUT | 0x01)
-#define USB_TIMEOUT         1000
+#define USB_ENDPOINT_IN	         (LIBUSB_ENDPOINT_IN  | 0x01)
+#define USB_ENDPOINT_OUT         (LIBUSB_ENDPOINT_OUT | 0x01)
+#define USB_TIMEOUT              1000
+#define USB_POLL_INTERVAL_MS     100
+
+using namespace std;
 
 struct respeaker_ctrl {
     uint32_t offset;
@@ -433,12 +437,26 @@ void *Voice::thread_func2(void *args)
     return NULL;
 }
 
+struct respeaker_detection {
+    uint32_t AECPathChange;
+    float    RT60;
+    uint32_t AECSilenceMode;
+    uint32_t SpeechDetected;
+    uint32_t FSBUpdated;
+    uint32_t FSBPathChange;
+    uint32_t VoiceActivity;
+    uint32_t DOAAngle;
+};
+
 void Voice::run2(void)
 {
     struct timespec ts, tloop;
+    struct respeaker_detection det;
 
-    tloop.tv_sec = 0;
-    tloop.tv_nsec = 500000000;
+    tloop.tv_sec = USB_POLL_INTERVAL_MS / 1000000000;
+    tloop.tv_nsec = USB_POLL_INTERVAL_MS / 1000000;
+
+    bzero(&det, sizeof(det));
 
     while (_running) {
         /* Probe and open USB device */
@@ -491,6 +509,29 @@ void Voice::run2(void)
         _prop.MinNNSR = readUsbFloatReg(19, 38);
         _prop.GammaVADSR = readUsbFloatReg(19, 39);
         _prop.DOAAngle = readUsbIntReg(21, 0);
+
+        if ((det.SpeechDetected != _prop.SpeechDetected) ||
+            (det.VoiceActivity != _prop.VoiceActivity)) {
+            string s;
+            s += "AECPathChange=";
+            s += _prop.AECPathChange ? "1" : "0";
+            s += ",";
+            s += "RT60=";
+            s += to_string(_prop.RT60);
+            s += ",";
+            mosquitto->publish("rabbit/voice/change",
+                               s.length(), s.c_str(),
+                               1, 0);
+        }
+
+        det.AECPathChange = _prop.AECPathChange;
+        det.RT60 = _prop.RT60;
+        det.AECSilenceMode = _prop.AECSilenceMode;
+        det.SpeechDetected = _prop.SpeechDetected;
+        det.FSBUpdated = _prop.FSBUpdated;
+        det.FSBPathChange = _prop.FSBPathChange;
+        det.VoiceActivity = _prop.VoiceActivity;
+        det.DOAAngle = _prop.DOAAngle;
 
         clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tloop, &ts);
