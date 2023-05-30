@@ -31,4 +31,4 @@ add_executable(rabbit rabbit.cxx mosquitto.cxx servos.cxx adc.cxx camera.cxx  pr
 add_subdirectory(../3rdparty/cpp-mjpeg-streamer cpp-mjpeg-streamer)
 add_subdirectory(../3rdparty/wsServer wsServer)
 #add_subdirectory(../3rdparty/librealsense librealsense)
-target_link_libraries(rabbit pthread bsd pigpio iw asound ${OpenCV_LIBS} mosquitto nadjieb_mjpeg_streamer::nadjieb_mjpeg_streamer ws)
+target_link_libraries(rabbit pthread bsd pigpio iw asound ${OpenCV_LIBS} mosquitto nadjieb_mjpeg_streamer::nadjieb_mjpeg_streamer ws usb-1.0)
