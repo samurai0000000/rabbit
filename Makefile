@@ -11,16 +11,14 @@ TARGETS =	build/$(ARCH)/rabbit
 ifeq ($(ARCH),x86_64)
 PICO_SDK =	$(realpath 3rdparty/pico-sdk)
 TARGETS +=	build/pico/rabbit_mcu.uf2 \
-		build/voicerec/voicerec
+		build/voicerec/voicerec \
+		build/ros/rabbit
+
 ifeq ($(RPI_HOST),coyote)
 ARCH_ENVVARS =	CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++
 else
 ARCH_ENVVARS =	CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++
 endif
-endif
-
-ifeq ($(ARCH),aarch64)
-TARGETS +=	build/ros/rabbit/devel/lib/rabbit/node
 endif
 
 .PHONY: default clean distclean $(TARGETS)
@@ -73,18 +71,18 @@ install-html:
 # Build rabbit'bot ROS nodes
 #
 
-ifneq ($(findstring build/ros/rabbit/devel/lib/rabbit/node,$(TARGETS)),)
+ifneq ($(findstring build/ros/rabbit,$(TARGETS)),)
 
 .PHONY: ros
 
-ros: build/ros/rabbit/devel/lib/rabbit/node
+ros: build/ros/rabbit
 
-build/ros/rabbit/devel/lib/rabbit/node: build/ros/rabbit/Makefile
-	@$(MAKE) -C build/ros/rabbit
+build/ros/rabbit: build/ros/Makefile
+	@$(MAKE) -C build/ros
 
-build/ros/rabbit/Makefile: ros/rabbit/CMakeLists.txt
-	@mkdir -p build/ros/rabbit
-	@cd build/ros/rabbit && cmake ../../../ros/rabbit
+build/ros/Makefile: ros/CMakeLists.txt
+	@mkdir -p build/ros
+	@cd build/ros && cmake ../../ros
 
 endif
 
