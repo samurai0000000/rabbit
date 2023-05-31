@@ -10,14 +10,19 @@ TARGETS =	build/$(ARCH)/rabbit
 
 ifeq ($(ARCH),x86_64)
 PICO_SDK =	$(realpath 3rdparty/pico-sdk)
-TARGETS +=	build/pico/rabbit_mcu.uf2 \
+TARGETS +=	build/$(ARCH)/librealsense/librealsense2.so \
+		build/pico/rabbit_mcu.uf2 \
 		build/voicerec/voicerec \
 		build/ros/rabbit
 
 ifeq ($(RPI_HOST),coyote)
 ARCH_ENVVARS =	CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++
+ROOTFS =	$(realpath rpi2rootfs)
+CMAKE_EXTRAS =	-DCMAKE_SYSROOT=$(ROOTFS)
 else
 ARCH_ENVVARS =	CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++
+ROOTFS =	$(realpath rpi4rootfs)
+CMAKE_EXTRAS =	-DCMAKE_SYSROOT=$(ROOTFS)
 endif
 endif
 
@@ -39,7 +44,7 @@ distclean:
 
 controller: build/$(ARCH)/rabbit
 
-build/$(ARCH)/rabbit: build/$(ARCH)/Makefile
+build/$(ARCH)/rabbit: build/$(ARCH)/Makefile build/$(ARCH)/librealsense/librealsense2.so
 	@$(MAKE) -C build/$(ARCH)
 
 build/$(ARCH)/Makefile: controller/CMakeLists.txt
@@ -179,4 +184,10 @@ build/$(ARCH)/librealsense/librealsense2.so: build/$(ARCH)/librealsense/Makefile
 
 build/$(ARCH)/librealsense/Makefile: 3rdparty/librealsense/CMakeLists.txt
 	@mkdir -p build/$(ARCH)/librealsense
-	@cd build/$(ARCH)/librealsense && $(ARCH_ENVVARS) cmake ../../../3rdparty/librealsense
+	@cd build/$(ARCH)/librealsense && $(ARCH_ENVVARS) cmake \
+		-DBUILD_GRAPHICAL_EXAMPLES=false \
+		-DBUILD_EASYLOGGINGPP=false \
+		-DBUILD_WITH_TM2=false \
+		-DBUILD_GLSL_EXTENSIONS=false \
+		$(CMAKE_EXTRAS) \
+		../../../3rdparty/librealsense
