@@ -57,6 +57,7 @@ static void do_hear(const struct mosquitto_message *msg)
     static const char *pick_right_arm[] = { "pick", "right", "arm", NULL, };
     static const char *pick_left_arm[] = { "pick", "left", "arm", NULL, };
     static const char *whoareyou[] = { "who", "are", "you", NULL, };
+    static const char *emotions[] = { "what", "emotions", NULL, };
 
     if (strchr(text, ' ') == NULL) {
         return;  // Less than two words
@@ -98,6 +99,45 @@ static void do_hear(const struct mosquitto_message *msg)
             rabbit_keycontrol('A');
         } else if (match_keywords(text, whoareyou)) {
             rabbit_keycontrol('t');
+        } else if (match_keywords(text, emotions)) {
+            speech->speak("I'm relaxed");
+            mouth->beh();
+            head->eyebrowSetDisposition(Head::EB_RELAXED);
+            sleep(2);
+            speech->speak("perplexed");
+            mouth->beh();
+            head->eyebrowSetDisposition(Head::EB_PERPLEXED);
+            sleep(2);
+            speech->speak("surprised");
+            mouth->beh();
+            head->eyebrowSetDisposition(Head::EB_SURPRISED);
+            sleep(2);
+            speech->speak("happy");
+            mouth->smile();
+            head->eyebrowSetDisposition(Head::EB_HAPPY);
+            sleep(2);
+            speech->speak("jubilant");
+            mouth->smile();
+            head->eyebrowSetDisposition(Head::EB_JUBILANT);
+            sleep(2);
+            speech->speak("angry");
+            mouth->beh();
+            head->eyebrowSetDisposition(Head::EB_ANGRY);
+            sleep(2);
+            speech->speak("furiuous");
+            mouth->beh();
+            head->eyebrowSetDisposition(Head::EB_FURIOUS);
+            sleep(2);
+            speech->speak("sad");
+            mouth->beh();
+            head->eyebrowSetDisposition(Head::EB_SAD);
+            sleep(2);
+            speech->speak("depressed");
+            mouth->beh();
+            head->eyebrowSetDisposition(Head::EB_DEPRESSED);
+            sleep(2);
+            head->eyebrowSetDisposition(Head::EB_RELAXED);
+            mouth->cylon();
         } else {
             mouth->beh();
             speech->speak("sorry!");

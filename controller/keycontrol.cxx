@@ -25,6 +25,8 @@ enum rabbit_console_mode {
     RABBIT_CONSOLE_MODE_L_WRIST = 8,
     RABBIT_CONSOLE_MODE_L_GRIPPER = 9,
     RABBIT_CONSOLE_MODE_HEAD = 10,
+    RABBIT_CONSOLE_MODE_R_EYEBROW = 11,
+    RABBIT_CONSOLE_MODE_L_EYEBROW = 12,
 };
 
 static enum rabbit_console_mode mode = RABBIT_CONSOLE_MODE_CAMERA;
@@ -64,6 +66,12 @@ static void action_up(void)
         break;
     case RABBIT_CONSOLE_MODE_HEAD:
         head->tilt(1.0, true);
+        break;
+    case RABBIT_CONSOLE_MODE_R_EYEBROW:
+        head->eyebrowTilt(1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_EYEBROW:
+        head->eyebrowTilt(1.0, true, 0x2);
         break;
     default:
         break;
@@ -106,6 +114,12 @@ static void action_down(void)
     case RABBIT_CONSOLE_MODE_HEAD:
         head->tilt(-1.0, true);
         break;
+    case RABBIT_CONSOLE_MODE_R_EYEBROW:
+        head->eyebrowTilt(-1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_EYEBROW:
+        head->eyebrowTilt(-1.0, true, 0x2);
+        break;
     default:
         break;
     }
@@ -147,6 +161,12 @@ static void action_right(void)
     case RABBIT_CONSOLE_MODE_HEAD:
         head->rotate(-1.0, true);
         break;
+    case RABBIT_CONSOLE_MODE_R_EYEBROW:
+        head->eyebrowRotate(1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_EYEBROW:
+        head->eyebrowRotate(1.0, true, 0x2);
+        break;
     default:
         break;
     }
@@ -187,6 +207,12 @@ static void action_left(void)
         break;
     case RABBIT_CONSOLE_MODE_HEAD:
         head->rotate(1.0, true);
+        break;
+    case RABBIT_CONSOLE_MODE_R_EYEBROW:
+        head->eyebrowRotate(-1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_EYEBROW:
+        head->eyebrowRotate(-1.0, true, 0x2);
         break;
     default:
         break;
@@ -323,6 +349,18 @@ void rabbit_keycontrol(uint8_t key)
             LOG("Head control active\n");
         }
         break;
+    case '(':
+        if (mode != RABBIT_CONSOLE_MODE_R_EYEBROW) {
+            mode = RABBIT_CONSOLE_MODE_R_EYEBROW;
+            LOG("Right eyebrow control active\n");
+        }
+        break;
+    case ')':
+        if (mode != RABBIT_CONSOLE_MODE_L_EYEBROW) {
+            mode = RABBIT_CONSOLE_MODE_L_EYEBROW;
+            LOG("Right eyebrow control active\n");
+        }
+        break;
     case 'v':
     case 'V':
         camera->enVision(!camera->isVisionEn());
@@ -335,6 +373,7 @@ void rabbit_keycontrol(uint8_t key)
         camera->tilt(0.0);
         head->rotate(0.0);
         head->tilt(0.0);
+        head->eyebrowSetDisposition(Head::EB_RELAXED);
         break;
     case 'd':
     case 'D':
