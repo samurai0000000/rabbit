@@ -16,7 +16,7 @@ public:
 
 private:
 
-    void probeOpenDevice(void);
+    void probeOpenDevice(bool color, bool depth, bool infrared);
     static void *thread_func(void *args);
     void run(void);
 
