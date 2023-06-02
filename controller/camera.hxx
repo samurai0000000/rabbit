@@ -9,7 +9,6 @@
 
 #include <pthread.h>
 #include <opencv2/opencv.hpp>
-#include <nadjieb/mjpeg_streamer.hpp>
 
 class Camera {
 
@@ -41,7 +40,6 @@ private:
                     const cv::Scalar &fontColor, const cv::Size &textSize);
 
     cv::VideoCapture *_vc;
-    nadjieb::MJPEGStreamer _streamer;
     pthread_t _thread;
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;

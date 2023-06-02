@@ -74,8 +74,6 @@ Camera::Camera()
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Camera::thread_func, this);
 
-    _streamer.start(8000);
-
     printf("Camera is online\n");
 }
 
@@ -86,8 +84,6 @@ Camera::~Camera()
     pthread_join(_thread, NULL);
     pthread_mutex_destroy(&_mutex);
     pthread_cond_destroy(&_cond);
-
-    _streamer.stop();
 
     servos->clearMotionSchedule(PAN_SERVO);
     servos->clearMotionSchedule(TILT_SERVO);
@@ -171,7 +167,7 @@ void Camera::run(void)
             }
         }
 
-        if (!isVisionEn() && !_streamer.hasClient("/rgb")) {
+        if (!isVisionEn() && !mjpeg_streamer->hasClient("/rgb")) {
             if (_vc->isOpened()) {
                 _vc->release();
             }
@@ -228,12 +224,12 @@ void Camera::run(void)
         frame.copyTo(screen(Rect(0, 0, frame.cols, frame.rows)));
         osd1.copyTo(screen(Rect(640, 0, osd1.cols, osd1.rows)));
 
-        if (_streamer.isRunning()) {
+        if (mjpeg_streamer->isRunning()) {
             vector<uchar> buff_rgb;
 
             imencode(".jpg", screen, buff_rgb, params);
-            _streamer.publish("/rgb", string(buff_rgb.begin(),
-                                             buff_rgb.end()));
+            mjpeg_streamer->publish("/rgb", string(buff_rgb.begin(),
+                                                   buff_rgb.end()));
         }
 
         if (!ptFaces.empty()) {

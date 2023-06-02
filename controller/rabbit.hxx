@@ -8,6 +8,7 @@
 #define RABBIT_HXX
 
 #include <pigpio.h>
+#include <nadjieb/mjpeg_streamer.hpp>
 #include "mosquitto.hxx"
 #include "servos.hxx"
 #include "adc.hxx"
@@ -29,6 +30,7 @@
 #include "logging.hxx"
 #include "crond.hxx"
 
+extern nadjieb::MJPEGStreamer *mjpeg_streamer;
 extern Mosquitto *mosquitto;
 extern Servos *servos;
 extern ADC *adc;

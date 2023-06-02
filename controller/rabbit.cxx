@@ -20,6 +20,7 @@ using namespace std;
 static int daemonize = 0;
 static struct termios t_old;
 
+nadjieb::MJPEGStreamer *mjpeg_streamer = NULL;
 Mosquitto *mosquitto = NULL;
 Servos *servos = NULL;
 ADC *adc = NULL;
@@ -137,6 +138,11 @@ static void cleanup(void)
         mosquitto = NULL;
     }
 
+    if (mjpeg_streamer) {
+        mjpeg_streamer->stop();
+        delete mjpeg_streamer;
+        mjpeg_streamer = NULL;
+    }
 
     websock_cleanup();
     gpioTerminate();
@@ -244,6 +250,8 @@ int main(int argc, char **argv)
     signal(SIGSEGV, sig_handler);
     signal(SIGKILL, sig_handler);
 
+    mjpeg_streamer = new nadjieb::MJPEGStreamer();
+    mjpeg_streamer->start(8000);
     mosquitto = new Mosquitto();
     speech = new Speech();
     servos = new Servos();
