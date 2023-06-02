@@ -24,6 +24,7 @@ Mosquitto *mosquitto = NULL;
 Servos *servos = NULL;
 ADC *adc = NULL;
 Camera *camera = NULL;
+StereoVision *stereovision = NULL;
 Proximity *proximity = NULL;
 Wheels *wheels = NULL;
 Arm *rightArm = NULL;
@@ -54,6 +55,11 @@ static void cleanup(void)
     if (camera) {
         delete camera;
         camera = NULL;
+    }
+
+    if (stereovision) {
+        delete stereovision;
+        stereovision = NULL;
     }
 
     if (wheels) {
@@ -243,6 +249,7 @@ int main(int argc, char **argv)
     servos = new Servos();
     adc = new ADC();
     camera = new Camera();
+    stereovision = new StereoVision();
     proximity = new Proximity();
     wheels = new Wheels();
     rightArm = new Arm(RIGHT_ARM);

@@ -189,5 +189,7 @@ build/$(ARCH)/librealsense/Makefile: 3rdparty/librealsense/CMakeLists.txt
 		-DBUILD_EASYLOGGINGPP=false \
 		-DBUILD_WITH_TM2=false \
 		-DBUILD_GLSL_EXTENSIONS=false \
+		-DFORCE_LIBUVC=true \
+		-DCMAKE_BUILD_TYPE=release \
 		$(CMAKE_EXTRAS) \
 		../../../3rdparty/librealsense

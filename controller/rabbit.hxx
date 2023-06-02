@@ -12,6 +12,7 @@
 #include "servos.hxx"
 #include "adc.hxx"
 #include "camera.hxx"
+#include "stereovision.hxx"
 #include "proximity.hxx"
 #include "wheels.hxx"
 #include "arms.hxx"
@@ -32,6 +33,7 @@ extern Mosquitto *mosquitto;
 extern Servos *servos;
 extern ADC *adc;
 extern Camera *camera;
+extern StereoVision *stereovision;
 extern Proximity *proximity;
 extern Wheels *wheels;
 extern Arm *rightArm;

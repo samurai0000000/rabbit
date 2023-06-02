@@ -11,7 +11,21 @@ class StereoVision {
 
 public:
 
+    StereoVision();
+    ~StereoVision();
+
 private:
+
+    void probeOpenDevice(void);
+    static void *thread_func(void *args);
+    void run(void);
+
+    void *_rs2_pipeline;
+
+    pthread_t _thread;
+    pthread_mutex_t _mutex;
+    pthread_cond_t _cond;
+    bool _running;
 
 };
 
