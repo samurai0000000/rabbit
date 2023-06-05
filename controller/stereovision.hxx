@@ -14,20 +14,29 @@ public:
     StereoVision();
     ~StereoVision();
 
+    bool isIMUEnabled(void) const;
+    void enableIMU(bool en);
+
     float colorFrameRate(void) const;
     float depthFrameRate(void) const;
     float infraredFrameRate(void) const;
+    float gyroSamplesPerSec(void) const;
+    float accelSamplesPerSec(void) const;
 
 private:
 
-    void probeOpenDevice(bool color, bool depth, bool infrared);
+    void probeOpenDevice(bool color, bool depth, bool infrared,
+                         bool gyro, bool accel);
     static void *thread_func(void *args);
     void run(void);
 
     void *_rs2_pipeline;
+    bool _imuEn;
     float _frColor;
     float _frDepth;
     float _frIR;
+    float _gyroSPS;
+    float _accelSPS;
 
     pthread_t _thread;
     pthread_mutex_t _mutex;
@@ -35,6 +44,17 @@ private:
     bool _running;
 
 };
+
+inline bool StereoVision::isIMUEnabled(void) const
+{
+    return _imuEn;
+}
+
+inline void StereoVision::enableIMU(bool en)
+{
+    en = en ? true : false;
+    _imuEn = en;
+}
 
 inline float StereoVision::colorFrameRate(void) const
 {
@@ -49,6 +69,16 @@ inline float StereoVision::depthFrameRate(void) const
 inline float StereoVision::infraredFrameRate(void) const
 {
     return _frIR;
+}
+
+inline float StereoVision::gyroSamplesPerSec(void) const
+{
+    return _gyroSPS;
+}
+
+inline float StereoVision::accelSamplesPerSec(void) const
+{
+    return _accelSPS;
 }
 
 #endif

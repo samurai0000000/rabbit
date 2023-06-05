@@ -28,7 +28,13 @@ using namespace cv;
 static unsigned int instance = 0;
 
 StereoVision::StereoVision()
-    : _rs2_pipeline(NULL)
+    : _rs2_pipeline(NULL),
+      _imuEn(false),
+      _frColor(0.0),
+      _frDepth(0.0),
+      _frIR(0.0),
+      _gyroSPS(0.0),
+      _accelSPS(0.0)
 {
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -55,7 +61,8 @@ StereoVision::~StereoVision()
     printf("StereoVision is offline\n");
 }
 
-void StereoVision::probeOpenDevice(bool color, bool depth, bool infrared)
+void StereoVision::probeOpenDevice(bool color, bool depth, bool infrared,
+                                   bool gyro, bool accel)
 {
     int ret = 0;
     rs2::config cfg;
@@ -74,6 +81,13 @@ void StereoVision::probeOpenDevice(bool color, bool depth, bool infrared)
         if (infrared) {
             cfg.enable_stream(RS2_STREAM_INFRARED, 640, 480, RS2_FORMAT_Y8, 30);
         }
+        if (gyro) {
+            cfg.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F);
+        }
+        if (accel) {
+            cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
+        }
+
         _rs2_pipeline = new rs2::pipeline();
         if (_rs2_pipeline) {
             ((rs2::pipeline *) _rs2_pipeline)->start(cfg);
@@ -94,6 +108,7 @@ void StereoVision::probeOpenDevice(bool color, bool depth, bool infrared)
     if (ret != 0 && _rs2_pipeline != NULL) {
         delete (rs2::pipeline *) _rs2_pipeline;
         _rs2_pipeline = NULL;
+        return;
     }
 }
 
@@ -109,7 +124,9 @@ void *StereoVision::thread_func(void *args)
 void StereoVision::run(void)
 {
     int ret;
-    struct timeval now, tdiff, tsColor, tsDepth, tsIR, tvColor, tvDepth, tvIR;
+    struct timeval now, tdiff;
+    struct timeval tsColor, tsDepth, tsIR, tvColor, tvDepth, tvIR;
+    struct timeval tvGyro, tvAccel;
     Mat colorScreen, depthScreen, irScreen;
     Mat colorOsd, depthOsd, irOsd;
     rs2::colorizer color_map;
@@ -134,9 +151,10 @@ void StereoVision::run(void)
     while (_running) {
         /* Close the device if there's no requestor */
         if ((mjpeg_streamer->isRunning() == false) ||
-            (mjpeg_streamer->hasClient("/svcolor") == false &&
-             mjpeg_streamer->hasClient("/svdepth") == false &&
-             mjpeg_streamer->hasClient("/svir") == false)) {
+            ((mjpeg_streamer->hasClient("/svcolor") == false) &&
+             (mjpeg_streamer->hasClient("/svdepth") == false) &&
+             (mjpeg_streamer->hasClient("/svir") == false) &&
+             (_imuEn == false))) {
             struct timespec twait;
 
             try {
@@ -165,7 +183,9 @@ void StereoVision::run(void)
         /* Probe and open device */
         probeOpenDevice(mjpeg_streamer->hasClient("/svcolor"),
                         mjpeg_streamer->hasClient("/svdepth"),
-                        mjpeg_streamer->hasClient("/svir"));
+                        mjpeg_streamer->hasClient("/svir"),
+                        _imuEn,
+                        _imuEn);
         if (_rs2_pipeline == NULL) {
             struct timespec twait;
             clock_gettime(CLOCK_REALTIME, &twait);
@@ -263,6 +283,7 @@ void StereoVision::run(void)
                                                    buff_svdepth.end()));
                 }
             }
+
             /* IR frame */
             if (mjpeg_streamer->hasClient("/svir")) {
                 rs2::frame ir_frame = frames.first(RS2_STREAM_INFRARED);
@@ -301,6 +322,52 @@ void StereoVision::run(void)
                     mjpeg_streamer->publish("/svir",
                                             string(buff_svir.begin(),
                                                    buff_svir.end()));
+                }
+            }
+
+            if (_imuEn) {
+                /* Gyro motion frame */
+                auto gyro_frame =
+                    frames.first_or_default(RS2_STREAM_GYRO,
+                                            RS2_FORMAT_MOTION_XYZ32F);
+                auto gyro_motion = gyro_frame.as<rs2::motion_frame>();
+                if (gyro_motion) {
+                    /* Update sample rate */
+                    gettimeofday(&now, NULL);
+                    timersub(&now, &tvGyro, &tdiff);
+                    _gyroSPS = 1.0 /
+                        (tdiff.tv_sec + (tdiff.tv_usec * 0.000001));
+                    memcpy(&tvGyro, &now, sizeof(struct timeval));
+
+                    double ts = gyro_motion.get_timestamp();
+                    rs2_vector gyro_data = gyro_motion.get_motion_data();
+                    (void)(ts);
+                    (void)(gyro_data);
+                    //printf("G sps=%.1f ts=%f x=%.3f y=%.3f z=%.3f\n",
+                    //       _gyroSPS, ts,
+                    //       gyro_data.x, gyro_data.y, gyro_data.z);
+                }
+
+                /* Accelerometer frame */
+                auto accel_frame =
+                    frames.first_or_default(RS2_STREAM_ACCEL,
+                                            RS2_FORMAT_MOTION_XYZ32F);
+                auto accel_motion = accel_frame.as<rs2::motion_frame>();
+                if (accel_motion) {
+                    /* Update sample rate */
+                    gettimeofday(&now, NULL);
+                    timersub(&now, &tvAccel, &tdiff);
+                    _accelSPS = 1.0 /
+                        (tdiff.tv_sec + (tdiff.tv_usec * 0.000001));
+                    memcpy(&tvAccel, &now, sizeof(struct timeval));
+
+                    double ts = accel_motion.get_timestamp();
+                    rs2_vector accel_data = accel_motion.get_motion_data();
+                    (void)(ts);
+                    (void)(accel_data);
+                    //printf("A sps=%.1f ts=%f x=%.3f y=%.3f z=%.3f\n",
+                    //       _accelSPS, ts,
+                    //       accel_data.x, accel_data.y, accel_data.z);
                 }
             }
         } catch (const rs2::error &e) {
