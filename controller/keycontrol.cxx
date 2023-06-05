@@ -159,7 +159,7 @@ static void action_right(void)
         leftArm->setGripperPosition(-1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_HEAD:
-        head->rotate(-1.0, true);
+        head->rotate(1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_R_EYEBROW:
         head->eyebrowRotate(1.0, true, 0x1);
@@ -206,7 +206,7 @@ static void action_left(void)
         leftArm->setGripperPosition(1.0, 5, true);
         break;
     case RABBIT_CONSOLE_MODE_HEAD:
-        head->rotate(1.0, true);
+        head->rotate(-1.0, true);
         break;
     case RABBIT_CONSOLE_MODE_R_EYEBROW:
         head->eyebrowRotate(-1.0, true, 0x1);
