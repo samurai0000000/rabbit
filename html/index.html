@@ -9,7 +9,7 @@
     <table width="940" border="1">
       <tr width="940">
 	<td height="480">
-	  <iframe src="" id="rgb-stream" frameborder="0" style="height:100%; overflow:hidden; width:100%;" scrolling="no"></iframe>
+	  <iframe src="" id="camera-stream" frameborder="0" style="height:100%; overflow:hidden; width:100%;" scrolling="no"></iframe>
 	</td>
       </tr>
       <tr>
@@ -21,9 +21,23 @@
 	      </td>
 	      <td valign="top" align="right" width="0%">
 		<table>
-		  <tr><td><input type="button" id="rabbit-connect" name="rabbit-connect" value="Connect"  style="outline:none;" /></td></tr>
-		  <tr><td><input type="button" id="rabbit-refresh" name="rabbit-refresh" value="Refresh"  style="outline:none;" /></td></tr>
-		  <tr><td><input type="button" id="rabbit-logclear" name="rabbit-logclear" value="Clear Log"  style="outline:none;" /></td></tr>
+		  <tr>
+		    <td valign="top">
+		      <table>
+			<tr><td><input type="button" id="rabbit-connect" name="rabbit-connect" value="Connect"  style="outline:none;" /></td></tr>
+			<tr><td><input type="button" id="rabbit-refresh" name="rabbit-refresh" value="Refresh"  style="outline:none;" /></td></tr>
+			<tr><td><input type="button" id="rabbit-logclear" name="rabbit-logclear" value="Clear Log"  style="outline:none;" /></td></tr>
+		      </table>
+		    </td>
+		    <td valign="top">
+		      <table>
+			<tr><td><input type="button" id="view-camera" name="view-camera" value="Camera View"  style="outline:none;" /></td></tr>
+			<tr><td><input type="button" id="view-color" name="view-color" value="RS Color View"  style="outline:none;" /></td></tr>
+			<tr><td><input type="button" id="view-depth" name="view-depth" value="RS Depth View"  style="outline:none;" /></td></tr>
+			<tr><td><input type="button" id="view-ir" name="view-ir" value="RS Infrared View"  style="outline:none;" /></td></tr>
+		      </table>
+		  </td>
+		  </tr>
 		</table>
 	      </td>
 	    </tr>

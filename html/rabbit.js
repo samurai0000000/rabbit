@@ -6,10 +6,34 @@
 
 var websock;
 
-function set_rgb_stream()
+function set_camera_stream()
 {
-    document.getElementById("rgb-stream").src =
-	window.location.protocol + "//" + document.domain + ":8000/rgb";
+    document.getElementById("camera-stream").src =
+	window.location.protocol + "//" + document.domain + ":8000/camera";
+}
+
+function set_view_camera()
+{
+    document.getElementById("camera-stream").src =
+	window.location.protocol + "//" + document.domain + ":8000/camera";
+}
+
+function set_view_color()
+{
+    document.getElementById("camera-stream").src =
+	window.location.protocol + "//" + document.domain + ":8000/svcolor";
+}
+
+function set_view_depth()
+{
+    document.getElementById("camera-stream").src =
+	window.location.protocol + "//" + document.domain + ":8000/svdepth";
+}
+
+function set_view_ir()
+{
+    document.getElementById("camera-stream").src =
+	window.location.protocol + "//" + document.domain + ":8000/svir";
 }
 
 function rabbit_key_pressed(event)
@@ -46,7 +70,7 @@ function rabbit_connected()
     rabbit_log.scrollTop = rabbit_log.scrollHeight;
     document.getElementById("rabbit-connect").value = "Disconnect";
 
-    set_rgb_stream();
+    set_camera_stream();
 }
 
 function rabbit_disconnected()
@@ -56,7 +80,7 @@ function rabbit_disconnected()
     rabbit_log.value += ("Lost connection to rabbit'bot!\n");
     rabbit_log.scrollTop = rabbit_log.scrollHeight;
     document.getElementById("rabbit-connect").value = "Connect";
-    document.getElementById("rgb-stream").src = "";
+    document.getElementById("camera-stream").src = "";
 }
 
 function rabbit_connect_button_event()
@@ -77,7 +101,7 @@ function rabbit_connect_button_event()
 function rabbit_refresh_button_event()
 {
     if (websock.readyState !== WebSocket.CLOSED) {
-	set_rgb_stream();
+	set_camera_stream();
     }
 }
 
@@ -141,6 +165,14 @@ function rabbit_keys_setup()
 	rabbit_refresh_button_event;
     document.getElementById("rabbit-logclear").onclick =
 	rabbit_logclear_button_event;
+    document.getElementById("view-camera").onclick =
+	set_view_camera;
+    document.getElementById("view-color").onclick =
+	set_view_color;
+    document.getElementById("view-depth").onclick =
+	set_view_depth;
+    document.getElementById("view-ir").onclick =
+	set_view_ir;
 
     document.getElementById("wheel-fwl").onclick =
 	rabbit_wheel_fwl;
@@ -176,5 +208,5 @@ function rabbit_setup()
 	alert("Browser does not support WebSocket!");
     }
 
-    set_rgb_stream();
+    set_camera_stream();
 }
