@@ -112,12 +112,13 @@ void StereoVision::run(void)
     struct timeval now, tdiff, tsColor, tsDepth, tsIR, tvColor, tvDepth, tvIR;
     Mat colorScreen, depthScreen, irScreen;
     Mat colorOsd, depthOsd, irOsd;
+    rs2::colorizer color_map;
 
     /* Setup */
     colorOsd.create(Size(300, 480), CV_8UC3);
     colorScreen.create(Size(640 + colorOsd.cols, 480), CV_8UC3);
-    depthOsd.create(Size(300, 480), CV_16UC1);
-    depthScreen.create(Size(640 + depthOsd.cols, 480), CV_16UC1);
+    depthOsd.create(Size(300, 480), CV_8UC3);
+    depthScreen.create(Size(640 + depthOsd.cols, 480), CV_8UC3);
     irOsd.create(Size(300, 480), CV_8UC3);
     irScreen.create(Size(640 + irOsd.cols, 480), CV_8UC3);
     gettimeofday(&now, NULL);
@@ -223,8 +224,12 @@ void StereoVision::run(void)
             /* Depth frame */
             if (mjpeg_streamer->hasClient("/svdepth")) {
                 rs2::frame depth_frame = frames.get_depth_frame();
-                Mat depth(Size(640, 480), CV_16UC1,
-                          (void *) depth_frame.get_data(),
+
+                /* Encode depth in colors */
+                rs2::frame depth_colorized =
+                    depth_frame.apply_filter(color_map);
+                Mat depth(Size(640, 480), CV_8UC3,
+                          (void *) depth_colorized.get_data(),
                           Mat::AUTO_STEP);
 
                 /* Update frame rate */
