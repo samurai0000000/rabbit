@@ -20,8 +20,10 @@
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 #include "rabbit.hxx"
+#include "osdcam.hxx"
 
 using namespace std;
+using namespace cv;
 
 static unsigned int instance = 0;
 
@@ -107,10 +109,26 @@ void *StereoVision::thread_func(void *args)
 void StereoVision::run(void)
 {
     int ret;
-    struct timespec ts, tloop;
+    struct timeval now, tdiff, tsColor, tsDepth, tsIR, tvColor, tvDepth, tvIR;
+    Mat colorScreen, depthScreen, irScreen;
+    Mat colorOsd, depthOsd, irOsd;
 
-    tloop.tv_sec = 1;
-    tloop.tv_nsec = 0;
+    /* Setup */
+    colorOsd.create(Size(300, 480), CV_8UC3);
+    colorScreen.create(Size(640 + colorOsd.cols, 480), CV_8UC3);
+    depthOsd.create(Size(300, 480), CV_16UC1);
+    depthScreen.create(Size(640 + depthOsd.cols, 480), CV_16UC1);
+    irOsd.create(Size(300, 480), CV_8UC3);
+    irScreen.create(Size(640 + irOsd.cols, 480), CV_8UC3);
+    gettimeofday(&now, NULL);
+    tdiff.tv_sec = 1;
+    tdiff.tv_usec = 0;
+    timersub(&now, &tdiff, &tsColor);
+    timersub(&now, &tdiff, &tsDepth);
+    timersub(&now, &tdiff, &tsIR);
+    memcpy(&tvColor, &now, sizeof(struct timeval));
+    memcpy(&tvDepth, &now, sizeof(struct timeval));
+    memcpy(&tvIR, &now, sizeof(struct timeval));
 
     while (_running) {
         /* Close the device if there's no requestor */
@@ -118,6 +136,8 @@ void StereoVision::run(void)
             (mjpeg_streamer->hasClient("/svcolor") == false &&
              mjpeg_streamer->hasClient("/svdepth") == false &&
              mjpeg_streamer->hasClient("/svir") == false)) {
+            struct timespec twait;
+
             try {
                 if (_rs2_pipeline != NULL) {
                     delete (rs2::pipeline *) _rs2_pipeline;
@@ -133,10 +153,10 @@ void StereoVision::run(void)
                 ret = -1;
             }
 
-            clock_gettime(CLOCK_REALTIME, &ts);
-            timespecadd(&ts, &tloop, &ts);
+            clock_gettime(CLOCK_REALTIME, &twait);
+            twait.tv_sec += 1;
             pthread_mutex_lock(&_mutex);
-            pthread_cond_timedwait(&_cond, &_mutex, &ts);
+            pthread_cond_timedwait(&_cond, &_mutex, &twait);
             pthread_mutex_unlock(&_mutex);
             continue;
         }
@@ -146,10 +166,11 @@ void StereoVision::run(void)
                         mjpeg_streamer->hasClient("/svdepth"),
                         mjpeg_streamer->hasClient("/svir"));
         if (_rs2_pipeline == NULL) {
-            clock_gettime(CLOCK_REALTIME, &ts);
-            timespecadd(&ts, &tloop, &ts);
+            struct timespec twait;
+            clock_gettime(CLOCK_REALTIME, &twait);
+            twait.tv_sec += 1;
             pthread_mutex_lock(&_mutex);
-            pthread_cond_timedwait(&_cond, &_mutex, &ts);
+            pthread_cond_timedwait(&_cond, &_mutex, &twait);
             pthread_mutex_unlock(&_mutex);
             continue;
         }
@@ -163,41 +184,119 @@ void StereoVision::run(void)
             /* Color frame */
             if (mjpeg_streamer->hasClient("/svcolor")) {
                 rs2::frame color_frame = frames.get_color_frame();
-                cv::Mat color(cv::Size(640, 480), CV_8UC3,
-                              (void *) color_frame.get_data(),
-                              cv::Mat::AUTO_STEP);
-                vector<uchar> buff_svcolor;
-                std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 90, };
-                cv::imencode(".jpg", color, buff_svcolor, params);
-                mjpeg_streamer->publish("/svcolor", string(buff_svcolor.begin(),
-                                                           buff_svcolor.end()));
+                Mat color(Size(640, 480), CV_8UC3,
+                          (void *) color_frame.get_data(),
+                          Mat::AUTO_STEP);
+
+                /* Update frame rate */
+                gettimeofday(&now, NULL);
+                timersub(&now, &tvColor, &tdiff);
+                _frColor = 1.0 / (tdiff.tv_sec + (tdiff.tv_usec * 0.000001));
+                memcpy(&tvColor, &now, sizeof(struct timeval));
+
+                /* Update OSD */
+                timersub(&now, &tsColor, &tdiff);
+                if (tdiff.tv_sec > 0 || tdiff.tv_usec > 500000) {
+                    OsdCam::genOsdFrame(colorOsd, colorFrameRate());
+                    gettimeofday(&tsColor, NULL);
+                }
+
+                /* Compose screen */
+                color.copyTo(colorScreen(Rect(0, 0, color.cols, color.rows)));
+                colorOsd.copyTo(colorScreen(Rect(640, 0,
+                                                 colorOsd.cols,
+                                                 colorOsd.rows)));
+
+
+                /* Publish */
+                if (mjpeg_streamer->isRunning()) {
+                    std::vector<int> params = { IMWRITE_JPEG_QUALITY, 90, };
+                    vector<uchar> buff_svcolor;
+
+                    imencode(".jpg", colorScreen, buff_svcolor, params);
+                    mjpeg_streamer->publish("/svcolor",
+                                            string(buff_svcolor.begin(),
+                                                   buff_svcolor.end()));
+                }
             }
 
             /* Depth frame */
             if (mjpeg_streamer->hasClient("/svdepth")) {
                 rs2::frame depth_frame = frames.get_depth_frame();
-                cv::Mat depth(cv::Size(640, 480), CV_16UC1,
-                              (void *) depth_frame.get_data(),
-                              cv::Mat::AUTO_STEP);
-                vector<uchar> buff_svdepth;
-                std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 90, };
-                cv::imencode(".jpg", depth, buff_svdepth, params);
-                mjpeg_streamer->publish("/svdepth", string(buff_svdepth.begin(),
-                                                           buff_svdepth.end()));
+                Mat depth(Size(640, 480), CV_16UC1,
+                          (void *) depth_frame.get_data(),
+                          Mat::AUTO_STEP);
+
+                /* Update frame rate */
+                gettimeofday(&now, NULL);
+                timersub(&now, &tvDepth, &tdiff);
+                _frDepth = 1.0 / (tdiff.tv_sec + (tdiff.tv_usec * 0.000001));
+                memcpy(&tvDepth, &now, sizeof(struct timeval));
+
+                /* Update OSD */
+                timersub(&now, &tsDepth, &tdiff);
+                if (tdiff.tv_sec > 0 || tdiff.tv_usec > 500000) {
+                    OsdCam::genOsdFrame(depthOsd, depthFrameRate());
+                    gettimeofday(&tsDepth, NULL);
+                }
+
+                /* Compose screen */
+                depth.copyTo(depthScreen(Rect(0, 0, depth.cols, depth.rows)));
+                depthOsd.copyTo(depthScreen(Rect(640, 0,
+                                                 depthOsd.cols,
+                                                 depthOsd.rows)));
+
+
+                /* Publish */
+                if (mjpeg_streamer->isRunning()) {
+                    std::vector<int> params = { IMWRITE_JPEG_QUALITY, 90, };
+                    vector<uchar> buff_svdepth;
+
+                    imencode(".jpg", depthScreen, buff_svdepth, params);
+                    mjpeg_streamer->publish("/svdepth",
+                                            string(buff_svdepth.begin(),
+                                                   buff_svdepth.end()));
+                }
             }
             /* IR frame */
             if (mjpeg_streamer->hasClient("/svir")) {
                 rs2::frame ir_frame = frames.first(RS2_STREAM_INFRARED);
-                cv::Mat ir(cv::Size(640, 480), CV_8UC1,
-                              (void *) ir_frame.get_data(),
-                           cv::Mat::AUTO_STEP);
-                cv::equalizeHist(ir, ir);
-                cv::applyColorMap(ir, ir, cv::COLORMAP_JET);
-                vector<uchar> buff_svir;
-                std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 90, };
-                cv::imencode(".jpg", ir, buff_svir, params);
-                mjpeg_streamer->publish("/svir", string(buff_svir.begin(),
-                                                        buff_svir.end()));
+                Mat ir(Size(640, 480), CV_8UC1,
+                       (void *) ir_frame.get_data(),
+                       Mat::AUTO_STEP);
+                equalizeHist(ir, ir);
+                applyColorMap(ir, ir, COLORMAP_JET);
+
+                /* Update frame rate */
+                gettimeofday(&now, NULL);
+                timersub(&now, &tvIR, &tdiff);
+                _frIR = 1.0 / (tdiff.tv_sec + (tdiff.tv_usec * 0.000001));
+                memcpy(&tvIR, &now, sizeof(struct timeval));
+
+                /* Update OSD */
+                timersub(&now, &tsIR, &tdiff);
+                if (tdiff.tv_sec > 0 || tdiff.tv_usec > 500000) {
+                    OsdCam::genOsdFrame(irOsd, infraredFrameRate());
+                    gettimeofday(&tsIR, NULL);
+                }
+
+                /* Compose screen */
+                ir.copyTo(irScreen(Rect(0, 0, ir.cols, ir.rows)));
+                irOsd.copyTo(irScreen(Rect(640, 0,
+                                           irOsd.cols,
+                                           irOsd.rows)));
+
+
+                /* Publish */
+                if (mjpeg_streamer->isRunning()) {
+                    std::vector<int> params = { IMWRITE_JPEG_QUALITY, 90, };
+                    vector<uchar> buff_svir;
+
+                    imencode(".jpg", irScreen, buff_svir, params);
+                    mjpeg_streamer->publish("/svir",
+                                            string(buff_svir.begin(),
+                                                   buff_svir.end()));
+                }
             }
         } catch (const rs2::error &e) {
             cerr << "RealSense error calling " <<

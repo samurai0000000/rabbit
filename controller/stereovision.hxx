@@ -14,6 +14,10 @@ public:
     StereoVision();
     ~StereoVision();
 
+    float colorFrameRate(void) const;
+    float depthFrameRate(void) const;
+    float infraredFrameRate(void) const;
+
 private:
 
     void probeOpenDevice(bool color, bool depth, bool infrared);
@@ -21,6 +25,9 @@ private:
     void run(void);
 
     void *_rs2_pipeline;
+    float _frColor;
+    float _frDepth;
+    float _frIR;
 
     pthread_t _thread;
     pthread_mutex_t _mutex;
@@ -28,6 +35,21 @@ private:
     bool _running;
 
 };
+
+inline float StereoVision::colorFrameRate(void) const
+{
+    return _frColor;
+}
+
+inline float StereoVision::depthFrameRate(void) const
+{
+    return _frDepth;
+}
+
+inline float StereoVision::infraredFrameRate(void) const
+{
+    return _frIR;
+}
 
 #endif
 
