@@ -42,8 +42,8 @@ Arm::Arm(unsigned int side)
         servos->setRange( 4, 530, 2580);
         servos->setRange( 5, 480, 1500);
     } else {
-        servos->setRange( 6, 430, 2490);
-        servos->setRange( 7, 450, 2500);
+        servos->setRange( 6, 440, 2490);
+        servos->setRange( 7, 430, 2460);
         servos->setRange( 8, 450, 2500);
         servos->setRange( 9, 450, 2500);
         servos->setRange(10, 430, 2480);
@@ -862,9 +862,9 @@ void Arm::hi(void)
                 25.0,
                 0.0, -90.0,
                 NAN,
-                1500);
+                500);
 
-    for (unsigned int i = 0; i < 5; i++) {
+    for (unsigned int i = 0; i < 3; i++) {
         planMotions(NAN, NAN,
                     NAN,
                     45.0, NAN,
@@ -1123,7 +1123,7 @@ void Arm::xferLR(void)
     }
 }
 
-void Arm::muscles()
+void Arm::muscles(void)
 {
     if (_side == RIGHT_ARM) {
         speech->speak("I am the Rabbit Bot.\n"
@@ -1134,32 +1134,32 @@ void Arm::muscles()
     }
 
     clearMotions();
-    planMotions(90.0, 0.0,
+    planMotions(90.0, 10.0,
                 45.0,
                 0.0, 0.0,
                 50.0,
                 1500);
-    planMotions(90.0, 0.0,
+    planMotions(90.0, 10.0,
                 -45.0,
                 0.0, 0.0,
                 50.0,
                 1500);
-    planMotions(90.0, 0.0,
+    planMotions(90.0, 10.0,
                 45.0,
                 0.0, 0.0,
                 50.0,
                 1500);
-    planMotions(90.0, 0.0,
+    planMotions(90.0, 10.0,
                 -45.0,
                 0.0, 0.0,
                 50.0,
                 1500);
-    planMotions(90.0, 0.0,
+    planMotions(90.0, 10.0,
                 45.0,
                 0.0, 0.0,
                 50.0,
                 1500);
-    planMotions(90.0, 0.0,
+    planMotions(90.0, 10.0,
                 -45.0,
                 0.0, 0.0,
                 50.0,
