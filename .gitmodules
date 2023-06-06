@@ -13,3 +13,6 @@
 [submodule "librealsense"]
 	path = 3rdparty/librealsense
 	url = https://github.com/IntelRealSense/librealsense.git
+[submodule "3rdparty/whisper.cpp"]
+	path = 3rdparty/whisper.cpp
+	url = https://github.com/ggerganov/whisper.cpp.git
