@@ -30,6 +30,7 @@ static unsigned int instance = 0;
 StereoVision::StereoVision()
     : _rs2_pipeline(NULL),
       _imuEn(false),
+      _emitterEn(false),
       _frColor(0.0),
       _frDepth(0.0),
       _frIR(0.0),
@@ -95,6 +96,22 @@ void StereoVision::probeOpenDevice(bool color, bool depth, bool infrared,
         } else {
             ret = -1;
         }
+
+        if (_emitterEn == false) {
+            rs2::pipeline_profile profile;
+            rs2::device device;
+            vector<rs2::sensor> sensors;
+            vector<rs2::sensor>::iterator it;
+
+            profile = ((rs2::pipeline *) _rs2_pipeline)->get_active_profile();
+            device = profile.get_device();
+            sensors = device.query_sensors();
+            for (it = sensors.begin(); it != sensors.end(); it++) {
+                if (it->supports(RS2_OPTION_EMITTER_ENABLED)) {
+                    it->set_option(RS2_OPTION_EMITTER_ENABLED, 0);
+                }
+            }
+        }
     } catch (const rs2::error &e) {
         cerr << "RealSense error calling " <<
             e.get_failed_function() << "(" <<
@@ -130,6 +147,7 @@ void StereoVision::run(void)
     Mat colorScreen, depthScreen, irScreen;
     Mat colorOsd, depthOsd, irOsd;
     rs2::colorizer color_map;
+    bool enableEmitter = isEmitterEnabled();
 
     /* Setup */
     colorOsd.create(Size(300, 480), CV_8UC3);
@@ -194,6 +212,24 @@ void StereoVision::run(void)
             pthread_cond_timedwait(&_cond, &_mutex, &twait);
             pthread_mutex_unlock(&_mutex);
             continue;
+        }
+
+        /* Adjust emitter on/off */
+        if (enableEmitter != _emitterEn) {
+            rs2::pipeline_profile profile;
+            rs2::device device;
+            vector<rs2::sensor> sensors;
+            vector<rs2::sensor>::iterator it;
+
+            profile = ((rs2::pipeline *) _rs2_pipeline)->get_active_profile();
+            device = profile.get_device();
+            sensors = device.query_sensors();
+            for (it = sensors.begin(); it != sensors.end(); it++) {
+                if (it->supports(RS2_OPTION_EMITTER_ENABLED)) {
+                    it->set_option(RS2_OPTION_EMITTER_ENABLED, _emitterEn);
+                }
+            }
+            enableEmitter = _emitterEn;
         }
 
         /* Capture frame(s) */

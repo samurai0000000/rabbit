@@ -379,6 +379,10 @@ void rabbit_keycontrol(uint8_t key)
     case 'D':
         lidar->enable(!lidar->isEnabled());
         break;
+    case 'f':
+    case 'F':
+        stereovision->enableEmitter(!stereovision->isEmitterEnabled());
+        break;
     case 's':
     case 'S':
         if (mode == RABBIT_CONSOLE_MODE_CAMERA) {

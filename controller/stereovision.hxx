@@ -17,6 +17,9 @@ public:
     bool isIMUEnabled(void) const;
     void enableIMU(bool en);
 
+    bool isEmitterEnabled(void) const;
+    void enableEmitter(bool en);
+
     float colorFrameRate(void) const;
     float depthFrameRate(void) const;
     float infraredFrameRate(void) const;
@@ -32,6 +35,7 @@ private:
 
     void *_rs2_pipeline;
     bool _imuEn;
+    bool _emitterEn;
     float _frColor;
     float _frDepth;
     float _frIR;
@@ -54,6 +58,17 @@ inline void StereoVision::enableIMU(bool en)
 {
     en = en ? true : false;
     _imuEn = en;
+}
+
+inline bool StereoVision::isEmitterEnabled(void) const
+{
+    return _emitterEn;
+}
+
+inline void StereoVision::enableEmitter(bool en)
+{
+    en = en ? true : false;
+    _emitterEn = en;
 }
 
 inline float StereoVision::colorFrameRate(void) const
