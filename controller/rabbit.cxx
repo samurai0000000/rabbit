@@ -370,9 +370,14 @@ static void announce_clock(void)
                  "Now is %d o'clock %s\n",
                  hour, timeofday);
     } else {
+        unsigned int hour;
+        hour = tm->tm_hour % 12;
+        if (hour == 0) {
+            hour = 12;
+        }
         snprintf(announcement, sizeof(announcement) - 1,
                  "Now is %d o'clock and %d %s %s\n",
-                 tm->tm_hour % 12, tm->tm_min,
+                 hour, tm->tm_min,
                  tm->tm_min == 1 ? "minute" : "minutes",
                  timeofday);
     }
