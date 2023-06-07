@@ -29,6 +29,7 @@ static unsigned int instance = 0;
 
 StereoVision::StereoVision()
     : _rs2_pipeline(NULL),
+      _vision(false),
       _imuEn(false),
       _emitterEn(false),
       _frColor(0.0),
@@ -168,11 +169,11 @@ void StereoVision::run(void)
 
     while (_running) {
         /* Close the device if there's no requestor */
-        if ((mjpeg_streamer->isRunning() == false) ||
-            ((mjpeg_streamer->hasClient("/svcolor") == false) &&
-             (mjpeg_streamer->hasClient("/svdepth") == false) &&
-             (mjpeg_streamer->hasClient("/svir") == false) &&
-             (_imuEn == false))) {
+        if ((_vision == false) &&
+            (_imuEn == false) &&
+            (mjpeg_streamer->hasClient("/svcolor") == false) &&
+            (mjpeg_streamer->hasClient("/svdepth") == false) &&
+            (mjpeg_streamer->hasClient("/svir") == false)) {
             struct timespec twait;
 
             try {
@@ -199,11 +200,11 @@ void StereoVision::run(void)
         }
 
         /* Probe and open device */
-        probeOpenDevice(mjpeg_streamer->hasClient("/svcolor"),
-                        mjpeg_streamer->hasClient("/svdepth"),
-                        mjpeg_streamer->hasClient("/svir"),
-                        _imuEn,
-                        _imuEn);
+        probeOpenDevice(_vision | mjpeg_streamer->hasClient("/svcolor"),
+                        _vision | mjpeg_streamer->hasClient("/svdepth"),
+                        _vision | mjpeg_streamer->hasClient("/svir"),
+                        _vision | _imuEn,
+                        _vision | _imuEn);
         if (_rs2_pipeline == NULL) {
             struct timespec twait;
             clock_gettime(CLOCK_REALTIME, &twait);
@@ -235,15 +236,19 @@ void StereoVision::run(void)
         /* Capture frame(s) */
         try {
             ret = 0;
+
+            /* Wait for frames */
             rs2::frameset frames =
                 ((rs2::pipeline *) _rs2_pipeline)->wait_for_frames();
 
             /* Color frame */
-            if (mjpeg_streamer->hasClient("/svcolor")) {
+            if (_vision || mjpeg_streamer->hasClient("/svcolor")) {
+                /* Get color frame */
                 rs2::frame color_frame = frames.get_color_frame();
+                /* Convert to OpenCV Mat */
                 Mat color(Size(640, 480), CV_8UC3,
-                          (void *) color_frame.get_data(),
-                          Mat::AUTO_STEP);
+                      (void *) color_frame.get_data(),
+                      Mat::AUTO_STEP);
 
                 /* Update frame rate */
                 gettimeofday(&now, NULL);
@@ -278,12 +283,14 @@ void StereoVision::run(void)
             }
 
             /* Depth frame */
-            if (mjpeg_streamer->hasClient("/svdepth")) {
+            if (_vision || mjpeg_streamer->hasClient("/svdepth")) {
+                /* Get depth frame */
                 rs2::frame depth_frame = frames.get_depth_frame();
 
                 /* Encode depth in colors */
                 rs2::frame depth_colorized =
                     depth_frame.apply_filter(color_map);
+                /* Convert to OpenCV Mat */
                 Mat depth(Size(640, 480), CV_8UC3,
                           (void *) depth_colorized.get_data(),
                           Mat::AUTO_STEP);
@@ -321,8 +328,11 @@ void StereoVision::run(void)
             }
 
             /* IR frame */
-            if (mjpeg_streamer->hasClient("/svir")) {
+            if (_vision || mjpeg_streamer->hasClient("/svir")) {
+                /* Get IR frame */
                 rs2::frame ir_frame = frames.first(RS2_STREAM_INFRARED);
+
+                /* Convert to OpenCV Mat */
                 Mat ir(Size(640, 480), CV_8UC1,
                        (void *) ir_frame.get_data(),
                        Mat::AUTO_STEP);
@@ -419,6 +429,21 @@ void StereoVision::run(void)
         if (ret != 0 && _rs2_pipeline != NULL) {
             delete (rs2::pipeline *) _rs2_pipeline;
             _rs2_pipeline = NULL;
+        }
+    }
+}
+
+void StereoVision::enVision(bool enable)
+{
+    enable = (enable ? true : false);
+    if (_vision != enable) {
+        _vision = enable;
+        if (enable) {
+            speech->speak("Stereo-vision vision enabled");
+            LOG("Stereo-vision vision enabled\n");
+        } else {
+            speech->speak("Stereo-vision vision disabled");
+            LOG("Stereo-vision vision disabled\n");
         }
     }
 }

@@ -236,6 +236,22 @@ void Camera::run(void)
     } while (_running);
 }
 
+void Camera::enVision(bool enable)
+{
+    enable = (enable ? true : false);
+
+    if (_vision != enable) {
+        _vision = enable;
+        if (enable) {
+            speech->speak("Camera vision enabled");
+            LOG("Camera vision enabled\n");
+        } else {
+            speech->speak("Camera vision disabled");
+            LOG("Camera vision disabled\n");
+        }
+    }
+}
+
 void Camera::detectFaces(Mat &frame, vector<Point> &ptFaces)
 {
     vector<Rect> faces;
@@ -274,27 +290,6 @@ void Camera::detectFaces(Mat &frame, vector<Point> &ptFaces)
     }
 }
 
-void Camera::enVision(bool enable)
-{
-    enable = (enable ? true : false);
-
-    if (_vision != enable) {
-        _vision = enable;
-        if (enable) {
-            speech->speak("Camera vision enabled");
-            LOG("Camera vision enabled\n");
-        } else {
-            speech->speak("Camera vision disabled");
-            LOG("Camera vision disabled\n");
-        }
-    }
-}
-
-bool Camera::isVisionEn(void) const
-{
-    return _vision;
-}
-
 void Camera::enSentry(bool enable)
 {
     enable = (enable ? true : false);
@@ -309,11 +304,6 @@ void Camera::enSentry(bool enable)
             LOG("Camera sentry mode disabled\n");
         }
     }
-}
-
-bool Camera::isSentryEn(void) const
-{
-    return _sentry;
 }
 
 void Camera::pan(float deg, bool relative)
@@ -382,11 +372,6 @@ float Camera::tiltAt(void) const
         TILT_LO_PULSE;
 
     return ((float) pulse - (float) center) / TILT_ANGLE_MULT * -1.0;
-}
-
-float Camera::frameRate(void) const
-{
-    return _fr;
 }
 
 /*

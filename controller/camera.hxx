@@ -51,6 +51,21 @@ private:
 
 };
 
+inline bool Camera::isVisionEn(void) const
+{
+    return _vision;
+}
+
+inline bool Camera::isSentryEn(void) const
+{
+    return _sentry;
+}
+
+inline float Camera::frameRate(void) const
+{
+    return _fr;
+}
+
 #endif
 
 /*

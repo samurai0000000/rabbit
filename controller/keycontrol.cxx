@@ -364,6 +364,7 @@ void rabbit_keycontrol(uint8_t key)
     case 'v':
     case 'V':
         camera->enVision(!camera->isVisionEn());
+        stereovision->enVision(!stereovision->isVisionEn());
         break;
     case ' ':
         wheels->halt();

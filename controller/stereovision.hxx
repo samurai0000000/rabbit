@@ -14,6 +14,9 @@ public:
     StereoVision();
     ~StereoVision();
 
+    void enVision(bool enable);
+    bool isVisionEn(void) const;
+
     bool isIMUEnabled(void) const;
     void enableIMU(bool en);
 
@@ -34,6 +37,7 @@ private:
     void run(void);
 
     void *_rs2_pipeline;
+    bool _vision;
     bool _imuEn;
     bool _emitterEn;
     float _frColor;
@@ -48,6 +52,11 @@ private:
     bool _running;
 
 };
+
+inline bool StereoVision::isVisionEn(void) const
+{
+    return _vision;
+}
 
 inline bool StereoVision::isIMUEnabled(void) const
 {
