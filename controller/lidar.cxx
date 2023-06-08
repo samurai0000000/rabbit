@@ -72,7 +72,7 @@ LiDAR::LiDAR()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, LiDAR::thread_func, this);
-    pthread_setname_np(_thread, "Rabbit LiDAR");
+    pthread_setname_np(_thread, "R'LiDAR");
 
     printf("LiDAR is online\n");
 }

@@ -96,6 +96,7 @@ Head::Head()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Head::thread_func, this);
+    pthread_setname_np(_thread, "R'Head");
 
     printf("Head is online\n");
 }

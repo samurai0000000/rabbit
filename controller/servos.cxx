@@ -55,6 +55,7 @@ Servos::Servos()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Servos::thread_func, this);
+    pthread_setname_np(_thread, "R'Servos");
 
     printf("Servos is online\n");
 }

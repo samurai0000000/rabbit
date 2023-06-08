@@ -30,6 +30,7 @@ Crond::Crond()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, Crond::thread_func, this);
+    pthread_setname_np(_thread, "R'Crond");
 
     printf("Crond is online\n");
 }
