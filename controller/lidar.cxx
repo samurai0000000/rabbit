@@ -72,6 +72,7 @@ LiDAR::LiDAR()
     pthread_mutex_init(&_mutex, NULL);
     pthread_cond_init(&_cond, NULL);
     pthread_create(&_thread, NULL, LiDAR::thread_func, this);
+    pthread_setname_np(_thread, "Rabbit LiDAR");
 
     printf("LiDAR is online\n");
 }
@@ -195,7 +196,7 @@ void LiDAR::thread_wait_interruptible(unsigned int ms)
     struct timespec ts, twait;
 
     twait.tv_sec = ms / 1000;
-    twait.tv_nsec = (twait.tv_sec - ms) * 1000000;
+    twait.tv_nsec = ((twait.tv_sec * 1000) - ms) * 1000000;
 
     clock_gettime(CLOCK_REALTIME, &ts);
     timespecadd(&ts, &twait, &ts);
@@ -211,10 +212,7 @@ void LiDAR::run(void)
     struct termios tty;
     int nfds;
     fd_set readfds;
-    struct timeval timeout = {
-        .tv_sec = 0,
-        .tv_usec = 100000,
-    };
+    struct timeval timeout;
     uint8_t buf[1024];
     unsigned int pos = 0;
     unsigned int lsn;
@@ -281,6 +279,8 @@ void LiDAR::run(void)
         FD_SET(_handle, &readfds);
         nfds = _handle + 1;
 
+        timeout.tv_sec = 1;
+        timeout.tv_usec = 0;
         ret = select(nfds, &readfds, NULL, NULL, &timeout);
         if (ret == -1) {
             perror("select");
