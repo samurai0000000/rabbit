@@ -148,8 +148,8 @@ void Wheels::run(void)
                     _rpwr = 0;
                 }
             } else {
-                if (_rpwr < 20) {
-                    _rpwr = 20;
+                if (_rpwr < 30) {
+                    _rpwr = 30;
                 } else {
                     _rpwr += 1;
                 }
@@ -168,8 +168,8 @@ void Wheels::run(void)
                     _lpwr = 0;
                 }
             } else {
-                if (_lpwr < 20) {
-                    _lpwr = 20;
+                if (_lpwr < 30) {
+                    _lpwr = 30;
                 } else {
                     _lpwr += 1;
                 }
