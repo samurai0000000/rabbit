@@ -58,7 +58,7 @@ void *Crond::thread_func(void *args)
 
 void Crond::run(void)
 {
-    struct timespec ts, tloop;
+    struct timespec ts, tloop, tlast;
     vector<struct crond_entry>::iterator it;
     const struct tm *tm;
 
@@ -77,7 +77,14 @@ void Crond::run(void)
 
     while (_running) {
         tm = localtime(&ts.tv_sec);
+        memcpy(&tlast, &ts, sizeof(struct timespec));
+        clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tloop, &ts);
+
+        if (ts.tv_sec < (tlast.tv_sec + 60)) {
+            /* Filter out noise from adjtime by NTP! */
+            continue;
+        }
 
         for (it = _entries.begin(); it != _entries.end(); it++) {
             if (it->map.m[tm->tm_min] == true &&
