@@ -42,7 +42,7 @@ Arm::Arm(unsigned int side)
         servos->setRange( 4, 530, 2580);
         servos->setRange( 5, 480, 1500);
     } else {
-        servos->setRange( 6, 440, 2490);
+        servos->setRange( 6, 410, 2440);
         servos->setRange( 7, 430, 2460);
         servos->setRange( 8, 450, 2500);
         servos->setRange( 9, 450, 2500);
@@ -894,7 +894,7 @@ void Arm::pickup(void)
                 NAN, NAN,
                 0.0,
                 1500);
-    planMotions(-32.5, 40.0,
+    planMotions(-35.0, 40.0,
                 -25.0,
                 -5.0, -90.0,
                 0.0,
