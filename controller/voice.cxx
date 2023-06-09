@@ -67,12 +67,22 @@ Voice::Voice()
 
 Voice::~Voice()
 {
+    static const unsigned int dark_r[12] =
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+    static const unsigned int dark_g[12] =
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+    static const unsigned int dark_b[12] =
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+
     _running = false;
     pthread_cond_broadcast(&_cond);
     pthread_join(_thread, NULL);
     pthread_join(_thread2, NULL);
     pthread_mutex_destroy(&_mutex);
     pthread_cond_destroy(&_cond);
+
+    setPixelRingBrightness(0);
+    setPixelRingCustom(dark_r, dark_g, dark_b);
 
     if (_handle != NULL) {
         snd_pcm_close((snd_pcm_t *) _handle);
@@ -297,7 +307,13 @@ void Voice::probeOpenUSBDevice(void)
             ret = -1;
             goto done;
         }
+    } else {
+        goto done;
     }
+
+    setPixelRingSpin();
+    setPixelRingVolume(6);
+    setPixelRingBrightness(0x4);
 
 done:
 
@@ -430,6 +446,327 @@ float Voice::readUsbFloatReg(unsigned int id, unsigned int offset)
     return ((float) response[0] * powf(2.0, (float) response[1]));
 }
 
+void Voice::setPixelRingTrace(void)
+{
+    int ret;
+    uint8_t data = 0x0;
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x0,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingMono(unsigned int r, unsigned int g, unsigned int b)
+{
+    int ret;
+    uint8_t data[4];
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    data[0] = (uint8_t) (r & 0xff);
+    data[1] = (uint8_t) (g & 0xff);
+    data[2] = (uint8_t) (b & 0xff);
+    data[3] = 0x0;
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x2,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingListen(void)
+{
+    int ret;
+    uint8_t data = 0x0;
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x2,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingSpeak(void)
+{
+    int ret;
+    uint8_t data = 0x0;
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x3,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingThink(void)
+{
+    int ret;
+    uint8_t data = 0x0;
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x4,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingSpin(void)
+{
+    int ret;
+    uint8_t data = 0x0;
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x5,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingCustom(const unsigned int r[12],
+                               const unsigned int g[12],
+                               const unsigned int b[12])
+{
+    int ret;
+    uint8_t data[4 * 12];
+    unsigned int i;
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    for (i = 0; i < 12; i++) {
+        data[i * 4 + 0] = (uint8_t) r[i];
+        data[i * 4 + 1] = (uint8_t) g[i];
+        data[i * 4 + 2] = (uint8_t) b[i];
+        data[i * 4 + 3] = 0;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x6,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingBrightness(unsigned int v)
+{
+    int ret;
+    uint8_t data;
+
+    data = (v % 0x20);
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x20,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingColorPalette(unsigned int r1,
+                                     unsigned int g1,
+                                     unsigned int b1,
+                                     unsigned int r2,
+                                     unsigned int g2,
+                                     unsigned int b2)
+{
+    int ret;
+    uint8_t data[8];
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    data[0] = (uint8_t) r1;
+    data[1] = (uint8_t) g1;
+    data[2] = (uint8_t) b1;
+    data[3] = 0;
+    data[4] = (uint8_t) r2;
+    data[5] = (uint8_t) g2;
+    data[6] = (uint8_t) b2;
+    data[7] = 0;
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x21,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingVADLED(unsigned int v)
+{
+    int ret;
+    uint8_t data;
+
+    data = (uint8_t) v;
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x22,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
+void Voice::setPixelRingVolume(unsigned int v)
+{
+    int ret;
+    uint8_t data;
+
+    data = (uint8_t) (v % 12);
+
+    if (_usbdev == NULL) {
+        return;
+    }
+
+    ret = libusb_control_transfer(_usbdev,
+                                  LIBUSB_REQUEST_TYPE_VENDOR |
+                                  LIBUSB_ENDPOINT_OUT,
+                                  0,
+                                  0x23,
+                                  0x1c,
+                                  (unsigned char *) &data,
+                                  sizeof(data),
+                                  USB_TIMEOUT);
+    if (ret < 0) {
+        fprintf(stderr, "libusb_control_transfer: %s\n",
+                libusb_strerror(ret));
+        libusb_close(_usbdev);
+        _usbdev = NULL;
+    }
+}
+
 void *Voice::thread_func2(void *args)
 {
     Voice *voice = (Voice *) args;
@@ -454,6 +791,7 @@ void Voice::run2(void)
 {
     struct timespec ts, tloop;
     struct respeaker_detection det;
+    bool pixelRingEnable = false;
 
     tloop.tv_sec = USB_POLL_INTERVAL_MS / 1000000000;
     tloop.tv_nsec = USB_POLL_INTERVAL_MS / 1000000;
@@ -470,6 +808,17 @@ void Voice::run2(void)
             pthread_cond_timedwait(&_cond, &_mutex, &ts);
             pthread_mutex_unlock(&_mutex);
             continue;
+        }
+
+        if (_enable != pixelRingEnable) {
+            if (_enable) {
+                setPixelRingColorPalette(0x00, 0xff, 0x00, 0x00, 0x00, 0xff);
+                setPixelRingListen();
+            } else {
+                setPixelRingColorPalette(0xff, 0x00, 0x00, 0x00, 0xff, 0x00);
+                setPixelRingSpin();
+            }
+            pixelRingEnable = _enable;
         }
 
         _prop.AECFreezeOnOff = readUsbIntReg(18, 7);

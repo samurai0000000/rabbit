@@ -91,6 +91,24 @@ private:
                         uint32_t value);
     void writeUsbFloatReg(unsigned int id, unsigned int offset,
                           float value);
+    void setPixelRingTrace(void);
+    void setPixelRingMono(unsigned int r, unsigned int g, unsigned int b);
+    void setPixelRingListen(void);
+    void setPixelRingSpeak(void);
+    void setPixelRingThink(void);
+    void setPixelRingSpin(void);
+    void setPixelRingCustom(const unsigned int r[12],
+                            const unsigned int g[12],
+                            const unsigned int b[12]);
+    void setPixelRingBrightness(unsigned int v);
+    void setPixelRingColorPalette(unsigned int r1,
+                                  unsigned int g1,
+                                  unsigned int b1,
+                                  unsigned int r2,
+                                  unsigned int g2,
+                                  unsigned int b2);
+    void setPixelRingVADLED(unsigned int v);
+    void setPixelRingVolume(unsigned int v);
     static void *thread_func2(void *args);
     void run2(void);
 
