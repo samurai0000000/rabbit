@@ -22,9 +22,9 @@
                              PAN_ANGLE_RANGE)
 
 #define TILT_SERVO           13
-#define TILT_LO_PULSE       800
-#define TILT_HI_PULSE      1550
-#define TILT_ANGLE_RANGE     90
+#define TILT_LO_PULSE       600
+#define TILT_HI_PULSE      1800
+#define TILT_ANGLE_RANGE    120
 #define TILT_ANGLE_MULT     ((TILT_HI_PULSE - TILT_LO_PULSE) /  \
                              TILT_ANGLE_RANGE)
 
@@ -56,9 +56,9 @@ Camera::Camera()
     }
 
     servos->setRange(PAN_SERVO, PAN_LO_PULSE, PAN_HI_PULSE);
-    servos->center(PAN_SERVO);
     servos->setRange(TILT_SERVO, TILT_LO_PULSE, TILT_HI_PULSE);
-    servos->center(TILT_SERVO);
+    pan(0.0);
+    tilt(0.0);
 
     _cascade.load("/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml");
 
@@ -81,6 +81,8 @@ Camera::~Camera()
 
     servos->clearMotionSchedule(PAN_SERVO);
     servos->clearMotionSchedule(TILT_SERVO);
+    pan(0.0);
+    tilt(0.0);
 
     if (_vc) {
         delete _vc;
