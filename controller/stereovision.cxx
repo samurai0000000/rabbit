@@ -449,6 +449,38 @@ void StereoVision::enVision(bool enable)
     }
 }
 
+void StereoVision::enableIMU(bool enable)
+{
+    enable = enable ? true : false;
+    if (_imuEn != enable) {
+        _imuEn = enable;
+
+        if (enable) {
+            speech->speak("IMU enabled");
+            LOG("IMU enabled\n");
+        } else {
+            speech->speak("IMU disabled");
+            LOG("IMU disabled\n");
+        }
+    }
+}
+
+void StereoVision::enableEmitter(bool enable)
+{
+    enable = enable ? true : false;
+    if (_emitterEn != enable) {
+        _emitterEn = enable;
+
+        if (enable) {
+            speech->speak("Infrared dots emitter enabled");
+            LOG("Infrared dots emitter enabled\n");
+        } else {
+            speech->speak("Infrared dots emitter disabled");
+            LOG("Infrared dots emitter disabled\n");
+        }
+    }
+}
+
 /*
  * Local variables:
  * mode: C++

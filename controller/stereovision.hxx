@@ -63,21 +63,9 @@ inline bool StereoVision::isIMUEnabled(void) const
     return _imuEn;
 }
 
-inline void StereoVision::enableIMU(bool en)
-{
-    en = en ? true : false;
-    _imuEn = en;
-}
-
 inline bool StereoVision::isEmitterEnabled(void) const
 {
     return _emitterEn;
-}
-
-inline void StereoVision::enableEmitter(bool en)
-{
-    en = en ? true : false;
-    _emitterEn = en;
 }
 
 inline float StereoVision::colorFrameRate(void) const

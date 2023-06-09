@@ -380,9 +380,13 @@ void rabbit_keycontrol(uint8_t key)
     case 'D':
         lidar->enable(!lidar->isEnabled());
         break;
+    case 'e':
+    case 'E':
+        stereovision->enableEmitter(!stereovision->isEmitterEnabled());
+        break;
     case 'f':
     case 'F':
-        stereovision->enableEmitter(!stereovision->isEmitterEnabled());
+        stereovision->enableIMU(!stereovision->isIMUEnabled());
         break;
     case 's':
     case 'S':
