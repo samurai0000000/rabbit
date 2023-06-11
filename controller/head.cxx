@@ -50,6 +50,36 @@
                                     EB_L_TILT_LO_PULSE) \
                                    / 90)
 
+#define EAR_R_TILT_SERVO            24
+#define EAR_R_TILT_LO_PULSE        650
+#define EAR_R_TILT_HI_PULSE       2450
+#define EAR_R_TILT_ANGLE_MULT     ((EAR_R_TILT_HI_PULSE -   \
+                                    EAR_R_TILT_LO_PULSE) \
+                                   / 180)
+
+#define EAR_L_TILT_SERVO            25
+#define EAR_L_TILT_LO_PULSE        650
+#define EAR_L_TILT_HI_PULSE       2300
+#define EAR_L_TILT_ANGLE_MULT     ((EAR_L_TILT_HI_PULSE -   \
+                                    EAR_L_TILT_LO_PULSE)    \
+                                   / 180)
+
+#define EAR_R_ROTATION_SERVO        26
+#define EAR_R_ROTATION_LO_PULSE    700
+#define EAR_R_ROTATION_HI_PULSE   2100
+#define EAR_R_ROTATION_ANGLE_MULT ((EAR_R_ROTATION_HI_PULSE -   \
+                                    EAR_R_ROTATION_LO_PULSE)    \
+                                   / 100)
+
+#define EAR_L_ROTATION_SERVO        27
+#define EAR_L_ROTATION_LO_PULSE    700
+#define EAR_L_ROTATION_HI_PULSE   2100
+#define EAR_L_ROTATION_ANGLE_MULT ((EAR_L_ROTATION_HI_PULSE -   \
+                                    EAR_L_ROTATION_LO_PULSE)    \
+                                   / 100)
+
+#define EAR_DROP_SECONDS            15
+
 using namespace std;
 
 static unsigned int instance = 0;
@@ -88,9 +118,23 @@ Head::Head()
                      EB_L_TILT_LO_PULSE,
                      EB_L_TILT_HI_PULSE);
 
+    servos->setRange(EAR_R_TILT_SERVO,
+                     EAR_R_TILT_LO_PULSE,
+                     EAR_R_TILT_HI_PULSE);
+    servos->setRange(EAR_L_TILT_SERVO,
+                     EAR_L_TILT_LO_PULSE,
+                     EAR_L_TILT_HI_PULSE);
+    servos->setRange(EAR_R_ROTATION_SERVO,
+                     EAR_R_ROTATION_LO_PULSE,
+                     EAR_R_ROTATION_HI_PULSE);
+    servos->setRange(EAR_L_ROTATION_SERVO,
+                     EAR_L_ROTATION_LO_PULSE,
+                     EAR_L_ROTATION_HI_PULSE);
+
     rotate(0.0);
     tilt(0.0);
     eyebrowSetDisposition(EB_RELAXED);
+    earsUp();
 
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -112,6 +156,9 @@ Head::~Head()
     rotate(0.0);
     tilt(0.0);
     eyebrowSetDisposition(EB_RELAXED);
+    earsDown();
+    servos->syncMotionSchedule((0x1 << EAR_R_TILT_SERVO) |
+                               (0x1 << EAR_L_TILT_SERVO));
 
     instance--;
     printf("Head is offline\n");
@@ -157,6 +204,9 @@ void Head::run(void)
 
         /* Update eyebrows */
         updateEyebrows();
+
+        /* Update ears */
+        updateEars();
 
         /* Sentry */
         if (_sentry) {
@@ -450,6 +500,7 @@ float Head::eyebrowRotationAt(unsigned int lr) const
     center = ((servos->hiRange(EB_L_ROTATION_SERVO) -
                servos->loRange(EB_L_ROTATION_SERVO)) / 2) +
         EB_L_ROTATION_LO_PULSE;
+
     return ((float) pulse - (float) center) / EB_L_ROTATION_ANGLE_MULT;
 }
 
@@ -550,6 +601,290 @@ void Head::updateEyebrows(void)
         motions.push_back(motion);
         servos->clearMotionSchedule(id);
         servos->scheduleMotions(id, motions);
+    }
+}
+
+void Head::earTilt(float deg, bool relative, unsigned int lr)
+{
+    unsigned int pulse;
+    unsigned int center;
+    char buf[128];
+
+    if (lr & 0x1) {
+        if (relative) {
+            pulse = servos->pulse(EAR_R_TILT_SERVO);
+            pulse = (unsigned int) ((float) pulse +
+                                    (EAR_R_TILT_ANGLE_MULT * deg));
+            servos->setPulse(EAR_R_TILT_SERVO, pulse);
+            _eb_r_tilt += deg;
+        } else {
+            center =
+                ((servos->hiRange(EAR_R_TILT_SERVO) -
+                  servos->loRange(EAR_R_TILT_SERVO)) / 2) +
+                EAR_R_TILT_LO_PULSE;
+            pulse = (unsigned int)
+                ((float) center + deg * EAR_R_TILT_ANGLE_MULT);
+            servos->setPulse(EAR_R_TILT_SERVO, pulse);
+            _eb_r_tilt = deg;
+        }
+
+        snprintf(buf, sizeof(buf) - 1, "Right ear tilt to %.1f\n",
+                 earTiltAt(0x1));
+        LOG(buf);
+    }
+
+    if (lr & 0x2) {
+        if (relative) {
+            pulse = servos->pulse(EAR_L_TILT_SERVO);
+            pulse = (unsigned int) ((float) pulse -
+                                    (EAR_L_TILT_ANGLE_MULT * deg));
+            servos->setPulse(EAR_L_TILT_SERVO, pulse);
+            _eb_l_tilt += deg;
+        } else {
+            center =
+                ((servos->hiRange(EAR_L_TILT_SERVO) -
+                  servos->loRange(EAR_L_TILT_SERVO)) / 2) +
+                EAR_L_TILT_LO_PULSE;
+            pulse = (unsigned int)
+                ((float) center - deg * EAR_L_TILT_ANGLE_MULT);
+            servos->setPulse(EAR_L_TILT_SERVO, pulse);
+            _eb_l_tilt = deg;
+        }
+
+        snprintf(buf, sizeof(buf) - 1, "Left ear tilt to %.1f\n",
+                 earTiltAt(0x2));
+        LOG(buf);
+    }
+}
+
+void Head::earRotate(float deg, bool relative, unsigned int lr)
+{
+    unsigned int pulse;
+    unsigned int center;
+    char buf[128];
+
+    if (lr & 0x1) {
+        if (relative) {
+            pulse = servos->pulse(EAR_R_ROTATION_SERVO);
+            pulse = (unsigned int) ((float) pulse +
+                                    (EAR_R_ROTATION_ANGLE_MULT * deg));
+            servos->setPulse(EAR_R_ROTATION_SERVO, pulse);
+            _eb_r_rotation += deg;
+        } else {
+            center =
+                ((servos->hiRange(EAR_R_ROTATION_SERVO) -
+                  servos->loRange(EAR_R_ROTATION_SERVO)) / 2) +
+                EAR_R_ROTATION_LO_PULSE;
+            pulse = (unsigned int)
+                ((float) center + deg * EAR_R_ROTATION_ANGLE_MULT);
+            servos->setPulse(EAR_R_ROTATION_SERVO, pulse);
+            _eb_r_rotation = deg;
+        }
+
+        snprintf(buf, sizeof(buf) - 1, "Right ear rotate to %.1f\n",
+                 earRotationAt(0x1));
+        LOG(buf);
+    }
+
+    if (lr & 0x2) {
+        if (relative) {
+            pulse = servos->pulse(EAR_L_ROTATION_SERVO);
+            pulse = (unsigned int) ((float) pulse +
+                                    (EAR_L_ROTATION_ANGLE_MULT * deg));
+            servos->setPulse(EAR_L_ROTATION_SERVO, pulse);
+            _eb_l_rotation += deg;
+        } else {
+            center =
+                ((servos->hiRange(EAR_L_ROTATION_SERVO) -
+                  servos->loRange(EAR_L_ROTATION_SERVO)) / 2) +
+                EAR_L_ROTATION_LO_PULSE;
+            pulse = (unsigned int)
+                ((float) center + deg * EAR_L_ROTATION_ANGLE_MULT);
+            servos->setPulse(EAR_L_ROTATION_SERVO, pulse);
+            _eb_l_rotation = deg;
+        }
+
+        snprintf(buf, sizeof(buf) - 1, "Left ear rotate to %.1f\n",
+                 earRotationAt(0x2));
+        LOG(buf);
+    }
+}
+
+void Head::earsUp(void)
+{
+    servos->clearMotionSchedule(EAR_R_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_L_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_R_ROTATION_SERVO);
+    servos->clearMotionSchedule(EAR_L_ROTATION_SERVO);
+
+    if (lidar && lidar->isEnabled()) {
+        return;  // Keep the ears foldeed to not obstruct lidar
+    }
+
+    gettimeofday(&_last_earsup, NULL);
+    earTilt(0.0);
+    earRotate(0.0);
+}
+
+void Head::earsBack(void)
+{
+    static const unsigned TILT_DEGREE = 2;
+    vector<struct servo_motion> motions;
+    struct servo_motion motion;
+    char buf[128];
+    unsigned int center;
+
+    servos->clearMotionSchedule(EAR_R_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_L_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_R_ROTATION_SERVO);
+    servos->clearMotionSchedule(EAR_L_ROTATION_SERVO);
+
+    earRotate(25.0, false, 0x1);
+    earRotate(-30.0, false, 0x2);
+
+    motions.clear();
+    motion.pulse = servos->loRange(EAR_R_TILT_SERVO);
+    motion.ms = 0;
+    motions.push_back(motion);
+    motion.pulse = servos->hiRange(EAR_R_TILT_SERVO) -
+        (EAR_R_TILT_ANGLE_MULT * TILT_DEGREE);
+    motion.ms = 300;
+    motions.push_back(motion);
+    servos->scheduleMotions(EAR_R_TILT_SERVO, motions);
+    {
+        center = ((servos->hiRange(EAR_R_TILT_SERVO) -
+                   servos->loRange(EAR_R_TILT_SERVO)) / 2) +
+            EAR_R_ROTATION_LO_PULSE;
+        snprintf(buf, sizeof(buf) - 1, "Right ear tilt to %.1f\n",
+                 ((float) motion.pulse - (float) center) /
+                 EAR_R_ROTATION_ANGLE_MULT);
+        LOG(buf);
+    }
+
+    motions.clear();
+    motion.pulse = servos->hiRange(EAR_L_TILT_SERVO);
+    motion.ms = 0;
+    motions.push_back(motion);
+    motion.pulse = servos->loRange(EAR_L_TILT_SERVO) +
+        (EAR_L_TILT_ANGLE_MULT * TILT_DEGREE);
+    motion.ms = 400;
+    motions.push_back(motion);
+    servos->scheduleMotions(EAR_L_TILT_SERVO, motions);
+    {
+        center = ((servos->hiRange(EAR_L_TILT_SERVO) -
+                   servos->loRange(EAR_L_TILT_SERVO)) / 2) +
+            EAR_L_ROTATION_LO_PULSE;
+        snprintf(buf, sizeof(buf) - 1, "Left ear tilt to %.1f\n",
+                 ((float) center - (float) motion.pulse) /
+                 EAR_L_ROTATION_ANGLE_MULT);
+        LOG(buf);
+    }
+}
+
+void Head::earsDown(void)
+{
+    servos->clearMotionSchedule(EAR_R_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_L_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_R_ROTATION_SERVO);
+    servos->clearMotionSchedule(EAR_L_ROTATION_SERVO);
+
+    earRotate(-32.5, false, 0x1);
+    earRotate(32.5, false, 0x2);
+    earTilt(-88.0);
+}
+
+void Head::earsHalfDown(void)
+{
+    servos->clearMotionSchedule(EAR_R_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_L_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_R_ROTATION_SERVO);
+    servos->clearMotionSchedule(EAR_L_ROTATION_SERVO);
+
+    earRotate(-32.5, false, 0x1);
+    earRotate(32.5, false, 0x2);
+    earTilt(-55.0);
+}
+
+void Head::earsPointTo(float deg)
+{
+    (void)(deg);
+}
+
+float Head::earTiltAt(unsigned int lr) const
+{
+    unsigned int pulse;
+    unsigned int center;
+
+    if (lr & 0x1) {
+        pulse = servos->pulse(EAR_R_TILT_SERVO);
+        center = ((servos->hiRange(EAR_R_TILT_SERVO) -
+                   servos->loRange(EAR_R_TILT_SERVO)) / 2) +
+            EAR_R_TILT_LO_PULSE;
+        return ((float) pulse - (float) center) / EAR_R_TILT_ANGLE_MULT;
+    }
+
+    pulse = servos->pulse(EAR_L_TILT_SERVO);
+    center = ((servos->hiRange(EAR_L_TILT_SERVO) -
+               servos->loRange(EAR_L_TILT_SERVO)) / 2) +
+        EAR_L_TILT_LO_PULSE;
+
+    return ((float) center - (float) pulse) / EAR_R_TILT_ANGLE_MULT;
+}
+
+float Head::earRotationAt(unsigned int lr) const
+{
+    unsigned int pulse;
+    unsigned int center;
+
+    if (lr & 0x1) {
+        pulse = servos->pulse(EAR_R_ROTATION_SERVO);
+        center = ((servos->hiRange(EAR_R_ROTATION_SERVO) -
+                   servos->loRange(EAR_R_ROTATION_SERVO)) / 2) +
+            EAR_R_ROTATION_LO_PULSE;
+        return ((float) pulse - (float) center) / EAR_R_ROTATION_ANGLE_MULT;
+    }
+
+    pulse = servos->pulse(EAR_L_ROTATION_SERVO);
+    center = ((servos->hiRange(EAR_L_ROTATION_SERVO) -
+               servos->loRange(EAR_L_ROTATION_SERVO)) / 2) +
+        EAR_L_ROTATION_LO_PULSE;
+
+    return ((float) pulse - (float) center) / EAR_L_ROTATION_ANGLE_MULT;
+}
+
+void Head::updateEars(void)
+{
+    struct timeval now;
+
+    gettimeofday(&now, NULL);
+    now.tv_sec -= EAR_DROP_SECONDS;
+
+    if (earTiltAt(0x1) == 0.0 && earTiltAt(0x2) == 0.0 &&
+        voice != NULL) {
+        static uint32_t last_doa = 0;
+        uint32_t doa;
+        bool speech_detected;
+        float deg;
+
+        doa = voice->getProp().DOAAngle;
+        speech_detected = voice->getProp().SpeechDetected;
+        if (speech_detected && (doa <= 90 || doa >= 270)) {
+            // Filter out sounds from servo motors mounted behind
+            if (doa != last_doa) {
+                // Skip updating servo if doa is same as last sampling time
+                last_doa = doa;
+                deg = (float) doa;
+                if (deg > 180.0) {
+                    deg = deg - 360.0;
+                }
+                earRotate(deg);
+            }
+        }
+    }
+
+    if (earTiltAt(0x1) == 0.0 && earTiltAt(0x2) == 0.0 &&
+        timercmp(&now, &_last_earsup, >=)) {
+        earsHalfDown();
     }
 }
 

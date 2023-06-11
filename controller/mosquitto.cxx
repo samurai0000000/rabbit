@@ -63,6 +63,8 @@ static void do_hear(const struct mosquitto_message *msg)
         return;  // Less than two words
     }
 
+    head->earsUp();
+
     if (attention == false) {
         if (match_keywords(text, hey_robot)) {
             mouth->cylon();

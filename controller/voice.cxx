@@ -861,6 +861,11 @@ void Voice::run2(void)
         _prop.GammaVADSR = readUsbFloatReg(19, 39);
         _prop.DOAAngle = readUsbIntReg(21, 0);
 
+        /* Correct/adjust DOAAngle */
+        _prop.DOAAngle = 360 - _prop.DOAAngle;
+        _prop.DOAAngle += 90;
+        _prop.DOAAngle %= 360;
+
         if ((det.SpeechDetected != _prop.SpeechDetected) ||
             (det.VoiceActivity != _prop.VoiceActivity)) {
             string s;

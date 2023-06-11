@@ -366,11 +366,13 @@ void LiDAR::enable(bool en)
         _operational = true;
         servos->setPulse(LIDAR_ON_SERVO, LIDAR_ON_HI_PULSE);
         pthread_cond_broadcast(&_cond);
+        head->earsBack();
         LOG("LiDAR enabled\n");
         speech->speak("Lie Dar enabled");
     } else if (en == false && _operational == true) {
         _operational = false;
         servos->setPulse(LIDAR_ON_SERVO, LIDAR_ON_LO_PULSE);
+        head->earsUp();
         LOG("LiDAR disabled\n");
         speech->speak("Lie Dar disabled");
     }

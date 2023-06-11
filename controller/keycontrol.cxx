@@ -27,6 +27,8 @@ enum rabbit_console_mode {
     RABBIT_CONSOLE_MODE_HEAD = 10,
     RABBIT_CONSOLE_MODE_R_EYEBROW = 11,
     RABBIT_CONSOLE_MODE_L_EYEBROW = 12,
+    RABBIT_CONSOLE_MODE_R_EAR = 13,
+    RABBIT_CONSOLE_MODE_L_EAR = 14,
 };
 
 static enum rabbit_console_mode mode = RABBIT_CONSOLE_MODE_CAMERA;
@@ -72,6 +74,12 @@ static void action_up(void)
         break;
     case RABBIT_CONSOLE_MODE_L_EYEBROW:
         head->eyebrowTilt(1.0, true, 0x2);
+        break;
+    case RABBIT_CONSOLE_MODE_R_EAR:
+        head->earTilt(1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_EAR:
+        head->earTilt(1.0, true, 0x2);
         break;
     default:
         break;
@@ -120,6 +128,12 @@ static void action_down(void)
     case RABBIT_CONSOLE_MODE_L_EYEBROW:
         head->eyebrowTilt(-1.0, true, 0x2);
         break;
+    case RABBIT_CONSOLE_MODE_R_EAR:
+        head->earTilt(-1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_EAR:
+        head->earTilt(-1.0, true, 0x2);
+        break;
     default:
         break;
     }
@@ -167,6 +181,12 @@ static void action_right(void)
     case RABBIT_CONSOLE_MODE_L_EYEBROW:
         head->eyebrowRotate(1.0, true, 0x2);
         break;
+    case RABBIT_CONSOLE_MODE_R_EAR:
+        head->earRotate(1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_EAR:
+        head->earRotate(1.0, true, 0x2);
+        break;
     default:
         break;
     }
@@ -213,6 +233,12 @@ static void action_left(void)
         break;
     case RABBIT_CONSOLE_MODE_L_EYEBROW:
         head->eyebrowRotate(-1.0, true, 0x2);
+        break;
+    case RABBIT_CONSOLE_MODE_R_EAR:
+        head->earRotate(-1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_EAR:
+        head->earRotate(-1.0, true, 0x2);
         break;
     default:
         break;
@@ -349,16 +375,84 @@ void rabbit_keycontrol(uint8_t key)
             LOG("Head control active\n");
         }
         break;
-    case '(':
+    case '>':
+        if (mode >= RABBIT_CONSOLE_MODE_R_SHOULDER &&
+            mode <= RABBIT_CONSOLE_MODE_R_GRIPPER) {
+            mode = (enum rabbit_console_mode)
+                (((unsigned int) mode) + 1);
+            if (mode > RABBIT_CONSOLE_MODE_R_GRIPPER) {
+                mode = RABBIT_CONSOLE_MODE_R_SHOULDER;
+            }
+        } else {
+            mode = RABBIT_CONSOLE_MODE_R_SHOULDER;
+        }
+        switch (mode) {
+        case RABBIT_CONSOLE_MODE_R_SHOULDER:
+            LOG("Right shoulder control active\n");
+            break;
+        case RABBIT_CONSOLE_MODE_R_ELBOW:
+            LOG("Right elbow control active\n");
+            break;
+        case RABBIT_CONSOLE_MODE_R_WRIST:
+            LOG("Right wrist control active\n");
+            break;
+        case RABBIT_CONSOLE_MODE_R_GRIPPER:
+            LOG("Right gripper control active\n");
+            break;
+        default:
+            break;
+        }
+        break;
+    case '<':
+        if (mode >= RABBIT_CONSOLE_MODE_L_SHOULDER &&
+            mode <= RABBIT_CONSOLE_MODE_L_GRIPPER) {
+            mode = (enum rabbit_console_mode)
+                (((unsigned int) mode) + 1);
+            if (mode > RABBIT_CONSOLE_MODE_L_GRIPPER) {
+                mode = RABBIT_CONSOLE_MODE_L_SHOULDER;
+            }
+        } else {
+            mode = RABBIT_CONSOLE_MODE_L_SHOULDER;
+        }
+        switch (mode) {
+        case RABBIT_CONSOLE_MODE_L_SHOULDER:
+            LOG("Left shoulder control active\n");
+            break;
+        case RABBIT_CONSOLE_MODE_L_ELBOW:
+            LOG("Left elbow control active\n");
+            break;
+        case RABBIT_CONSOLE_MODE_L_WRIST:
+            LOG("Left wrist control active\n");
+            break;
+        case RABBIT_CONSOLE_MODE_L_GRIPPER:
+            LOG("Left gripper control active\n");
+            break;
+        default:
+            break;
+        }
+        break;
+    case ')':
         if (mode != RABBIT_CONSOLE_MODE_R_EYEBROW) {
             mode = RABBIT_CONSOLE_MODE_R_EYEBROW;
             LOG("Right eyebrow control active\n");
         }
         break;
-    case ')':
+    case '(':
         if (mode != RABBIT_CONSOLE_MODE_L_EYEBROW) {
             mode = RABBIT_CONSOLE_MODE_L_EYEBROW;
             LOG("Right eyebrow control active\n");
+        }
+        break;
+    case '}':
+        if (mode != RABBIT_CONSOLE_MODE_R_EAR) {
+            mode = RABBIT_CONSOLE_MODE_R_EAR;
+            LOG("Right ear control active\n");
+        }
+        break;
+    case '{':
+        if (mode != RABBIT_CONSOLE_MODE_L_EAR) {
+            mode = RABBIT_CONSOLE_MODE_L_EAR;
+            LOG("Left ear control active\n");
         }
         break;
     case 'v':
@@ -394,66 +488,6 @@ void rabbit_keycontrol(uint8_t key)
             camera->enSentry(!camera->isSentryEn());
         } else if (mode == RABBIT_CONSOLE_MODE_HEAD) {
             head->enSentry(!head->isSentryEn());
-        }
-        break;
-    case 'r':
-    case 'R':
-    case '>':
-        if (mode >= RABBIT_CONSOLE_MODE_R_SHOULDER &&
-            mode <= RABBIT_CONSOLE_MODE_R_GRIPPER) {
-            mode = (enum rabbit_console_mode)
-                (((unsigned int) mode) + 1);
-            if (mode > RABBIT_CONSOLE_MODE_R_GRIPPER) {
-                mode = RABBIT_CONSOLE_MODE_R_SHOULDER;
-            }
-        } else {
-            mode = RABBIT_CONSOLE_MODE_R_SHOULDER;
-        }
-        switch (mode) {
-        case RABBIT_CONSOLE_MODE_R_SHOULDER:
-            LOG("Right shoulder control active\n");
-            break;
-        case RABBIT_CONSOLE_MODE_R_ELBOW:
-            LOG("Right elbow control active\n");
-            break;
-        case RABBIT_CONSOLE_MODE_R_WRIST:
-            LOG("Right wrist control active\n");
-            break;
-        case RABBIT_CONSOLE_MODE_R_GRIPPER:
-            LOG("Right gripper control active\n");
-            break;
-        default:
-            break;
-        }
-        break;
-    case 'l':
-    case 'L':
-    case '<':
-        if (mode >= RABBIT_CONSOLE_MODE_L_SHOULDER &&
-            mode <= RABBIT_CONSOLE_MODE_L_GRIPPER) {
-            mode = (enum rabbit_console_mode)
-                (((unsigned int) mode) + 1);
-            if (mode > RABBIT_CONSOLE_MODE_L_GRIPPER) {
-                mode = RABBIT_CONSOLE_MODE_L_SHOULDER;
-            }
-        } else {
-            mode = RABBIT_CONSOLE_MODE_L_SHOULDER;
-        }
-        switch (mode) {
-        case RABBIT_CONSOLE_MODE_L_SHOULDER:
-            LOG("Left shoulder control active\n");
-            break;
-        case RABBIT_CONSOLE_MODE_L_ELBOW:
-            LOG("Left elbow control active\n");
-            break;
-        case RABBIT_CONSOLE_MODE_L_WRIST:
-            LOG("Left wrist control active\n");
-            break;
-        case RABBIT_CONSOLE_MODE_L_GRIPPER:
-            LOG("Left gripper control active\n");
-            break;
-        default:
-            break;
         }
         break;
     case 'x':

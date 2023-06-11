@@ -39,6 +39,16 @@ public:
     float eyebrowTiltAt(unsigned int lr) const;
     enum EyebrowDisposition eyebrowDisposition(void) const;
 
+    void earTilt(float deg, bool relative = false, unsigned int lr = 0x03);
+    void earRotate(float deg, bool relative = false, unsigned int lr = 0x3);
+    void earsUp(void);
+    void earsBack(void);
+    void earsDown(void);
+    void earsHalfDown(void);
+    void earsPointTo(float deg);
+    float earTiltAt(unsigned int lr) const;
+    float earRotationAt(unsigned int lr) const;
+
     void enSentry(bool enable);
     bool isSentryEn(void) const;
 
@@ -47,6 +57,7 @@ private:
     static void *thread_func(void *args);
     void run(void);
     void updateEyebrows(void);
+    void updateEars(void);
 
     float _rotation;
     float _tilt;
@@ -55,6 +66,7 @@ private:
     float _eb_r_tilt;
     float _eb_l_rotation;
     float _eb_l_tilt;
+    struct timeval _last_earsup;
     bool _sentry;
 
     pthread_t _thread;
