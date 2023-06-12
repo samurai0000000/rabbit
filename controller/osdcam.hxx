@@ -11,6 +11,7 @@ class OsdCam {
 
 public:
 
+    static void initialize(void);
     static void genOsdFrame(cv::Mat &osdFrame,
                             float videoFrameRate);
 

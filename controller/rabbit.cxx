@@ -14,6 +14,7 @@
 #include <sys/time.h>
 #include <iostream>
 #include "rabbit.hxx"
+#include "osdcam.hxx"
 
 using namespace std;
 
@@ -250,6 +251,7 @@ int main(int argc, char **argv)
     signal(SIGSEGV, sig_handler);
     signal(SIGKILL, sig_handler);
 
+    OsdCam::initialize();
     mjpeg_streamer = new nadjieb::MJPEGStreamer();
     mjpeg_streamer->start(8000);
     mosquitto = new Mosquitto();

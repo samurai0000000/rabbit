@@ -32,7 +32,7 @@ static Size textSize;
 static const Scalar fontColor(255, 255, 255);
 static struct timeval since;
 
-static void setup(void)
+void OsdCam::initialize(void)
 {
     static bool done_setup = false;
 
@@ -49,7 +49,7 @@ static void setup(void)
 
 void OsdCam::genOsdFrame(cv::Mat &osdFrame, float videoFrameRate)
 {
-    setup();
+    initialize();
 
     String text;
     Point pos;
