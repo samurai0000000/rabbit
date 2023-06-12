@@ -23,29 +23,29 @@
                                    / 180)
 
 #define EB_R_ROTATION_SERVO         20
-#define EB_R_ROTATION_LO_PULSE     975
-#define EB_R_ROTATION_HI_PULSE    1975
+#define EB_R_ROTATION_LO_PULSE    1015
+#define EB_R_ROTATION_HI_PULSE    2015
 #define EB_R_ROTATION_ANGLE_MULT  ((EB_R_ROTATION_HI_PULSE - \
                                     EB_R_ROTATION_LO_PULSE)  \
                                    / 90)
 
 #define EB_R_TILT_SERVO             21
-#define EB_R_TILT_LO_PULSE         975
-#define EB_R_TILT_HI_PULSE        1975
+#define EB_R_TILT_LO_PULSE         900
+#define EB_R_TILT_HI_PULSE        1900
 #define EB_R_TILT_ANGLE_MULT      ((EB_R_TILT_HI_PULSE - \
                                     EB_R_TILT_LO_PULSE) \
                                    / 90)
 
 #define EB_L_ROTATION_SERVO         22
-#define EB_L_ROTATION_LO_PULSE     975
-#define EB_L_ROTATION_HI_PULSE    1975
+#define EB_L_ROTATION_LO_PULSE     855
+#define EB_L_ROTATION_HI_PULSE    1855
 #define EB_L_ROTATION_ANGLE_MULT  ((EB_L_ROTATION_HI_PULSE - \
                                     EB_L_ROTATION_LO_PULSE)  \
                                    / 90)
 
 #define EB_L_TILT_SERVO             23
-#define EB_L_TILT_LO_PULSE         975
-#define EB_L_TILT_HI_PULSE        1975
+#define EB_L_TILT_LO_PULSE        1100
+#define EB_L_TILT_HI_PULSE        2100
 #define EB_L_TILT_ANGLE_MULT      ((EB_L_TILT_HI_PULSE -    \
                                     EB_L_TILT_LO_PULSE) \
                                    / 90)
