@@ -44,6 +44,7 @@ public:
     void earsUp(void);
     void earsBack(void);
     void earsDown(void);
+    void earsFold(void);
     void earsHalfDown(void);
     void earsPointTo(float deg);
     float earTiltAt(unsigned int lr) const;

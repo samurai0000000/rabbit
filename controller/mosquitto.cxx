@@ -40,7 +40,7 @@ static int match_keywords(const char *text, const char *argv[])
 static void do_hear(const struct mosquitto_message *msg)
 {
     const char *text = (const char *) msg->payload;
-    static const char *hey_robot[] = { "hey", "robot", NULL, };
+    static const char *ok_robot[] = { "ok", "robot", NULL, };
     static const char *give_hug[] = { "give", "hug", NULL, };
     static const char *raise_arms[] = { "raise", "arms", NULL, };
     static const char *rest_arms[] = { "rest", "arms", NULL, };
@@ -58,6 +58,9 @@ static void do_hear(const struct mosquitto_message *msg)
     static const char *pick_left_arm[] = { "pick", "left", "arm", NULL, };
     static const char *whoareyou[] = { "who", "are", "you", NULL, };
     static const char *emotions[] = { "what", "emotions", NULL, };
+    static const char *earsup[] = { "ears", "up", NULL, };
+    static const char *earsback[] = { "ears", "back", NULL, };
+    static const char *earsdown[] = { "ears", "down", NULL, };
 
     if (strchr(text, ' ') == NULL) {
         return;  // Less than two words
@@ -66,13 +69,13 @@ static void do_hear(const struct mosquitto_message *msg)
     head->earsUp();
 
     if (attention == false) {
-        if (match_keywords(text, hey_robot)) {
+        if (match_keywords(text, ok_robot)) {
             mouth->cylon();
             speech->speak("yes");
             attention = true;
         }
     } else {
-        if (match_keywords(text, hey_robot)) {
+        if (match_keywords(text, ok_robot)) {
             mouth->cylon();
             speech->speak("yes");
             attention = true;
@@ -140,6 +143,20 @@ static void do_hear(const struct mosquitto_message *msg)
             sleep(2);
             head->eyebrowSetDisposition(Head::EB_RELAXED);
             mouth->cylon();
+        } else if (match_keywords(text, earsup)) {
+            speech->speak("I'm all ears");
+            head->earsUp();
+            head->eyebrowRotate(30.0);
+            head->eyebrowTilt(0.0);
+        } else if (match_keywords(text, earsback)) {
+            speech->speak("Super cool");
+            head->earsBack();
+            head->eyebrowRotate(45.0);
+            head->eyebrowTilt(0.0);
+        } else if (match_keywords(text, earsdown)) {
+            speech->speak("yikes");
+            head->earsDown();
+            head->eyebrowSetDisposition(Head::EB_DEPRESSED);
         } else {
             mouth->beh();
             speech->speak("sorry!");

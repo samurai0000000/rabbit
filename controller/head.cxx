@@ -728,6 +728,30 @@ void Head::earsUp(void)
 
 void Head::earsBack(void)
 {
+    servos->clearMotionSchedule(EAR_R_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_L_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_R_ROTATION_SERVO);
+    servos->clearMotionSchedule(EAR_L_ROTATION_SERVO);
+
+    earRotate(45.0, false, 0x1);
+    earRotate(-45.0, false, 0x2);
+    earTilt(45.0);
+}
+
+void Head::earsDown(void)
+{
+    servos->clearMotionSchedule(EAR_R_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_L_TILT_SERVO);
+    servos->clearMotionSchedule(EAR_R_ROTATION_SERVO);
+    servos->clearMotionSchedule(EAR_L_ROTATION_SERVO);
+
+    earRotate(-32.5, false, 0x1);
+    earRotate(32.5, false, 0x2);
+    earTilt(-88.0);
+}
+
+void Head::earsFold(void)
+{
     static const unsigned TILT_DEGREE = 2;
     vector<struct servo_motion> motions;
     struct servo_motion motion;
@@ -743,11 +767,9 @@ void Head::earsBack(void)
     earRotate(-30.0, false, 0x2);
 
     motions.clear();
-    motion.pulse = servos->loRange(EAR_R_TILT_SERVO);
-    motion.ms = 0;
     motions.push_back(motion);
     motion.pulse = servos->hiRange(EAR_R_TILT_SERVO) -
-        (EAR_R_TILT_ANGLE_MULT * TILT_DEGREE);
+        (EAR_R_TILT_ANGLE_MULT * (TILT_DEGREE + 5));
     motion.ms = 300;
     motions.push_back(motion);
     servos->scheduleMotions(EAR_R_TILT_SERVO, motions);
@@ -762,9 +784,6 @@ void Head::earsBack(void)
     }
 
     motions.clear();
-    motion.pulse = servos->hiRange(EAR_L_TILT_SERVO);
-    motion.ms = 0;
-    motions.push_back(motion);
     motion.pulse = servos->loRange(EAR_L_TILT_SERVO) +
         (EAR_L_TILT_ANGLE_MULT * TILT_DEGREE);
     motion.ms = 400;
@@ -779,18 +798,6 @@ void Head::earsBack(void)
                  EAR_L_ROTATION_ANGLE_MULT);
         LOG(buf);
     }
-}
-
-void Head::earsDown(void)
-{
-    servos->clearMotionSchedule(EAR_R_TILT_SERVO);
-    servos->clearMotionSchedule(EAR_L_TILT_SERVO);
-    servos->clearMotionSchedule(EAR_R_ROTATION_SERVO);
-    servos->clearMotionSchedule(EAR_L_ROTATION_SERVO);
-
-    earRotate(-32.5, false, 0x1);
-    earRotate(32.5, false, 0x2);
-    earTilt(-88.0);
 }
 
 void Head::earsHalfDown(void)
