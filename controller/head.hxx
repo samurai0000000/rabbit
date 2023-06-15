@@ -50,6 +50,21 @@ public:
     float earTiltAt(unsigned int lr) const;
     float earRotationAt(unsigned int lr) const;
 
+    void teethUp(void);
+    void teethDown(void);
+    void teethAnimate(bool en, bool sync = true);
+    void teethRandomize(unsigned int probPct);
+    void toothRotate(float deg, bool relative = false, unsigned int lr = 0x3);
+    float toothRotationAt(unsigned int lr) const;
+
+    void whiskersUp(void);
+    void whiskersCenter(void);
+    void whiskersDown(void);
+    void whiskersAnimate(bool en, bool sync = true);
+    void whiskersRandomize(unsigned int probPct);
+    void whiskerRotate(float deg, bool relative = false, unsigned int lr = 0x3);
+    float whiskerRotationAt(unsigned int lr) const;
+
     void enSentry(bool enable);
     bool isSentryEn(void) const;
 
@@ -59,6 +74,8 @@ private:
     void run(void);
     void updateEyebrows(void);
     void updateEars(void);
+    void updateTeeth(void);
+    void updateWhiskers(void);
 
     float _rotation;
     float _tilt;
@@ -68,6 +85,12 @@ private:
     float _eb_l_rotation;
     float _eb_l_tilt;
     struct timeval _last_earsup;
+    bool _teethAnimateEn;
+    bool _teethAnimateSync;
+    unsigned int _teethRandPct;
+    bool _whiskersAnimateEn;
+    bool _whiskersAnimateSync;
+    unsigned int _whiskersRandPct;
     bool _sentry;
 
     pthread_t _thread;

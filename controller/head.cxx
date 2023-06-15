@@ -23,8 +23,8 @@
                                    / 180)
 
 #define EB_R_ROTATION_SERVO         20
-#define EB_R_ROTATION_LO_PULSE    1015
-#define EB_R_ROTATION_HI_PULSE    2015
+#define EB_R_ROTATION_LO_PULSE     900
+#define EB_R_ROTATION_HI_PULSE    1900
 #define EB_R_ROTATION_ANGLE_MULT  ((EB_R_ROTATION_HI_PULSE - \
                                     EB_R_ROTATION_LO_PULSE)  \
                                    / 90)
@@ -37,15 +37,15 @@
                                    / 90)
 
 #define EB_L_ROTATION_SERVO         22
-#define EB_L_ROTATION_LO_PULSE     855
-#define EB_L_ROTATION_HI_PULSE    1855
+#define EB_L_ROTATION_LO_PULSE     930
+#define EB_L_ROTATION_HI_PULSE    1930
 #define EB_L_ROTATION_ANGLE_MULT  ((EB_L_ROTATION_HI_PULSE - \
                                     EB_L_ROTATION_LO_PULSE)  \
                                    / 90)
 
 #define EB_L_TILT_SERVO             23
-#define EB_L_TILT_LO_PULSE        1100
-#define EB_L_TILT_HI_PULSE        2100
+#define EB_L_TILT_LO_PULSE        1000
+#define EB_L_TILT_HI_PULSE        2000
 #define EB_L_TILT_ANGLE_MULT      ((EB_L_TILT_HI_PULSE -    \
                                     EB_L_TILT_LO_PULSE) \
                                    / 90)
@@ -80,6 +80,30 @@
 
 #define EAR_DROP_SECONDS            15
 
+#define TOOTH_R_ROTATION_SERVO          28
+#define TOOTH_R_ROTATION_LO_PULSE     1000
+#define TOOTH_R_ROTATION_HI_PULSE     1900
+#define TOOTH_R_ROTATION_ANGLE_MULT             \
+    ((TOOTH_R_ROTATION_HI_PULSE - TOOTH_R_ROTATION_LO_PULSE) / 90)
+
+#define TOOTH_L_ROTATION_SERVO          29
+#define TOOTH_L_ROTATION_LO_PULSE     1000
+#define TOOTH_L_ROTATION_HI_PULSE     1900
+#define TOOTH_L_ROTATION_ANGLE_MULT             \
+    ((TOOTH_L_ROTATION_HI_PULSE - TOOTH_L_ROTATION_LO_PULSE) / 90)
+
+#define WHISKER_R_ROTATION_SERVO        30
+#define WHISKER_R_ROTATION_LO_PULSE   1250
+#define WHISKER_R_ROTATION_HI_PULSE   1650
+#define WHISKER_R_ROTATION_ANGLE_MULT             \
+    ((WHISKER_R_ROTATION_HI_PULSE - WHISKER_R_ROTATION_LO_PULSE) / 60)
+
+#define WHISKER_L_ROTATION_SERVO        31
+#define WHISKER_L_ROTATION_LO_PULSE   1250
+#define WHISKER_L_ROTATION_HI_PULSE   1650
+#define WHISKER_L_ROTATION_ANGLE_MULT             \
+    ((WHISKER_L_ROTATION_HI_PULSE - TOOTH_L_ROTATION_LO_PULSE) / 60)
+
 using namespace std;
 
 static unsigned int instance = 0;
@@ -87,6 +111,12 @@ static unsigned int instance = 0;
 Head::Head()
     : _rotation(0.0),
       _tilt(0.0),
+      _teethAnimateEn(false),
+      _teethAnimateSync(true),
+      _teethRandPct(0),
+      _whiskersAnimateEn(false),
+      _whiskersAnimateSync(true),
+      _whiskersRandPct(0),
       _sentry(false)
 {
     if (instance != 0) {
@@ -131,10 +161,28 @@ Head::Head()
                      EAR_L_ROTATION_LO_PULSE,
                      EAR_L_ROTATION_HI_PULSE);
 
+    servos->setRange(TOOTH_R_ROTATION_SERVO,
+                     TOOTH_R_ROTATION_LO_PULSE,
+                     TOOTH_R_ROTATION_HI_PULSE);
+    servos->setRange(TOOTH_L_ROTATION_SERVO,
+                     TOOTH_L_ROTATION_LO_PULSE,
+                     TOOTH_L_ROTATION_HI_PULSE);
+
+    servos->setRange(WHISKER_R_ROTATION_SERVO,
+                     WHISKER_R_ROTATION_LO_PULSE,
+                     WHISKER_R_ROTATION_HI_PULSE);
+    servos->setRange(WHISKER_L_ROTATION_SERVO,
+                     WHISKER_L_ROTATION_LO_PULSE,
+                     WHISKER_L_ROTATION_HI_PULSE);
+
     rotate(0.0);
     tilt(0.0);
     eyebrowSetDisposition(EB_RELAXED);
     earsUp();
+    teethDown();
+    teethRandomize(1);
+    whiskersCenter();
+    whiskersRandomize(1);
 
     _running = true;
     pthread_mutex_init(&_mutex, NULL);
@@ -157,8 +205,8 @@ Head::~Head()
     tilt(0.0);
     eyebrowSetDisposition(EB_RELAXED);
     earsDown();
-    servos->syncMotionSchedule((0x1 << EAR_R_TILT_SERVO) |
-                               (0x1 << EAR_L_TILT_SERVO));
+    teethDown();
+    whiskersDown();
 
     instance--;
     printf("Head is offline\n");
@@ -202,13 +250,11 @@ void Head::run(void)
     while (_running) {
         timespecadd(&ts, &tloop, &ts);
 
-        /* Update eyebrows */
         updateEyebrows();
-
-        /* Update ears */
         updateEars();
+        updateTeeth();
+        updateWhiskers();
 
-        /* Sentry */
         if (_sentry) {
             if (servos->hasMotionSchedule(HEAD_ROTATION_SERVO) == false) {
                 servos->scheduleMotions(HEAD_ROTATION_SERVO, sentry_motions);
@@ -444,38 +490,38 @@ void Head::eyebrowSetDisposition(enum EyebrowDisposition disposition)
         eyebrowTilt(0.0);
         break;
     case EB_PERPLEXED:
-        eyebrowRotate(20.0, false, 0x1);
+        eyebrowRotate(-45.0, false, 0x1);
         eyebrowRotate(0.0, false, 0x2);
         eyebrowTilt(0.0, false, 0x1);
-        eyebrowTilt(-45.0, false, 0x2);
+        eyebrowTilt(0.0, false, 0x2);
         break;
     case EB_SURPRISED:
-        eyebrowRotate(30.0);
-        eyebrowTilt(25.0);
+        eyebrowRotate(5.0);
+        eyebrowTilt(45.0);
         break;
     case EB_HAPPY:
-        eyebrowRotate(10.0);
-        eyebrowTilt(10.0);
+        eyebrowRotate(5.0);
+        eyebrowTilt(30.0);
         break;
     case EB_JUBILANT:
-        eyebrowRotate(30.0);
-        eyebrowTilt(20.0);
+        eyebrowRotate(5.0);
+        eyebrowTilt(45.0);
         break;
     case EB_ANGRY:
-        eyebrowRotate(-10.0);
-        eyebrowTilt(-20.0);
+        eyebrowRotate(-20.0);
+        eyebrowTilt(-5.0);
         break;
     case EB_FURIOUS:
-        eyebrowRotate(-20.0);
-        eyebrowTilt(-30.0);
+        eyebrowRotate(-35.0);
+        eyebrowTilt(-15.0);
         break;
     case EB_SAD:
-        eyebrowRotate(-20.0);
-        eyebrowTilt(20.0);
+        eyebrowRotate(20.0);
+        eyebrowTilt(-20.0);
         break;
     case EB_DEPRESSED:
-        eyebrowRotate(-30.0);
-        eyebrowTilt(30.0);
+        eyebrowRotate(25.0);
+        eyebrowTilt(-35.0);
         break;
     case EB_MANUAL:
     default:
@@ -616,7 +662,6 @@ void Head::earTilt(float deg, bool relative, unsigned int lr)
             pulse = (unsigned int) ((float) pulse +
                                     (EAR_R_TILT_ANGLE_MULT * deg));
             servos->setPulse(EAR_R_TILT_SERVO, pulse);
-            _eb_r_tilt += deg;
         } else {
             center =
                 ((servos->hiRange(EAR_R_TILT_SERVO) -
@@ -625,7 +670,6 @@ void Head::earTilt(float deg, bool relative, unsigned int lr)
             pulse = (unsigned int)
                 ((float) center + deg * EAR_R_TILT_ANGLE_MULT);
             servos->setPulse(EAR_R_TILT_SERVO, pulse);
-            _eb_r_tilt = deg;
         }
 
         snprintf(buf, sizeof(buf) - 1, "Right ear tilt to %.1f\n",
@@ -639,7 +683,6 @@ void Head::earTilt(float deg, bool relative, unsigned int lr)
             pulse = (unsigned int) ((float) pulse -
                                     (EAR_L_TILT_ANGLE_MULT * deg));
             servos->setPulse(EAR_L_TILT_SERVO, pulse);
-            _eb_l_tilt += deg;
         } else {
             center =
                 ((servos->hiRange(EAR_L_TILT_SERVO) -
@@ -648,7 +691,6 @@ void Head::earTilt(float deg, bool relative, unsigned int lr)
             pulse = (unsigned int)
                 ((float) center - deg * EAR_L_TILT_ANGLE_MULT);
             servos->setPulse(EAR_L_TILT_SERVO, pulse);
-            _eb_l_tilt = deg;
         }
 
         snprintf(buf, sizeof(buf) - 1, "Left ear tilt to %.1f\n",
@@ -669,7 +711,6 @@ void Head::earRotate(float deg, bool relative, unsigned int lr)
             pulse = (unsigned int) ((float) pulse +
                                     (EAR_R_ROTATION_ANGLE_MULT * deg));
             servos->setPulse(EAR_R_ROTATION_SERVO, pulse);
-            _eb_r_rotation += deg;
         } else {
             center =
                 ((servos->hiRange(EAR_R_ROTATION_SERVO) -
@@ -678,7 +719,6 @@ void Head::earRotate(float deg, bool relative, unsigned int lr)
             pulse = (unsigned int)
                 ((float) center + deg * EAR_R_ROTATION_ANGLE_MULT);
             servos->setPulse(EAR_R_ROTATION_SERVO, pulse);
-            _eb_r_rotation = deg;
         }
 
         snprintf(buf, sizeof(buf) - 1, "Right ear rotate to %.1f\n",
@@ -692,7 +732,6 @@ void Head::earRotate(float deg, bool relative, unsigned int lr)
             pulse = (unsigned int) ((float) pulse +
                                     (EAR_L_ROTATION_ANGLE_MULT * deg));
             servos->setPulse(EAR_L_ROTATION_SERVO, pulse);
-            _eb_l_rotation += deg;
         } else {
             center =
                 ((servos->hiRange(EAR_L_ROTATION_SERVO) -
@@ -701,7 +740,6 @@ void Head::earRotate(float deg, bool relative, unsigned int lr)
             pulse = (unsigned int)
                 ((float) center + deg * EAR_L_ROTATION_ANGLE_MULT);
             servos->setPulse(EAR_L_ROTATION_SERVO, pulse);
-            _eb_l_rotation = deg;
         }
 
         snprintf(buf, sizeof(buf) - 1, "Left ear rotate to %.1f\n",
@@ -892,6 +930,379 @@ void Head::updateEars(void)
     if (earTiltAt(0x1) == 0.0 && earTiltAt(0x2) == 0.0 &&
         timercmp(&now, &_last_earsup, >=)) {
         earsHalfDown();
+    }
+}
+
+void Head::teethUp(void)
+{
+    toothRotate(45.0);
+}
+
+void Head::teethDown(void)
+{
+    toothRotate(-45.0);
+}
+
+void Head::teethAnimate(bool en, bool sync)
+{
+    _teethAnimateEn = en ? true : false;
+    _teethAnimateSync = sync ? true : false;
+
+    if (en == false) {
+        servos->clearMotionSchedule(TOOTH_R_ROTATION_SERVO);
+        servos->clearMotionSchedule(TOOTH_L_ROTATION_SERVO);
+        teethDown();
+    }
+}
+
+void Head::teethRandomize(unsigned int probPct)
+{
+    if (probPct > 100) {
+        probPct = 100;
+    }
+    _teethRandPct = probPct;
+}
+
+void Head::toothRotate(float deg, bool relative, unsigned int lr)
+{
+    unsigned int pulse;
+    unsigned int center;
+    char buf[128];
+
+    if (lr & 0x1) {
+        if (relative) {
+            pulse = servos->pulse(TOOTH_R_ROTATION_SERVO);
+            pulse = (unsigned int) ((float) pulse -
+                                    (TOOTH_R_ROTATION_ANGLE_MULT * deg));
+            servos->setPulse(TOOTH_R_ROTATION_SERVO, pulse);
+        } else {
+            center =
+                ((servos->hiRange(TOOTH_R_ROTATION_SERVO) -
+                  servos->loRange(TOOTH_R_ROTATION_SERVO)) / 2) +
+                TOOTH_R_ROTATION_LO_PULSE;
+            pulse = (unsigned int)
+                ((float) center - deg * TOOTH_R_ROTATION_ANGLE_MULT);
+            servos->setPulse(TOOTH_R_ROTATION_SERVO, pulse);
+        }
+
+        snprintf(buf, sizeof(buf) - 1, "Right tooth rotate to %.1f\n",
+                 toothRotationAt(0x1));
+        LOG(buf);
+    }
+
+    if (lr & 0x2) {
+        if (relative) {
+            pulse = servos->pulse(TOOTH_L_ROTATION_SERVO);
+            pulse = (unsigned int) ((float) pulse +
+                                    (TOOTH_L_ROTATION_ANGLE_MULT * deg));
+            servos->setPulse(TOOTH_L_ROTATION_SERVO, pulse);
+        } else {
+            center =
+                ((servos->hiRange(TOOTH_L_ROTATION_SERVO) -
+                  servos->loRange(TOOTH_L_ROTATION_SERVO)) / 2) +
+                TOOTH_L_ROTATION_LO_PULSE;
+            pulse = (unsigned int)
+                ((float) center + deg * TOOTH_L_ROTATION_ANGLE_MULT);
+            servos->setPulse(TOOTH_L_ROTATION_SERVO, pulse);
+        }
+
+        snprintf(buf, sizeof(buf) - 1, "Left tooth rotate to %.1f\n",
+                 toothRotationAt(0x2));
+        LOG(buf);
+    }
+}
+
+float Head::toothRotationAt(unsigned int lr) const
+{
+    unsigned int pulse;
+    unsigned int center;
+
+    if (lr & 0x1) {
+        pulse = servos->pulse(TOOTH_R_ROTATION_SERVO);
+        center = ((servos->hiRange(TOOTH_R_ROTATION_SERVO) -
+                   servos->loRange(TOOTH_R_ROTATION_SERVO)) / 2) +
+            TOOTH_R_ROTATION_LO_PULSE;
+        return ((float) center - (float) pulse) / TOOTH_R_ROTATION_ANGLE_MULT;
+    }
+
+    pulse = servos->pulse(TOOTH_L_ROTATION_SERVO);
+    center = ((servos->hiRange(TOOTH_L_ROTATION_SERVO) -
+               servos->loRange(TOOTH_L_ROTATION_SERVO)) / 2) +
+        TOOTH_L_ROTATION_LO_PULSE;
+
+    return ((float) pulse - (float) center) / TOOTH_L_ROTATION_ANGLE_MULT;
+}
+
+void Head::updateTeeth(void)
+{
+    vector<struct servo_motion> motions;
+    struct servo_motion motion;
+
+    if (_teethAnimateEn) {
+        if (servos->hasMotionSchedule(TOOTH_R_ROTATION_SERVO) == false) {
+            if (_teethAnimateSync) {
+                servos->clearMotionSchedule(TOOTH_L_ROTATION_SERVO);
+
+                motions.clear();
+                motion.pulse = TOOTH_R_ROTATION_HI_PULSE;
+                motion.ms = 250;
+                motions.push_back(motion);
+                motion.pulse = TOOTH_R_ROTATION_LO_PULSE;
+                motion.ms = 250;
+                motions.push_back(motion);
+                servos->scheduleMotions(TOOTH_R_ROTATION_SERVO, motions);
+
+                motions.clear();
+                motion.pulse = TOOTH_L_ROTATION_LO_PULSE;
+                motion.ms = 250;
+                motions.push_back(motion);
+                motion.pulse = TOOTH_L_ROTATION_HI_PULSE;
+                motion.ms = 250;
+                motions.push_back(motion);
+                servos->scheduleMotions(TOOTH_L_ROTATION_SERVO, motions);
+            } else {
+                servos->clearMotionSchedule(TOOTH_L_ROTATION_SERVO);
+
+                motions.clear();
+                motion.pulse = TOOTH_R_ROTATION_HI_PULSE;
+                motion.ms = 250;
+                motions.push_back(motion);
+                motion.pulse = TOOTH_R_ROTATION_LO_PULSE;
+                motion.ms = 250;
+                motions.push_back(motion);
+                servos->scheduleMotions(TOOTH_R_ROTATION_SERVO, motions);
+
+                motions.clear();
+                motion.pulse = TOOTH_L_ROTATION_HI_PULSE;
+                motion.ms = 250;
+                motions.push_back(motion);
+                motion.pulse = TOOTH_L_ROTATION_LO_PULSE;
+                motion.ms = 250;
+                motions.push_back(motion);
+                servos->scheduleMotions(TOOTH_L_ROTATION_SERVO, motions);
+            }
+        }
+    }
+
+    if ((_teethRandPct) > 0 &&
+        (servos->hasMotionSchedule(TOOTH_R_ROTATION_SERVO) == false) &&
+        (servos->hasMotionSchedule(TOOTH_L_ROTATION_SERVO) == false) &&
+        ((((unsigned int) rand()) % 1000) <= _teethRandPct)) {
+        unsigned int id;
+        vector<struct servo_motion> motions;
+        struct servo_motion motion;
+        unsigned int pr;
+
+        pr = random_servo_pos_unadjusted(TOOTH_R_ROTATION_SERVO);
+
+        id = TOOTH_R_ROTATION_SERVO;
+        motions.clear();
+        motion.pulse = servos->loRange(id) + pr;
+        motion.ms = 200;
+        motions.push_back(motion);
+        motion.pulse = servos->pulse(id);
+        motion.ms = 200;
+        motions.push_back(motion);
+        servos->scheduleMotions(id, motions);
+
+        id = TOOTH_L_ROTATION_SERVO;
+        motions.clear();
+        motion.pulse = servos->hiRange(id) - pr;
+        motion.ms = 200;
+        motions.push_back(motion);
+        motion.pulse = servos->pulse(id);
+        motion.ms = 200;
+        motions.push_back(motion);
+        servos->scheduleMotions(id, motions);
+    }
+}
+
+void Head::whiskersUp(void)
+{
+    whiskerRotate(45.0);
+}
+
+void Head::whiskersDown(void)
+{
+    whiskerRotate(-45.0);
+}
+
+void Head::whiskersCenter(void)
+{
+    whiskerRotate(0.0);
+}
+
+void Head::whiskersAnimate(bool en, bool sync)
+{
+    _whiskersAnimateEn = en ? true : false;
+    _whiskersAnimateSync = sync ? true : false;
+
+    if (en == false) {
+        servos->clearMotionSchedule(WHISKER_R_ROTATION_SERVO);
+        servos->clearMotionSchedule(WHISKER_L_ROTATION_SERVO);
+        whiskersCenter();
+    }
+}
+
+void Head::whiskersRandomize(unsigned int probPct)
+{
+    if (probPct > 100) {
+        probPct = 100;
+    }
+    _whiskersRandPct = probPct;
+}
+
+void Head::whiskerRotate(float deg, bool relative, unsigned int lr)
+{
+    unsigned int pulse;
+    unsigned int center;
+    char buf[128];
+
+    if (lr & 0x1) {
+        if (relative) {
+            pulse = servos->pulse(WHISKER_R_ROTATION_SERVO);
+            pulse = (unsigned int) ((float) pulse +
+                                    (WHISKER_R_ROTATION_ANGLE_MULT * deg));
+            servos->setPulse(WHISKER_R_ROTATION_SERVO, pulse);
+        } else {
+            center =
+                ((servos->hiRange(WHISKER_R_ROTATION_SERVO) -
+                  servos->loRange(WHISKER_R_ROTATION_SERVO)) / 2) +
+                WHISKER_R_ROTATION_LO_PULSE;
+            pulse = (unsigned int)
+                ((float) center + deg * WHISKER_R_ROTATION_ANGLE_MULT);
+            servos->setPulse(WHISKER_R_ROTATION_SERVO, pulse);
+        }
+
+        snprintf(buf, sizeof(buf) - 1, "Right whisker rotate to %.1f\n",
+                 whiskerRotationAt(0x1));
+        LOG(buf);
+    }
+
+    if (lr & 0x2) {
+        if (relative) {
+            pulse = servos->pulse(WHISKER_L_ROTATION_SERVO);
+            pulse = (unsigned int) ((float) pulse -
+                                    (WHISKER_L_ROTATION_ANGLE_MULT * deg));
+            servos->setPulse(WHISKER_L_ROTATION_SERVO, pulse);
+        } else {
+            center =
+                ((servos->hiRange(WHISKER_L_ROTATION_SERVO) -
+                  servos->loRange(WHISKER_L_ROTATION_SERVO)) / 2) +
+                WHISKER_L_ROTATION_LO_PULSE;
+            pulse = (unsigned int)
+                ((float) center - deg * WHISKER_L_ROTATION_ANGLE_MULT);
+            servos->setPulse(WHISKER_L_ROTATION_SERVO, pulse);
+        }
+
+        snprintf(buf, sizeof(buf) - 1, "Left whisker rotate to %.1f\n",
+                 whiskerRotationAt(0x2));
+        LOG(buf);
+    }
+}
+
+float Head::whiskerRotationAt(unsigned int lr) const
+{
+    unsigned int pulse;
+    unsigned int center;
+
+    if (lr & 0x1) {
+        pulse = servos->pulse(WHISKER_R_ROTATION_SERVO);
+        center = ((servos->hiRange(WHISKER_R_ROTATION_SERVO) -
+                   servos->loRange(WHISKER_R_ROTATION_SERVO)) / 2) +
+            WHISKER_R_ROTATION_LO_PULSE;
+        return ((float) pulse - (float) center) / WHISKER_R_ROTATION_ANGLE_MULT;
+    }
+
+    pulse = servos->pulse(WHISKER_L_ROTATION_SERVO);
+    center = ((servos->hiRange(WHISKER_L_ROTATION_SERVO) -
+               servos->loRange(WHISKER_L_ROTATION_SERVO)) / 2) +
+        WHISKER_L_ROTATION_LO_PULSE;
+
+    return ((float) center - (float) pulse) / WHISKER_L_ROTATION_ANGLE_MULT;
+}
+
+void Head::updateWhiskers(void)
+{
+    vector<struct servo_motion> motions;
+    struct servo_motion motion;
+
+    if (_teethAnimateEn) {
+        if (servos->hasMotionSchedule(WHISKER_R_ROTATION_SERVO) == false) {
+            if (_teethAnimateSync) {
+                servos->clearMotionSchedule(WHISKER_L_ROTATION_SERVO);
+
+                motions.clear();
+                motion.pulse = WHISKER_R_ROTATION_HI_PULSE;
+                motion.ms = 150;
+                motions.push_back(motion);
+                motion.pulse = WHISKER_R_ROTATION_LO_PULSE;
+                motion.ms = 150;
+                motions.push_back(motion);
+                servos->scheduleMotions(WHISKER_R_ROTATION_SERVO, motions);
+
+                motions.clear();
+                motion.pulse = WHISKER_L_ROTATION_LO_PULSE;
+                motion.ms = 150;
+                motions.push_back(motion);
+                motion.pulse = WHISKER_L_ROTATION_HI_PULSE;
+                motion.ms = 150;
+                motions.push_back(motion);
+                servos->scheduleMotions(WHISKER_L_ROTATION_SERVO, motions);
+            } else {
+                servos->clearMotionSchedule(WHISKER_L_ROTATION_SERVO);
+
+                motions.clear();
+                motion.pulse = WHISKER_R_ROTATION_HI_PULSE;
+                motion.ms = 150;
+                motions.push_back(motion);
+                motion.pulse = WHISKER_R_ROTATION_LO_PULSE;
+                motion.ms = 150;
+                motions.push_back(motion);
+                servos->scheduleMotions(WHISKER_R_ROTATION_SERVO, motions);
+
+                motions.clear();
+                motion.pulse = WHISKER_L_ROTATION_HI_PULSE;
+                motion.ms = 150;
+                motions.push_back(motion);
+                motion.pulse = WHISKER_L_ROTATION_LO_PULSE;
+                motion.ms = 150;
+                motions.push_back(motion);
+                servos->scheduleMotions(WHISKER_L_ROTATION_SERVO, motions);
+            }
+        }
+    }
+
+    if ((_whiskersRandPct) > 0 &&
+        (servos->hasMotionSchedule(WHISKER_R_ROTATION_SERVO) == false) &&
+        (servos->hasMotionSchedule(WHISKER_L_ROTATION_SERVO) == false) &&
+        ((((unsigned int) rand()) % 1000) <= _whiskersRandPct)) {
+        unsigned int id;
+        vector<struct servo_motion> motions;
+        struct servo_motion motion;
+        unsigned int pr;
+
+        pr = random_servo_pos_unadjusted(WHISKER_R_ROTATION_SERVO);
+
+        id = WHISKER_R_ROTATION_SERVO;
+        motions.clear();
+        motion.pulse = servos->loRange(id) + pr;
+        motion.ms = 200;
+        motions.push_back(motion);
+        motion.pulse = servos->pulse(id);
+        motion.ms = 200;
+        motions.push_back(motion);
+        servos->scheduleMotions(id, motions);
+
+        id = WHISKER_L_ROTATION_SERVO;
+        motions.clear();
+        motion.pulse = servos->hiRange(id) - pr;
+        motion.ms = 200;
+        motions.push_back(motion);
+        motion.pulse = servos->pulse(id);
+        motion.ms = 200;
+        motions.push_back(motion);
+        servos->scheduleMotions(id, motions);
     }
 }
 

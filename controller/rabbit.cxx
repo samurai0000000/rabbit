@@ -255,7 +255,6 @@ int main(int argc, char **argv)
     mjpeg_streamer = new nadjieb::MJPEGStreamer();
     mjpeg_streamer->start(8000);
     mosquitto = new Mosquitto();
-    speech = new Speech();
     servos = new Servos();
     adc = new ADC();
     camera = new Camera();
@@ -268,6 +267,7 @@ int main(int argc, char **argv)
     ambience = new Ambience();
     head = new Head();
     lidar = new LiDAR();
+    speech = new Speech();
     mouth = new Mouth();
     voice = new Voice();
     crond = new Crond();

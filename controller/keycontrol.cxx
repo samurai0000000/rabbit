@@ -29,6 +29,8 @@ enum rabbit_console_mode {
     RABBIT_CONSOLE_MODE_L_EYEBROW = 12,
     RABBIT_CONSOLE_MODE_R_EAR = 13,
     RABBIT_CONSOLE_MODE_L_EAR = 14,
+    RABBIT_CONSOLE_MODE_R_TW = 15,
+    RABBIT_CONSOLE_MODE_L_TW = 16,
 };
 
 static enum rabbit_console_mode mode = RABBIT_CONSOLE_MODE_CAMERA;
@@ -80,6 +82,12 @@ static void action_up(void)
         break;
     case RABBIT_CONSOLE_MODE_L_EAR:
         head->earTilt(1.0, true, 0x2);
+        break;
+    case RABBIT_CONSOLE_MODE_R_TW:
+        head->toothRotate(1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_TW:
+        head->toothRotate(1.0, true, 0x2);
         break;
     default:
         break;
@@ -134,6 +142,12 @@ static void action_down(void)
     case RABBIT_CONSOLE_MODE_L_EAR:
         head->earTilt(-1.0, true, 0x2);
         break;
+    case RABBIT_CONSOLE_MODE_R_TW:
+        head->toothRotate(-1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_TW:
+        head->toothRotate(-1.0, true, 0x2);
+        break;
     default:
         break;
     }
@@ -187,6 +201,12 @@ static void action_right(void)
     case RABBIT_CONSOLE_MODE_L_EAR:
         head->earRotate(1.0, true, 0x2);
         break;
+    case RABBIT_CONSOLE_MODE_R_TW:
+        head->whiskerRotate(1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_TW:
+        head->whiskerRotate(1.0, true, 0x2);
+        break;
     default:
         break;
     }
@@ -239,6 +259,12 @@ static void action_left(void)
         break;
     case RABBIT_CONSOLE_MODE_L_EAR:
         head->earRotate(-1.0, true, 0x2);
+        break;
+    case RABBIT_CONSOLE_MODE_R_TW:
+        head->whiskerRotate(-1.0, true, 0x1);
+        break;
+    case RABBIT_CONSOLE_MODE_L_TW:
+        head->whiskerRotate(-1.0, true, 0x2);
         break;
     default:
         break;
@@ -455,6 +481,18 @@ void rabbit_keycontrol(uint8_t key)
             LOG("Left ear control active\n");
         }
         break;
+    case ']':
+        if (mode != RABBIT_CONSOLE_MODE_R_TW) {
+            mode = RABBIT_CONSOLE_MODE_R_TW;
+            LOG("Right tooth/whisker active\n");
+        }
+        break;
+    case '[':
+        if (mode != RABBIT_CONSOLE_MODE_L_TW) {
+            mode = RABBIT_CONSOLE_MODE_L_TW;
+            LOG("Left tooth/whisker active\n");
+        }
+        break;
     case 'v':
     case 'V':
         camera->enVision(!camera->isVisionEn());
@@ -469,6 +507,8 @@ void rabbit_keycontrol(uint8_t key)
         head->rotate(0.0);
         head->tilt(0.0);
         head->eyebrowSetDisposition(Head::EB_RELAXED);
+        head->teethDown();
+        head->whiskersCenter();
         break;
     case 'd':
     case 'D':

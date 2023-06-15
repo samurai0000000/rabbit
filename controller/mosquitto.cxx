@@ -41,6 +41,7 @@ static void do_hear(const struct mosquitto_message *msg)
 {
     const char *text = (const char *) msg->payload;
     static const char *ok_robot[] = { "ok", "robot", NULL, };
+    static const char *ok2_robot[] = { "okay", "robot", NULL, };
     static const char *give_hug[] = { "give", "hug", NULL, };
     static const char *raise_arms[] = { "raise", "arms", NULL, };
     static const char *rest_arms[] = { "rest", "arms", NULL, };
@@ -69,7 +70,8 @@ static void do_hear(const struct mosquitto_message *msg)
     head->earsUp();
 
     if (attention == false) {
-        if (match_keywords(text, ok_robot)) {
+        if (match_keywords(text, ok_robot) ||
+            match_keywords(text, ok2_robot)) {
             mouth->cylon();
             speech->speak("yes");
             attention = true;

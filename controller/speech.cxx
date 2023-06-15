@@ -91,7 +91,7 @@ void Speech::run(void)
             snprintf(cmd, sizeof(cmd) - 1,
                      "/usr/bin/espeak -s %u -a %u --stdout 2>/dev/null | "
                      "aplay -D %s >/dev/null 2>&1",
-                     120, 7, "plughw:1");
+                     120, 10, "plughw:1");
 
             ret = pipe(espeak_stdin);
             if (ret != 0) {
@@ -142,6 +142,10 @@ void Speech::run(void)
                     if (mouth) {
                         mouth->speak();        // Animate the mouth with speech
                     }
+                    if (head) {
+                        head->teethAnimate(true);
+                        head->whiskersAnimate(true);
+                    }
                     if (voice) {
                         voice->enable(false);  // Stop listening
                     }
@@ -152,6 +156,10 @@ void Speech::run(void)
                     }
                     if (mouth) {
                         mouth->setMode(mode);  // Restore mouth mode
+                    }
+                    if (head) {
+                        head->teethAnimate(false);
+                        head->whiskersAnimate(false);
                     }
                 }
             }
