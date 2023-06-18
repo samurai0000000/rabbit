@@ -13,6 +13,7 @@ PICO_SDK =	$(realpath 3rdparty/pico-sdk)
 TARGETS +=	build/$(ARCH)/librealsense/librealsense2.so \
 		build/pico/rabbit_mcu.uf2 \
 		build/voicerec/voicerec \
+		build/voicerec2/voicerec2 \
 		build/ros/rabbit
 
 ifeq ($(RPI_HOST),coyote)
@@ -170,6 +171,39 @@ build/voicerec/voicerec: build/voicerec/Makefile
 build/voicerec/Makefile: voicerec/CMakeLists.txt
 	@mkdir -p build/voicerec
 	@cd build/voicerec && cmake ../../voicerec
+
+#
+# Build voicerec2
+#
+
+.PHONY: voicerec2
+
+voicerec: build/voicerec2/voicerec2
+
+build/voicerec2/voicerec2: build/voicerec2/Makefile build/whisper.cpp/libwhisper.so 3rdparty/whisper.cpp/models/ggml-base.en.bin
+	$(MAKE) -C build/voicerec2
+
+build/voicerec2/Makefile: voicerec2/CMakeLists.txt
+	@mkdir -p build/voicerec2
+	@cd build/voicerec2 && cmake ../../voicerec2
+
+#
+# Builder whisper.cpp
+#
+
+.PHONY: whisper.cpp
+
+whisper.cpp: build/whisper.cpp/libwhisper.so
+
+build/whisper.cpp/libwhisper.so: build/whisper.cpp/Makefile
+	$(MAKE) -C build/whisper.cpp
+
+build/whisper.cpp/Makefile: 3rdparty/whisper.cpp/CMakeLists.txt
+	@mkdir -p build/whisper.cpp
+	@cd build/whisper.cpp && cmake ../../3rdparty/whisper.cpp
+
+3rdparty/whisper.cpp/models/ggml-base.en.bin: 3rdparty/whisper.cpp/models/download-ggml-model.sh
+	@bash $< base.en
 
 #
 # Build Intel's librealsense
