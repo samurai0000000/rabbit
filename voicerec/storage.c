@@ -18,6 +18,9 @@
 #include <assert.h>
 #include "voicerec.h"
 
+#define AUDIO_SAMPLE_CHANNELS      1
+#define AUDIO_SAMPLE_RATE      16000
+
 struct wav_header {
     char riff[4];
     uint32_t file_size;
@@ -150,7 +153,8 @@ void wav_start(void)
     }
 
 
-    empty_frames = ((22050 * 16 * 1) / 8) / 2;  // 0.5 second of silence
+    // 0.5 second of silence
+    empty_frames = ((AUDIO_SAMPLE_RATE * 16 * 1) / 8) / 2;
     ret = fseek(fout, sizeof(struct wav_header) + empty_frames, SEEK_SET);
     if (ret != 0) {
         perror(filename);
@@ -203,8 +207,8 @@ void wav_stop(void)
     wav_header.fmt_[3] = ' ';
     wav_header.length = 16;
     wav_header.type = 1;
-    wav_header.num_chans = 1;
-    wav_header.sample_rate = 22050;
+    wav_header.num_chans = AUDIO_SAMPLE_CHANNELS;
+    wav_header.sample_rate = AUDIO_SAMPLE_RATE;
     wav_header.bps = 16;
     wav_header.bpschdiv8 = (wav_header.bps * wav_header.num_chans) / 8;
     wav_header.byte_rate =
