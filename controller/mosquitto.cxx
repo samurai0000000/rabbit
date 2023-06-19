@@ -148,13 +148,11 @@ static void do_hear(const struct mosquitto_message *msg)
         } else if (match_keywords(text, earsup)) {
             speech->speak("I'm all ears");
             head->earsUp();
-            head->eyebrowRotate(30.0);
-            head->eyebrowTilt(0.0);
+            head->eyebrowSetDisposition(Head::EB_RELAXED);
         } else if (match_keywords(text, earsback)) {
             speech->speak("Super cool");
             head->earsBack();
-            head->eyebrowRotate(45.0);
-            head->eyebrowTilt(0.0);
+            head->eyebrowSetDisposition(Head::EB_JUBILANT);
         } else if (match_keywords(text, earsdown)) {
             speech->speak("yikes");
             head->earsDown();

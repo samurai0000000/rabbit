@@ -50,7 +50,7 @@ static unsigned int instance = 0;
 
 Mouth::Mouth()
   : _handle(-1),
-    _intensity(3),
+    _intensity(1),
     _fb(),
     _mode(MOUTH_BEH)
 {

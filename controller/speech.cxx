@@ -91,7 +91,7 @@ void Speech::run(void)
             snprintf(cmd, sizeof(cmd) - 1,
                      "/usr/bin/espeak -s %u -a %u --stdout 2>/dev/null | "
                      "aplay -D %s >/dev/null 2>&1",
-                     120, 10, "plughw:1");
+                     120, 8, "plughw:1");
 
             ret = pipe(espeak_stdin);
             if (ret != 0) {

@@ -52,7 +52,7 @@
 
 #define EAR_R_TILT_SERVO            24
 #define EAR_R_TILT_LO_PULSE        650
-#define EAR_R_TILT_HI_PULSE       2450
+#define EAR_R_TILT_HI_PULSE       2300
 #define EAR_R_TILT_ANGLE_MULT     ((EAR_R_TILT_HI_PULSE -   \
                                     EAR_R_TILT_LO_PULSE) \
                                    / 180)
@@ -790,7 +790,8 @@ void Head::earsDown(void)
 
 void Head::earsFold(void)
 {
-    static const unsigned TILT_DEGREE = 2;
+    static const unsigned EAR_R_TILT_DEGREE = 0;
+    static const unsigned EAR_L_TILT_DEGREE = 10;
     vector<struct servo_motion> motions;
     struct servo_motion motion;
     char buf[128];
@@ -807,7 +808,7 @@ void Head::earsFold(void)
     motions.clear();
     motions.push_back(motion);
     motion.pulse = servos->hiRange(EAR_R_TILT_SERVO) -
-        (EAR_R_TILT_ANGLE_MULT * (TILT_DEGREE + 5));
+        (EAR_R_TILT_ANGLE_MULT * (EAR_R_TILT_DEGREE + 5));
     motion.ms = 300;
     motions.push_back(motion);
     servos->scheduleMotions(EAR_R_TILT_SERVO, motions);
@@ -823,7 +824,7 @@ void Head::earsFold(void)
 
     motions.clear();
     motion.pulse = servos->loRange(EAR_L_TILT_SERVO) +
-        (EAR_L_TILT_ANGLE_MULT * TILT_DEGREE);
+        (EAR_L_TILT_ANGLE_MULT * EAR_L_TILT_DEGREE);
     motion.ms = 400;
     motions.push_back(motion);
     servos->scheduleMotions(EAR_L_TILT_SERVO, motions);
@@ -847,7 +848,7 @@ void Head::earsHalfDown(void)
 
     earRotate(-32.5, false, 0x1);
     earRotate(32.5, false, 0x2);
-    earTilt(-55.0);
+    earTilt(-45.0);
 }
 
 void Head::earsPointTo(float deg)
