@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <limits.h>
+#include <assert.h>
 #include <vector>
 #include <filesystem>
 #include <whisper.h>
@@ -16,7 +18,7 @@
 using namespace std;
 
 #define WHISPER_SAMPLE_RATE 16000
-#define MAIN_SAMPLE_SECONDS 5
+#define MAIN_SAMPLE_SECONDS 30
 
 struct audio_sample_main {
     float data[WHISPER_SAMPLE_RATE * MAIN_SAMPLE_SECONDS];
@@ -31,7 +33,102 @@ static struct audio_sample_main audio_sample_main = {
     .samples = 0,
 };
 
-static void make_inference(void);
+#define VOLUME_THRESHOLD  1500
+#define SILENT_THRESHOLD   200
+
+static void get_frame_vol_minmax(const void *pcm, size_t size,
+                                 int16_t *min, int16_t *max)
+{
+    unsigned int count;
+    const int16_t *sample;
+    int16_t lmin = SHRT_MAX, lmax = SHRT_MIN;
+
+    assert(pcm != NULL);
+    assert((size > 0) && (size % 2) == 0);
+    assert(min != NULL);
+    assert(max != NULL);
+
+    for (count = size / sizeof(int16_t), sample = (const int16_t *) pcm;
+         count > 0;
+         count--, sample++) {
+        if (*sample < lmin) {
+            lmin = *sample;
+        }
+        if (*sample > lmax) {
+            lmax = *sample;
+        }
+    }
+
+    *min = lmin;
+    *max = lmax;
+}
+
+static bool pcm_vad(const void *pcm, size_t size)
+{
+    bool vad = false;
+    static unsigned int silent_count = 0;
+    static unsigned int active_count = 0;
+    int16_t min, max;
+    bool silent = false;
+
+    get_frame_vol_minmax(pcm, size, &min, &max);
+    if ((max - min) < VOLUME_THRESHOLD) {
+        silent = true;
+    }
+
+    if (silent) {
+        silent_count++;
+        active_count = 0;
+    } else {
+        active_count++;
+        silent_count = 0;
+    }
+
+    if (silent_count >= SILENT_THRESHOLD) {
+        vad = false;
+    } else {
+        vad = true;
+    }
+
+    return vad;
+}
+
+static void make_inference(void)
+{
+    int ret;
+    whisper_full_params wparams =
+        whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+
+    wparams.print_progress   = false;
+    wparams.print_special    = false;
+    wparams.print_realtime   = false;
+    wparams.print_timestamps = false;
+    wparams.translate        = false;
+    wparams.single_segment   = false;
+    wparams.max_tokens       = 32;
+    wparams.language         = "en";
+    wparams.n_threads        = 4;
+    wparams.audio_ctx        = 0;
+    wparams.speed_up         = false;
+
+    printf("make inference with %u samples\n", audio_sample_main.samples);
+
+    ret = whisper_full(whisper, wparams,
+                       audio_sample_main.data,
+                       audio_sample_main.samples);
+    if (ret != 0) {
+        fprintf(stderr, "failed to process audio (%d)!\n", ret);
+    }
+
+    const int n_segments = whisper_full_n_segments(whisper);
+    for (int i = 0; i < n_segments; ++i) {
+        const char *text = whisper_full_get_segment_text(whisper, i);
+
+        printf("%s", text);
+        fflush(stdout);
+    }
+    printf("\n");
+}
 
 static void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
 {
@@ -99,27 +196,36 @@ static void on_message(struct mosquitto *mosq, void *obj,
 
     if (strcmp(msg->topic, "rabbit/voice/pcm") == 0) {
         unsigned int new_samples;
+        bool vad;
 
-        new_samples = msg->payloadlen / sizeof(int16_t);
-        if ((audio_sample_main.samples + new_samples) <=
-            (WHISPER_SAMPLE_RATE * MAIN_SAMPLE_SECONDS)) {
-            unsigned int i;
-            const int16_t *pcm_s16_le = (const int16_t *) msg->payload;
-            float v;
+        vad = pcm_vad(msg->payload, msg->payloadlen);
+        if (vad) {
+            new_samples = msg->payloadlen / sizeof(int16_t);
+            if ((audio_sample_main.samples + new_samples) <=
+                (WHISPER_SAMPLE_RATE * MAIN_SAMPLE_SECONDS)) {
+                unsigned int i;
+                const int16_t *pcm_s16_le = (const int16_t *) msg->payload;
+                float v;
 
-            /* Convert from S16_LE to F32 */
-            for (i = 0; i < new_samples; i++) {
-                v = ((float) *pcm_s16_le) / 32768.0;
-                audio_sample_main.data[audio_sample_main.samples] = v;
-                audio_sample_main.samples++;
-                pcm_s16_le++;
+                /* Convert from S16_LE to F32 */
+                for (i = 0; i < new_samples; i++) {
+                    v = ((float) *pcm_s16_le) / 32768.0;
+                    audio_sample_main.data[audio_sample_main.samples] = v;
+                    audio_sample_main.samples++;
+                    pcm_s16_le++;
+                }
             }
-        }
 
-        if (audio_sample_main.samples >=
-            (WHISPER_SAMPLE_RATE * MAIN_SAMPLE_SECONDS)) {
-            make_inference();
-            audio_sample_main.samples = 0;
+            if (audio_sample_main.samples >=
+                (WHISPER_SAMPLE_RATE * MAIN_SAMPLE_SECONDS)) {
+                make_inference();
+                audio_sample_main.samples = 0;
+            }
+        } else {
+            if (audio_sample_main.samples > 0) {
+                make_inference();
+                audio_sample_main.samples = 0;
+            }
         }
     } else if (strcmp(msg->topic, "rabbit/voice/state") == 0) {
         const char *str = (const char *) msg->payload;
@@ -136,43 +242,6 @@ static void on_message(struct mosquitto *mosq, void *obj,
     } else {
         fprintf(stderr, "%s: off-topic: %s\n", __func__, msg->topic);
     }
-}
-
-static void make_inference(void)
-{
-    int ret;
-    whisper_full_params wparams =
-        whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-
-    wparams.print_progress   = false;
-    wparams.print_special    = false;
-    wparams.print_realtime   = false;
-    wparams.print_timestamps = false;
-    wparams.translate        = false;
-    wparams.single_segment   = false;
-    wparams.max_tokens       = 32;
-    wparams.language         = "en";
-    wparams.n_threads        = 4;
-    wparams.audio_ctx        = 0;
-    wparams.speed_up         = false;
-
-    printf("make inference with %u samples\n", audio_sample_main.samples);
-
-    ret = whisper_full(whisper, wparams,
-                       audio_sample_main.data,
-                       audio_sample_main.samples);
-    if (ret != 0) {
-        fprintf(stderr, "failed to process audio (%d)!\n", ret);
-    }
-
-    const int n_segments = whisper_full_n_segments(whisper);
-    for (int i = 0; i < n_segments; ++i) {
-        const char *text = whisper_full_get_segment_text(whisper, i);
-
-        printf("%s", text);
-        fflush(stdout);
-    }
-    printf("\n");
 }
 
 static void cleanup(void)
@@ -268,13 +337,6 @@ int main(int argc, char **argv)
     ret = mosquitto_connect(mosq, "rabbit", 1883, 60);
     if (ret != MOSQ_ERR_SUCCESS) {
         fprintf(stderr, "mosquitto_connect failed: %s\n",
-                mosquitto_strerror(ret));
-        exit(EXIT_FAILURE);
-    }
-
-    ret = mosquitto_loop_start(mosq);
-    if (ret != MOSQ_ERR_SUCCESS) {
-        fprintf(stderr, "mosquitto_loop_start failed: %s\n",
                 mosquitto_strerror(ret));
         exit(EXIT_FAILURE);
     }

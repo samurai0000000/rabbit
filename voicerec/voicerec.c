@@ -168,13 +168,6 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    ret = mosquitto_loop_start(mosq);
-    if (ret != MOSQ_ERR_SUCCESS) {
-        fprintf(stderr, "mosquitto_loop_start failed: %s\n",
-                mosquitto_strerror(ret));
-        exit(EXIT_FAILURE);
-    }
-
     for (;;) {
         ret = mosquitto_loop_forever(mosq, -1, 1);
         fprintf(stderr, "mosquitto_loop_forever: %s\n",
