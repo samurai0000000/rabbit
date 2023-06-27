@@ -23,15 +23,15 @@
                                    / 180)
 
 #define EB_R_ROTATION_SERVO         20
-#define EB_R_ROTATION_LO_PULSE     900
-#define EB_R_ROTATION_HI_PULSE    1900
+#define EB_R_ROTATION_LO_PULSE    1080
+#define EB_R_ROTATION_HI_PULSE    2080
 #define EB_R_ROTATION_ANGLE_MULT  ((EB_R_ROTATION_HI_PULSE - \
                                     EB_R_ROTATION_LO_PULSE)  \
                                    / 90)
 
 #define EB_R_TILT_SERVO             21
-#define EB_R_TILT_LO_PULSE         900
-#define EB_R_TILT_HI_PULSE        1900
+#define EB_R_TILT_LO_PULSE        1050
+#define EB_R_TILT_HI_PULSE        2050
 #define EB_R_TILT_ANGLE_MULT      ((EB_R_TILT_HI_PULSE - \
                                     EB_R_TILT_LO_PULSE) \
                                    / 90)
@@ -93,14 +93,14 @@
     ((TOOTH_L_ROTATION_HI_PULSE - TOOTH_L_ROTATION_LO_PULSE) / 90)
 
 #define WHISKER_R_ROTATION_SERVO        30
-#define WHISKER_R_ROTATION_LO_PULSE   1250
-#define WHISKER_R_ROTATION_HI_PULSE   1650
+#define WHISKER_R_ROTATION_LO_PULSE   1300
+#define WHISKER_R_ROTATION_HI_PULSE   1600
 #define WHISKER_R_ROTATION_ANGLE_MULT             \
     ((WHISKER_R_ROTATION_HI_PULSE - WHISKER_R_ROTATION_LO_PULSE) / 60)
 
 #define WHISKER_L_ROTATION_SERVO        31
-#define WHISKER_L_ROTATION_LO_PULSE   1250
-#define WHISKER_L_ROTATION_HI_PULSE   1650
+#define WHISKER_L_ROTATION_LO_PULSE   1300
+#define WHISKER_L_ROTATION_HI_PULSE   1600
 #define WHISKER_L_ROTATION_ANGLE_MULT             \
     ((WHISKER_L_ROTATION_HI_PULSE - TOOTH_L_ROTATION_LO_PULSE) / 60)
 
