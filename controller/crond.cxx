@@ -62,9 +62,8 @@ void Crond::run(void)
     vector<struct crond_entry>::iterator it;
     const struct tm *tm;
 
-    clock_gettime(CLOCK_REALTIME, &ts);
-
     /* First, sleep until the next 0 second time epoch */
+    clock_gettime(CLOCK_REALTIME, &ts);
     tm = localtime(&ts.tv_sec);
     ts.tv_sec += (60 - tm->tm_sec);
     pthread_mutex_lock(&_mutex);

@@ -260,13 +260,13 @@ void Servos::run(void)
     bool unfinished = false;
     vector<struct servo_motion_sync *>::iterator it;
 
-    clock_gettime(CLOCK_REALTIME, &ts);
     tn.tv_sec = 0;
     tn.tv_nsec = 1000000 * SERVO_SCHEDULE_INTERVAL_MS;
 
     do {
         unfinished = false;          /* Reset unfinished variable */
 
+        clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tn, &ts);  /* Update time to next epoch */
 
         probeOpenDevice();           /* Probe and open device(s) */

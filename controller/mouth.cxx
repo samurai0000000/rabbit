@@ -375,7 +375,6 @@ void Mouth::run(void)
     l_intensity = _intensity;
     memset(l_fb, 0x0, sizeof(l_fb));
 
-    clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
     tloop.tv_nsec = 20000000;
 
@@ -383,6 +382,7 @@ void Mouth::run(void)
         int ret;
         unsigned int i;
 
+        clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tloop, &ts);
 
         switch (_mode) {

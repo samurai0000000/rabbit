@@ -227,7 +227,6 @@ void Head::run(void)
     vector<struct servo_motion> sentry_motions;
     struct servo_motion motion;
 
-    clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
     tloop.tv_nsec = 100000000;
 
@@ -248,6 +247,7 @@ void Head::run(void)
     sentry_motions.push_back(motion);
 
     while (_running) {
+        clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tloop, &ts);
 
         updateEyebrows();

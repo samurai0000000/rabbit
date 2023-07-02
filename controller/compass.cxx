@@ -163,11 +163,11 @@ void Compass::run(void)
     bool dirtyX, dirtyY, dirtyZ;
     float heading_now;
 
-    clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
     tloop.tv_nsec = 50000000;
 
     while (_running) {
+        clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tloop, &ts);
 
         /* Probe and open device */

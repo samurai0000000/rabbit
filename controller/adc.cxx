@@ -155,11 +155,11 @@ void ADC::run(void)
 {
     struct timespec ts, tloop;
 
-    clock_gettime(CLOCK_REALTIME, &ts);
     tloop.tv_sec = 0;
     tloop.tv_nsec = 100000000;
 
     while (_running) {
+        clock_gettime(CLOCK_REALTIME, &ts);
         timespecadd(&ts, &tloop, &ts);
 
         if (_handle == -1) {
